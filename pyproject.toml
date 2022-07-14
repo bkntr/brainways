@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=42.0.0", "wheel", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+
+[tool.setuptools_scm]
+write_to = "src/brainways/_version.py"
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.flake8]
+line-length = 88
+extend-ignore = ["E203", "E501"]

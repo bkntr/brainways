@@ -52,3 +52,4 @@ def _module_available(module_path: str) -> bool:
 
 BRAINWAYS_REG_MODEL_AVAILABLE = _module_available("brainways_reg_model")
 NAPARI_AVAILABLE = _module_available("napari")
+STARDIST_AVAILABLE = _module_available("stardist")

@@ -1,15 +1,18 @@
-import argparse
 from pathlib import Path
 from typing import Optional
 
-import napari
+import click
 import numpy as np
-from duracell.ui.model.cell_detector_model import CellDetectorModel, MinMaxNormalizer
 from tqdm import tqdm
 
+from brainways.pipeline.cell_detector import CellDetector, MinMaxNormalizer
 from brainways.project.brainways_project import BrainwaysProject
+from brainways.utils._imports import NAPARI_AVAILABLE
 from brainways.utils.io import ImagePath
 from brainways.utils.io.readers import get_reader, get_scenes
+
+if NAPARI_AVAILABLE:
+    import napari
 
 # CONTRAST_LIMITS = (12000, 50000)
 CFOS_CONTRAST_LIMITS = (99.5, 99.97)
@@ -19,6 +22,11 @@ DAPI_CONTRAST_LIMITS = (0, 98)
 def display_results(
     cfos: np.ndarray, labels: np.ndarray, dapi: Optional[np.ndarray] = None
 ):
+    if not NAPARI_AVAILABLE:
+        raise ImportError(
+            "Please install napari to display results: "
+            "`pip install napari` or `pip install brainways[all]`"
+        ) from None
     viewer = napari.Viewer()
     cfos_layer = viewer.add_image(cfos, colormap="green")
     cfos_layer.reset_contrast_limits_range()
@@ -33,8 +41,8 @@ def display_results(
 
 def run_cell_detector(
     image_path: ImagePath,
-    cell_detector: CellDetectorModel,
-    cfos_channel: int,
+    cell_detector: CellDetector,
+    channel: int,
     output_dir: Path,
     dapi_channel: Optional[int] = None,
     display: bool = False,
@@ -47,7 +55,7 @@ def run_cell_detector(
         return
 
     reader = get_reader(path=image_path)
-    image = reader.read_image(channel=cfos_channel, scale=1)
+    image = reader.read_image(channel=channel, scale=1)
     min_val, max_val = np.percentile(image, CFOS_CONTRAST_LIMITS)
     print(min_val, max_val)
     normalizer = MinMaxNormalizer(min=min_val, max=max_val)
@@ -63,22 +71,45 @@ def run_cell_detector(
         cells.to_csv(output_filename)
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--input", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--cfos-channel", type=int, default=0)
-    parser.add_argument("--dapi-channel", type=int)
-    parser.add_argument("--display", action="store_true")
-    args = parser.parse_args()
-
-    output = Path(args.output)
+@click.command()
+@click.option(
+    "--input",
+    type=Path,
+    required=True,
+    help="Input project file / directory of project files / directory of images to "
+    "run cell detector for.",
+)
+@click.option(
+    "--output",
+    type=Path,
+    required=True,
+    help="Results will be written to this directory.",
+)
+@click.option(
+    "--channel",
+    type=int,
+    default=0,
+    show_default=True,
+    help="Channel index to detect in the images.",
+)
+@click.option(
+    "--dapi-channel",
+    type=int,
+    help="DAPI channel index in the image (optional).",
+)
+@click.option(
+    "--display", is_flag=True, help="Display detected cells (requires napari)."
+)
+def cell_detection(
+    input: Path, output: Path, channel: int, dapi_channel: int, display: bool
+):
+    output = Path(output)
 
     output.mkdir(parents=True, exist_ok=True)
 
-    cell_detector = CellDetectorModel()
+    cell_detector = CellDetector()
 
-    project_paths = sorted(list(args.input.glob("*")))
+    project_paths = sorted(list(input.glob("*")))
     with tqdm(project_paths) as t:
         for path in t:
             try:
@@ -101,14 +132,14 @@ def main():
                     run_cell_detector(
                         image_path=image_path,
                         cell_detector=cell_detector,
-                        cfos_channel=args.cfos_channel,
-                        output_dir=args.output,
-                        dapi_channel=args.dapi_channel,
-                        display=args.display,
+                        channel=channel,
+                        output_dir=output,
+                        dapi_channel=dapi_channel,
+                        display=display,
                     )
                 except Exception as e:
                     t.write(f"Error in file {image_path}: {e}")
 
 
 if __name__ == "__main__":
-    main()
+    cell_detection()

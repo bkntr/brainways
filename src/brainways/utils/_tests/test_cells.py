@@ -52,6 +52,18 @@ def test_cell_counts_min_region_area_um2(mock_atlas):
     assert len(summary) == 0
 
 
+def test_cell_counts_empty_region(mock_atlas):
+    cells = np.array([[0, 0, 0]])
+    areas = Counter({10: 100, 11: 100})
+    summary = cell_count_summary(
+        cells=cells,
+        region_areas=areas,
+        atlas=mock_atlas,
+    )
+    empty_region_cell_count = summary.loc[summary["id"] == 11, "cell_count"].item()
+    assert empty_region_cell_count == 0
+
+
 def test_region_areas(mock_atlas):
     registered_image = np.array([[0, 1], [1, 1]])
     annotation = np.array([[1, 1], [2, 3]])

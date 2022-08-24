@@ -66,7 +66,7 @@ def cell_count_summary(
             region_areas[parent_struct_id] += region_areas[struct_id]
 
     df = []
-    for struct_id in cell_counts:
+    for struct_id in region_areas:
         if struct_id not in atlas.atlas.structures:
             continue
         struct = atlas.atlas.structures[struct_id]

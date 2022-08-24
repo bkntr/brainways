@@ -42,7 +42,7 @@ class BrainwaysProject:
         if atlas is not None:
             if atlas.atlas.atlas_name != settings.atlas:
                 raise ValueError(
-                    f"Input atlas doesn't match atlas in project settings "
+                    "Input atlas doesn't match atlas in project settings "
                     f"({atlas.atlas.atlas_name} != {settings.atlas})"
                 )
         self.documents = documents or []
@@ -93,14 +93,15 @@ class BrainwaysProject:
         image = slice_to_uint8(image)
         return image
 
-    def load_atlas(self):
+    def load_atlas(self, load_volumes: bool = True):
         self.atlas = BrainwaysAtlas(
             self.settings.atlas, exclude_regions=[76, 42, 41]
         )  # TODO: from model
-        # cache volumes
-        _ = self.atlas.reference
-        _ = self.atlas.annotation
-        _ = self.atlas.hemispheres
+        # load volumes to cache
+        if load_volumes:
+            _ = self.atlas.reference
+            _ = self.atlas.annotation
+            _ = self.atlas.hemispheres
 
     def load_pipeline(self):
         if self.atlas is None:

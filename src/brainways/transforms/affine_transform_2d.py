@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, Tuple
 
+# TODO: remove kornia dependency
 import kornia.geometry as KG
 import numpy as np
 import torch

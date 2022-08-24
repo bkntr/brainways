@@ -64,6 +64,14 @@ def mock_atlas(test_data: Tuple[np.ndarray, AtlasSlice]) -> BrainwaysAtlas:
             "rgb_triplet": [255, 255, 255],
             "mesh_filename": Path("/"),
         },
+        {
+            "name": "test_region2",
+            "acronym": "TEST2",
+            "id": 11,
+            "structure_id_path": [1, 11],
+            "rgb_triplet": [255, 255, 255],
+            "mesh_filename": Path("/"),
+        },
     ]
     structures = StructuresDict(structures_list=structures_list)
     mock_atlas.atlas.structures = structures

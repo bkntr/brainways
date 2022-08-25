@@ -36,5 +36,6 @@ class AicsImageIoReader(ImageReader):
             x, y, w, h = self.scene_bb
 
         image = image[y : y + h + 1, x : x + w + 1]
-        image = resize_image(image, size=size, scale=scale)
+        if size is not None or scale is not None:
+            image = resize_image(image, size=size, scale=scale)
         return image

@@ -9,7 +9,6 @@ from typing import Iterator, List, Optional, Tuple, Union
 
 import dacite
 import numpy as np
-import pandas as pd
 from pandas import DataFrame
 from PIL import Image
 
@@ -24,6 +23,7 @@ from brainways.utils.cells import (
     filter_cells_on_annotation,
     filter_cells_on_tissue,
     get_region_areas,
+    read_cells_csv,
 )
 from brainways.utils.image import get_resize_size, slice_to_uint8
 from brainways.utils.io import ImagePath
@@ -180,16 +180,8 @@ class BrainwaysProject:
                     f"csv path: {csv_path}"
                 )
                 continue
-            cells_df = pd.read_csv(csv_path)
-
-            cells_image = cells_df[["centroid-1", "centroid-0"]].to_numpy()
-            if (cells_image > 1).any():
-                cells_image = cells_image / document.image_size[::-1]
-            assert (cells_image < 1).all()
-            cell_areas = cells_df["area"].to_numpy()
-            # TODO: configurable
-            cells_image = cells_image[(cell_areas >= 50) & (cell_areas <= 400)]
-            self.documents[i] = replace(document, cells=cells_image)
+            cells = read_cells_csv(csv_path=csv_path, document=document)
+            self.documents[i] = replace(document, cells=cells)
             yield i, document
 
     def import_cells(self, path: Path) -> None:

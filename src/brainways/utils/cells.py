@@ -1,13 +1,16 @@
 from collections import Counter
+from pathlib import Path
 from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
+from aicsimageio import AICSImage
 from bg_atlasapi import BrainGlobeAtlas
 from skimage.measure import regionprops_table
 
 from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.pipeline.brainways_pipeline import BrainwaysPipeline, PipelineStep
+from brainways.project.brainways_project_settings import ProjectDocument
 from brainways.utils.atlas.duracell_atlas import BrainwaysAtlas
 from brainways.utils.image import ImageSizeHW, brain_mask_simple
 
@@ -185,3 +188,27 @@ def filter_cells_on_annotation(
     )
     result = cells[cells_on_slice_mask]
     return result
+
+
+def read_cells_csv(csv_path: Path, document: ProjectDocument):
+    # TODO: refactor
+    with open(csv_path) as f:
+        header = f.readline()
+    if header[:5] == "Image":
+        aicsimage = AICSImage(document.path.filename)
+        aicsimage.set_scene(document.path.scene)
+        cells_df = pd.read_csv(csv_path, sep="\t")
+        cfos_cells = cells_df["Name"].str.contains("cFos")
+        cells = cells_df.loc[cfos_cells, ["Centroid X µm", "Centroid Y µm"]].values
+        image_size_um = [
+            aicsimage.dims.X * aicsimage.physical_pixel_sizes.X,
+            aicsimage.dims.Y * aicsimage.physical_pixel_sizes.Y,
+        ]
+        cells = cells / image_size_um
+    else:
+        cells_df = pd.read_csv(csv_path)
+        cells = cells_df[["centroid-1", "centroid-0"]].to_numpy()
+        if (cells > 1).any():
+            cells = cells / document.image_size[::-1]
+    assert (cells < 1).all()
+    return cells

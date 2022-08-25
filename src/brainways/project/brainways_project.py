@@ -207,9 +207,11 @@ class BrainwaysProject:
         )
         return valid_cells
 
-    def get_all_cells_on_atlas(self):
+    def get_cells_on_atlas(self, documents: Optional[List[ProjectDocument]] = None):
         cells_on_atlas = []
-        for i, document in self.valid_documents:
+        if documents is None:
+            documents = (document for i, document in self.valid_documents)
+        for document in documents:
             if document.cells is None:
                 continue
 

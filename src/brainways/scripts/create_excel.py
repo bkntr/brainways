@@ -12,14 +12,14 @@ if NAPARI_AVAILABLE:
     import napari
 
 
-def display_cells(project: BrainwaysProject):
+def display_cells_3d(project: BrainwaysProject):
     if not NAPARI_AVAILABLE:
         raise ImportError(
             "Please install napari to display results: "
             "`pip install napari` or `pip install brainways[all]`"
         ) from None
 
-    all_cells = project.get_all_cells_on_atlas()
+    all_cells = project.get_cells_on_atlas()
     struct_ids = get_cell_struct_ids(all_cells, project.atlas.atlas)
     colors = get_struct_colors(struct_ids, project.atlas.atlas)
 
@@ -32,9 +32,40 @@ def display_cells(project: BrainwaysProject):
         ndim=3,
         size=1,
         edge_color=colors,
+        face_color=colors,
     )
     viewer.title = project.project_path.name
     napari.run()
+
+
+def display_cells_2d(project: BrainwaysProject):
+    if not NAPARI_AVAILABLE:
+        raise ImportError(
+            "Please install napari to display results: "
+            "`pip install napari` or `pip install brainways[all]`"
+        ) from None
+
+    for _, document in project.valid_documents:
+        if document.cells is None:
+            continue
+
+        viewer = napari.Viewer()
+        image = project.read_highres_image(document)
+        viewer.add_image(image, name=str(document.path))
+
+        cells_atlas = project.get_cells_on_atlas([document])
+        cells = project.get_valid_cells(document)
+        struct_ids = get_cell_struct_ids(cells_atlas, project.atlas.atlas)
+        colors = get_struct_colors(struct_ids, project.atlas.atlas)
+
+        viewer.add_points(
+            cells[:, ::-1] * [image.shape[0], image.shape[1]],
+            name="Cells",
+            size=50,
+            edge_color=colors,
+            face_color=colors,
+        )
+        napari.run()
 
 
 @click.command()
@@ -79,6 +110,11 @@ def create_excel(input: Path, output: Path, min_region_area_um2: int, display: b
             project = BrainwaysProject.open(
                 project_path, atlas=project.atlas, pipeline=project.pipeline
             )
+            if project.settings.atlas != project.atlas.atlas.atlas_name:
+                raise RuntimeError(
+                    f"Multiple atlases detected: {project.settings.atlas},"
+                    f" {project.atlas.atlas.atlas_name}"
+                )
         summary = project.cell_count_summary(min_region_area_um2=min_region_area_um2)
         cell_count_sheet.append(
             {
@@ -105,24 +141,8 @@ def create_excel(input: Path, output: Path, min_region_area_um2: int, display: b
         )
 
         if display:
-            display_cells(project)
-
-            for i, doc in project.valid_documents:
-                if doc.cells is None:
-                    continue
-
-                viewer = napari.Viewer()
-                image = project.read_highres_image(doc)
-                viewer.add_image(image, name=str(doc.path))
-
-                viewer.add_points(
-                    doc.cells[:, ::-1] * [image.shape[0], image.shape[1]],
-                    name="Cells",
-                    size=7,
-                    edge_color="red",
-                    face_color="red",
-                )
-                napari.run()
+            display_cells_3d(project)
+            display_cells_2d(project)
 
     cells_per_250um2_sheet = pd.DataFrame(cells_per_250um2_sheet)
     total_area_um2_sheet = pd.DataFrame(total_area_um2_sheet)

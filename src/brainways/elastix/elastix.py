@@ -59,7 +59,7 @@ def elastix_registration(
         f.write(points_file_contents)
         tmpfilename = f.name
 
-    (result_image, result_transform_parameters,) = itk.elastix_registration_method(
+    result_image, result_transform_parameters = itk.elastix_registration_method(
         fixed,
         moving,
         parameter_object,

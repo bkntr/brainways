@@ -76,8 +76,10 @@ class BrainwaysProject:
         else:
             reader = QupathReader(document.path.filename)
             reader.set_scene(document.path.scene)
-            image = reader.get_thumbnail()
-            image = slice_to_uint8(image[self.settings.channel])
+            image = reader.get_thumbnail(
+                target_size=document.lowres_image_size, channel=self.settings.channel
+            )
+            image = slice_to_uint8(image)
             Image.fromarray(image).save(thumbnail_path)
         return image
 

@@ -20,6 +20,7 @@ from resource_backed_dask_array import (
     resource_backed_dask_array,
 )
 
+from brainways.utils.image import ImageSizeHW, resize_image
 from brainways.utils.qupath import (
     add_brainways_qupath_dir_to_paquo_settings,
     download_qupath,
@@ -100,17 +101,23 @@ class QupathReader(Reader):
                     self.__class__.__name__, self._path
                 ) from e
 
-    def get_thumbnail(self):
-        # TODO: accept thumbnail size
-        buffered_image = self._current_server.getDefaultThumbnail(0, 0)
-        w = buffered_image.getWidth()
-        h = buffered_image.getHeight()
-        data = buffered_image.getData()
-        sample_model = data.getSampleModel()
-        c = sample_model.getNumBands()
-        buffer = data.getDataBuffer().getData()
-        im = np.array(buffer).reshape((c, h, w))
-        return im
+    def get_thumbnail(self, target_size: ImageSizeHW, channel: int):
+        original_level = self.current_level
+        thumbnail_level = self.n_levels - 1
+        target_downsample = max(
+            self.dims.X / target_size[1], self.dims.Y / target_size[0]
+        )
+        thumbnail_level = [
+            i for i, d in enumerate(self.downsamples) if d <= target_downsample
+        ][-1]
+        if thumbnail_level != original_level:
+            self.set_level(thumbnail_level)
+        thumbnail = self.get_image_data("YX", channel=channel)
+        if thumbnail_level != original_level:
+            self.set_level(original_level)
+        if thumbnail.shape[:2] != target_size:
+            thumbnail = resize_image(thumbnail, size=target_size, keep_aspect=True)
+        return thumbnail
 
     @property
     def current_level(self) -> int:
@@ -223,6 +230,21 @@ class QupathReader(Reader):
     def qupath_version() -> str:
         """The version of the qupath jar being used."""
         raise NotImplementedError()
+
+
+def _pixtype2javatype(pixeltype: int):
+    FT = scyjava.jimport("loci.formats.FormatTools")
+    fmt2type: Dict[int, str] = {
+        FT.INT8: jpype.JInt,
+        FT.UINT8: jpype.JInt,
+        FT.INT16: jpype.JInt,
+        FT.UINT16: jpype.JInt,
+        FT.INT32: jpype.JInt,
+        FT.UINT32: jpype.JInt,
+        FT.FLOAT: jpype.JFloat,
+        FT.DOUBLE: jpype.JDouble,
+    }
+    return fmt2type[pixeltype]
 
 
 def _pixtype2dtype(pixeltype: int, little_endian: bool) -> np.dtype:

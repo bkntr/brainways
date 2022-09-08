@@ -4,9 +4,10 @@ from typing import Union
 import aicsimageio
 
 from brainways.utils.image import ImageSizeHW
-from brainways.utils.io.image_path import ImagePath
-from brainways.utils.io.readers.aicsimageio_reader import AicsImageIoReader
-from brainways.utils.io.readers.czi_reader import CziReader
+from brainways.utils.io_utils.image_path import ImagePath
+from brainways.utils.io_utils.readers.aicsimageio_reader import AicsImageIoReader
+from brainways.utils.io_utils.readers.czi_reader import CziReader
+from brainways.utils.io_utils.readers.qupath_reader import QupathReader
 
 
 def get_reader(path: ImagePath):
@@ -23,10 +24,10 @@ def get_scenes(filename: Union[str, Path]):
 
 
 def get_image_size(path: ImagePath) -> ImageSizeHW:
-    aics_image = aicsimageio.AICSImage(path.filename)
+    reader = QupathReader(path.filename)
     if path.scene is not None:
-        aics_image.set_scene(path.scene)
-    return (aics_image.dims.Y, aics_image.dims.X)
+        reader.set_scene(path.scene)
+    return (reader.dims.Y, reader.dims.X)
 
 
 def get_channels(filename: Union[str, Path]):

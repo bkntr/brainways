@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 import aicsimageio
 
 from brainways.utils.image import ImageSizeHW, resize_image
-from brainways.utils.io.readers.base import ImageReader
+from brainways.utils.io_utils.readers.base import ImageReader
 
 
 class AicsImageIoReader(ImageReader):

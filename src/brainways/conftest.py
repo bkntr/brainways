@@ -25,8 +25,8 @@ from brainways.project.brainways_project_settings import (
 )
 from brainways.utils.atlas.duracell_atlas import AtlasSlice, BrainwaysAtlas
 from brainways.utils.image import ImageSizeHW
-from brainways.utils.io import ImagePath
-from brainways.utils.io.readers.base import ImageReader
+from brainways.utils.io_utils import ImagePath
+from brainways.utils.io_utils.readers.base import ImageReader
 
 
 @fixture(autouse=True)
@@ -95,6 +95,11 @@ def test_data() -> Tuple[np.ndarray, AtlasSlice]:
 
 
 @fixture(scope="session")
+def test_image_path() -> Path:
+    return Path(__file__).parent.parent.parent / "data/test_image.jpg"
+
+
+@fixture(scope="session")
 def test_image_size(test_data: Tuple[np.ndarray, AtlasSlice]) -> ImageSizeHW:
     input, atlas_size = test_data
     return input.shape
@@ -112,8 +117,10 @@ def image_reader_mock(test_data: Tuple[np.ndarray, AtlasSlice]):
     mock_get_scenes = Mock(return_value=[0])
 
     with patch(
-        "brainways.utils.io.readers.get_reader", return_value=mock_image_reader
-    ), patch("brainways.utils.io.readers.get_scenes", return_value=mock_get_scenes):
+        "brainways.utils.io_utils.readers.get_reader", return_value=mock_image_reader
+    ), patch(
+        "brainways.utils.io_utils.readers.get_scenes", return_value=mock_get_scenes
+    ):
         yield
 
 

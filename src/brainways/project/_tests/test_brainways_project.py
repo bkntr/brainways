@@ -13,7 +13,7 @@ from brainways.project.brainways_project_settings import (
     ProjectSettings,
 )
 from brainways.utils.atlas.duracell_atlas import AtlasSlice, BrainwaysAtlas
-from brainways.utils.io import ImagePath
+from brainways.utils.io_utils import ImagePath
 
 
 @pytest.fixture

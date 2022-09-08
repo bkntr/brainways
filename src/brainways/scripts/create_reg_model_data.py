@@ -73,6 +73,8 @@ def create_reg_model_data(input: Path, output: Path):
             labels.append(
                 {
                     "filename": str(output_image_filename),
+                    "animal_id": Path(project.project_path).name,
+                    "image_id": str(document.path),
                     "ap": ap,
                     "rot_frontal": rot_frontal,
                     "rot_horizontal": rot_horizontal,

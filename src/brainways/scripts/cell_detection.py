@@ -8,8 +8,8 @@ from tqdm import tqdm
 from brainways.pipeline.cell_detector import CellDetector, MinMaxNormalizer
 from brainways.project.brainways_project import BrainwaysProject
 from brainways.utils._imports import NAPARI_AVAILABLE
-from brainways.utils.io import ImagePath
-from brainways.utils.io.readers import get_reader, get_scenes
+from brainways.utils.io_utils import ImagePath
+from brainways.utils.io_utils.readers import get_reader, get_scenes
 
 if NAPARI_AVAILABLE:
     import napari
@@ -76,8 +76,10 @@ def run_cell_detector(
     "--input",
     type=Path,
     required=True,
-    help="Input project file / directory of project files / directory of images to "
-    "run cell detector for.",
+    help=(
+        "Input project file / directory of project files / directory of images to "
+        "run cell detector for."
+    ),
 )
 @click.option(
     "--output",

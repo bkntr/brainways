@@ -4,12 +4,15 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import Optional, Sequence, Union
 
+import kornia
 import numpy as np
 import torch
 from bg_atlasapi import BrainGlobeAtlas
 
 from brainways.utils.atlas.slice_atlas import slice_atlas
 from brainways.utils.image import nonzero_bounding_box_tensor
+
+_BRAINGLOBE_ATLAS_CACHE = {}
 
 
 class BrainwaysAtlas:
@@ -18,14 +21,24 @@ class BrainwaysAtlas:
         atlas: Union[str, BrainGlobeAtlas],
         exclude_regions: Optional[Sequence[int]] = None,
     ):
+        self.exclude_regions = exclude_regions
         if isinstance(atlas, str):
-            self.atlas = BrainGlobeAtlas(atlas)
+            cache_key = (atlas, tuple(exclude_regions))
+            if cache_key in _BRAINGLOBE_ATLAS_CACHE:
+                self.atlas, self.bounding_boxes = _BRAINGLOBE_ATLAS_CACHE[cache_key]
+            else:
+                _BRAINGLOBE_ATLAS_CACHE.clear()
+                self.atlas = BrainGlobeAtlas(atlas)
+                self.bounding_boxes = self._calc_bounding_boxes()
+                _BRAINGLOBE_ATLAS_CACHE[cache_key] = (
+                    self.atlas,
+                    self.bounding_boxes,
+                )
         elif isinstance(atlas, BrainGlobeAtlas):
             self.atlas = atlas
+            self.bounding_boxes = self._calc_bounding_boxes()
         else:
             raise ValueError(f"Unsupported atlas type {type(atlas)}")
-        self.exclude_regions = exclude_regions
-        self.bounding_boxes = self._calc_bounding_boxes()
 
     def slice(
         self,
@@ -77,7 +90,11 @@ class BrainwaysAtlas:
         )
 
     def _calc_bounding_boxes(self):
-        boxes = [nonzero_bounding_box_tensor(ann) for ann in self.annotation]
+        boxes = []
+        kernel = torch.ones(5, 5)
+        for ann in self.annotation:
+            ann_open = kornia.morphology.opening(ann[None, None], kernel)[0, 0]
+            boxes.append(nonzero_bounding_box_tensor(ann_open))
         return boxes
 
     @property

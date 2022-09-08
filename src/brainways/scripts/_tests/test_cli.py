@@ -8,7 +8,7 @@ from brainways.pipeline.cell_detector import CellDetector
 from brainways.scripts.cli import cli
 from brainways.utils.atlas.duracell_atlas import BrainwaysAtlas
 from brainways.utils.image import ImageSizeHW
-from brainways.utils.io import ImagePath
+from brainways.utils.io_utils import ImagePath
 
 
 def test_cell_detection(

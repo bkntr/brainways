@@ -94,6 +94,9 @@ def brain_mask(image: np.ndarray):
     mask = np.ones_like(image, dtype=bool)
 
     connected_components, nr_objects = ndimage.label(quantized)
+    # don't attempt to compute mask when n_objects is very large
+    if nr_objects > 50:
+        return np.ones_like(image, dtype=bool)
     cc_sizes = {
         cc: (connected_components == cc).sum() for cc in range(1, nr_objects + 1)
     }
@@ -163,23 +166,65 @@ def crop_nonzero(image: np.ndarray):
     return image[y : y + h, x : x + w]
 
 
-def annotation_outline(annotation: torch.Tensor):
+def annotation_outline(annotation: Union[torch.Tensor, np.ndarray]):
+    is_ndarray = isinstance(annotation, np.ndarray)
+    if is_ndarray:
+        annotation = torch.as_tensor(annotation)
     outline = kornia.filters.spatial_gradient(
         annotation[None, None].float(), mode="diff"
     )
-    outline = (outline[0, 0].abs().amax(dim=0) > 0).byte() * 255
-    return outline
+    outline = outline.abs().amax(dim=2) > 0
+    kernel_size = int(max(annotation.shape) / 512)
+    if kernel_size > 1:
+        kernel = torch.ones(kernel_size, kernel_size)
+        outline = kornia.morphology.dilation(outline, kernel, border_type="constant")
+    outline = outline.byte() * 255
+    if is_ndarray:
+        outline = outline.numpy()
+    return outline[0, 0]
 
 
-def slice_contrast_values(slice_image: np.ndarray):
-    min_val, max_val = np.percentile(slice_image[slice_image > 0], [1, 98])
-    return min_val, max_val
+def slice_contrast_values(slice_image: np.ndarray, saturation: float = 0.001):
+    hist, bin_edges = np.histogram(slice_image.flat, bins=1024)
+    if hist[0] > hist[1]:
+        hist = hist[1:]
+        bin_edges = bin_edges[1:]
+    if hist[-1] > hist[-2]:
+        hist = hist[:-1]
+        bin_edges = bin_edges[:-1]
+
+    count_sum = sum(hist)
+    count_max = count_sum * saturation
+    count = count_max
+    min_display = bin_edges[0]
+    ind = 0
+    while ind < len(hist) - 1:
+        next_count = hist[ind]
+        if count < next_count:
+            bin_width = bin_edges[ind + 1] - bin_edges[ind]
+            min_display = bin_edges[ind] + (count / next_count) * bin_width
+            break
+        count -= next_count
+        ind += 1
+
+    count = count_max
+    max_display = bin_edges[-1]
+    ind = len(hist) - 1
+    while ind >= 0:
+        next_count = hist[ind]
+        if count < next_count:
+            bin_width = bin_edges[ind + 1] - bin_edges[ind]
+            max_display = bin_edges[ind + 1] - (count / next_count) * bin_width
+            break
+        count -= next_count
+        ind -= 1
+    # min_val, max_val = np.percentile(slice_image[slice_image > 0], [0.001, 99.99])
+    return min_display, max_display
 
 
 def slice_to_uint8(slice_image: np.ndarray):
     min_val, max_val = slice_contrast_values(slice_image)
     slice_image = np.clip(slice_image, min_val, max_val)
-    slice_image = normalize_min_max(slice_image)
     slice_image = convert_to_uint8(slice_image)
     return slice_image
 

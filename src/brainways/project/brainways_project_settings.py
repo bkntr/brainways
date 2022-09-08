@@ -8,7 +8,7 @@ import numpy as np
 from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.utils.dataclasses import dataclass_eq
 from brainways.utils.image import ImageSizeHW
-from brainways.utils.io import ImagePath
+from brainways.utils.io_utils import ImagePath
 
 
 @dataclass(frozen=True)

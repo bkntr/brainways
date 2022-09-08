@@ -46,6 +46,7 @@ class AtlasRegistration:
         atlas_slice = self.atlas.slice(
             ap=params.ap,
             rot_horizontal=params.rot_horizontal,
+            rot_sagittal=params.rot_sagittal,
             hemisphere=params.hemisphere,
         )
         return atlas_slice

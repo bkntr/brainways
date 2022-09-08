@@ -26,8 +26,9 @@ from brainways.utils.cells import (
     read_cells_csv,
 )
 from brainways.utils.image import get_resize_size, slice_to_uint8
-from brainways.utils.io import ImagePath
-from brainways.utils.io.readers import get_image_size, get_reader
+from brainways.utils.io_utils import ImagePath
+from brainways.utils.io_utils.readers import get_image_size
+from brainways.utils.io_utils.readers.qupath_reader import QupathReader
 
 
 class BrainwaysProject:
@@ -73,24 +74,21 @@ class BrainwaysProject:
         if thumbnail_path.exists():
             image = np.array(Image.open(thumbnail_path))
         else:
-            reader = get_reader(document.path)
-            image = reader.read_image(
-                channel=self.settings.channel, size=document.lowres_image_size
-            )
-            image = slice_to_uint8(image)
+            reader = QupathReader(document.path.filename)
+            reader.set_scene(document.path.scene)
+            image = reader.get_thumbnail()
+            image = slice_to_uint8(image[self.settings.channel])
             Image.fromarray(image).save(thumbnail_path)
         return image
 
     def read_highres_image(
         self,
         document: ProjectDocument,
-        bounding_box: Optional[Tuple[float, float, float, float]] = None,
     ):
-        reader = get_reader(document.path)
-        image = reader.read_image(
-            bounding_box=bounding_box, channel=self.settings.channel
-        )
-        image = slice_to_uint8(image)
+        reader = QupathReader(document.path.filename)
+        reader.set_scene(document.path.scene)
+        image = reader.get_image_data("YX", C=self.settings.channel)
+        # image = slice_to_uint8(image)
         return image
 
     def load_atlas(self, load_volumes: bool = True):
@@ -111,7 +109,7 @@ class BrainwaysProject:
     def add_image(self, path: ImagePath) -> ProjectDocument:
         image_size = get_image_size(path)
         lowres_image_size = get_resize_size(
-            input_size=image_size, output_size=(512, 512), keep_aspect=True
+            input_size=image_size, output_size=(1024, 1024), keep_aspect=True
         )
         document = ProjectDocument(
             path=path,

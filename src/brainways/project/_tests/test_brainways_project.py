@@ -200,6 +200,36 @@ def test_save_moves_project(
     ).exists()
 
 
+def test_save_to_empty_directory(
+    brainways_project: BrainwaysProject,
+    test_data: Tuple[np.ndarray, AtlasSlice],
+    mock_image_path: ImagePath,
+    tmpdir,
+):
+    image, _ = test_data
+    save_path = Path(tmpdir) / "save_project"
+    save_path.mkdir()
+    brainways_project.save(save_path)
+    assert brainways_project.project_path == save_path
+    assert brainways_project.thumbnail_path(
+        brainways_project.documents[0].path, channel=0
+    ).exists()
+
+
+def test_save_to_already_existing_directory(
+    brainways_project: BrainwaysProject,
+    test_data: Tuple[np.ndarray, AtlasSlice],
+    mock_image_path: ImagePath,
+    tmpdir,
+):
+    image, _ = test_data
+    save_path = Path(tmpdir) / "save_project"
+    save_path.mkdir()
+    (save_path / "test").touch()
+    with pytest.raises(FileExistsError):
+        brainways_project.save(save_path)
+
+
 def test_init_brainways_with_wrong_atlas_raises_exception(
     mock_project_settings: ProjectSettings,
 ):

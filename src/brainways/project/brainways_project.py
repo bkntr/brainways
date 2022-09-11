@@ -162,6 +162,13 @@ class BrainwaysProject:
         path = Path(path)
         project_dir = self._get_project_dir(path)
         if project_dir != self.project_path:
+            if project_dir.exists():
+                if project_dir.is_dir() and not any(project_dir.iterdir()):
+                    shutil.rmtree(str(project_dir))
+                else:
+                    raise FileExistsError(
+                        f"Project directory {project_dir} is not empty!"
+                    )
             shutil.move(str(self.project_path), str(project_dir))
             self.project_path = project_dir
         serialized_settings = asdict(self.settings)

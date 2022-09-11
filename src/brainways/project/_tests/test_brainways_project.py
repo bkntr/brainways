@@ -157,7 +157,7 @@ def test_close_project(brainways_project: BrainwaysProject):
     assert brainways_project.settings is None
     assert brainways_project.atlas is None
     assert brainways_project.pipeline is None
-    assert brainways_project.project_path == Path(brainways_project._tmpdir.name)
+    assert brainways_project.project_path is None
 
 
 def test_close_project_clears_tmpdir(brainways_tmp_project: BrainwaysProject):
@@ -243,3 +243,11 @@ def test_load_pipeline(brainways_project: BrainwaysProject, mock_atlas: Brainway
     assert brainways_project.pipeline is None
     brainways_project.load_pipeline()
     assert brainways_project.pipeline is not None
+
+
+def test_init_project_with_nonempty_directory(
+    mock_project_settings: ProjectSettings, tmpdir
+):
+    (Path(tmpdir) / "test").touch()
+    with pytest.raises(FileExistsError):
+        BrainwaysProject(settings=mock_project_settings, project_path=Path(tmpdir))

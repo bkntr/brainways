@@ -50,11 +50,22 @@ class BrainwaysProject:
         self.settings = settings
         self.atlas = atlas
         self.pipeline = pipeline
+        self._tmpdir = None
 
-        self._tmpdir = tempfile.TemporaryDirectory()
-        self.project_path = (
-            project_path if project_path is not None else Path(self._tmpdir.name)
-        )
+        # TODO: refactor, BrainwaysProject.create() and BrainwaysProject.open()
+        if project_path is None:
+            self._tmpdir = tempfile.TemporaryDirectory()
+            self.project_path = Path(self._tmpdir.name)
+        else:
+            self.project_path = self._get_project_dir(project_path)
+            if not (self.project_path / "brainways.bin").exists():
+                if self.project_path.exists():
+                    if not self.project_path.is_dir() or any(
+                        self.project_path.iterdir()
+                    ):
+                        raise FileExistsError(
+                            f"New project directory {self.project_path} is not empty!"
+                        )
 
         if not self.thumbnails_root.exists():
             self.thumbnails_root.mkdir()
@@ -64,8 +75,9 @@ class BrainwaysProject:
         self.settings = None
         self.atlas = None
         self.pipeline = None
-        self.project_path = Path(self._tmpdir.name)
-        self._tmpdir.cleanup()
+        self.project_path = None
+        if self._tmpdir is not None:
+            self._tmpdir.cleanup()
 
     def read_lowres_image(self, document: ProjectDocument) -> np.ndarray:
         thumbnail_path = self.thumbnail_path(

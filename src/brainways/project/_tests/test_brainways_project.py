@@ -12,7 +12,7 @@ from brainways.project.brainways_project_settings import (
     ProjectDocument,
     ProjectSettings,
 )
-from brainways.utils.atlas.duracell_atlas import AtlasSlice, BrainwaysAtlas
+from brainways.utils.atlas.brainways_atlas import AtlasSlice, BrainwaysAtlas
 from brainways.utils.io_utils import ImagePath
 
 

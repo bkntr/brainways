@@ -6,7 +6,7 @@ import numpy as np
 
 from brainways.pipeline.brainways_params import AffineTransform2DParams
 from brainways.transforms.affine_transform_2d import BrainwaysAffineTransform2D
-from brainways.utils.atlas.duracell_atlas import AtlasSlice
+from brainways.utils.atlas.brainways_atlas import AtlasSlice
 from brainways.utils.image import ImageSizeHW, brain_mask, nonzero_bounding_box
 
 

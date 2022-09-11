@@ -22,6 +22,13 @@ def add_brainways_qupath_dir_to_paquo_settings():
         paquo_settings.qupath_search_dirs = paquo_settings.qupath_search_dirs + [
             qupath_brainways_dir
         ]
+        # TODO: this is a workaround to enable BioFormats memoization.
+        # It stops working in Java 17, and will be fixed in QuPath 0.4.0.
+        # See https://github.com/ome/bioformats/issues/3659
+        paquo_settings.java_opts = paquo_settings.java_opts + [
+            "--add-opens=java.base/java.util.regex=ALL-UNNAMED",
+            "--illegal-access=permit",
+        ]
 
 
 def is_qupath_downloaded():

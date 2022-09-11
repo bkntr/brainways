@@ -3,7 +3,7 @@ from typing import Tuple
 import numpy as np
 
 from brainways.elastix.elastix import elastix_registration
-from brainways.utils.atlas.duracell_atlas import AtlasSlice
+from brainways.utils.atlas.brainways_atlas import AtlasSlice
 
 
 def test_elastix(test_data: Tuple[np.ndarray, AtlasSlice]):

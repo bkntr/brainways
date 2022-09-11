@@ -9,17 +9,17 @@ from brainways.transforms.depth_registration import (
     DepthRegistrationParams,
 )
 from brainways.utils._imports import BRAINWAYS_REG_MODEL_AVAILABLE
-from brainways.utils.atlas.duracell_atlas import AtlasSlice, BrainwaysAtlas
-from brainways.utils.image import convert_to_uint8
+from brainways.utils.atlas.brainways_atlas import AtlasSlice, BrainwaysAtlas
+from brainways.utils.image import slice_to_uint8
 from brainways.utils.paths import REG_MODEL
 
 if TYPE_CHECKING:
-    from brainways_reg_model import BrainwaysRegModel
+    from brainways_reg_model.model.model import BrainwaysRegModel
 
 
 class AtlasRegistration:
     def __init__(self, atlas: BrainwaysAtlas):
-        self.duracell_reg_model: Optional[BrainwaysRegModel] = None
+        self.brainways_reg_model: Optional[BrainwaysRegModel] = None
         self.atlas = atlas
 
     def run_automatic_registration(self, image: np.ndarray):
@@ -30,16 +30,15 @@ class AtlasRegistration:
                 "`pip install brainways[all]`"
             )
 
-        from brainways_reg_model import BrainwaysRegModel
+        from brainways_reg_model.model.model import BrainwaysRegModel
 
-        if self.duracell_reg_model is None:
-            self.duracell_reg_model = BrainwaysRegModel.load_from_checkpoint(
+        if self.brainways_reg_model is None:
+            self.brainways_reg_model = BrainwaysRegModel.load_from_checkpoint(
                 REG_MODEL, atlas=self.atlas
             )
-            self.duracell_reg_model.freeze()
-        image = np.clip(image, image.min(), np.quantile(image, 0.998))
-        image = convert_to_uint8(image)
-        params = self.duracell_reg_model.predict(PIL.Image.fromarray(image))
+            self.brainways_reg_model.freeze()
+        image = slice_to_uint8(image)
+        params = self.brainways_reg_model.predict(PIL.Image.fromarray(image))
         return params
 
     def get_atlas_slice(self, params: AtlasRegistrationParams) -> AtlasSlice:

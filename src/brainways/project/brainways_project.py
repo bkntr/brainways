@@ -17,7 +17,7 @@ from brainways.project.brainways_project_settings import (
     ProjectDocument,
     ProjectSettings,
 )
-from brainways.utils.atlas.duracell_atlas import BrainwaysAtlas
+from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 from brainways.utils.cells import (
     cell_count_summary,
     filter_cells_on_annotation,
@@ -108,7 +108,9 @@ class BrainwaysProject:
             self.load_atlas()
         self.pipeline = BrainwaysPipeline(self.atlas)
 
-    def add_image(self, path: ImagePath) -> ProjectDocument:
+    def add_image(
+        self, path: ImagePath, load_thumbnail: bool = True
+    ) -> ProjectDocument:
         image_size = get_image_size(path)
         lowres_image_size = get_resize_size(
             input_size=image_size, output_size=(1024, 1024), keep_aspect=True
@@ -118,7 +120,8 @@ class BrainwaysProject:
             image_size=image_size,
             lowres_image_size=lowres_image_size,
         )
-        self.read_lowres_image(document)
+        if load_thumbnail:
+            self.read_lowres_image(document)
         self.documents.append(document)
         return document
 

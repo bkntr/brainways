@@ -9,7 +9,7 @@ from brainways.pipeline.atlas_registration import AtlasRegistration
 from brainways.pipeline.brainways_params import AffineTransform2DParams, BrainwaysParams
 from brainways.pipeline.tps import TPS
 from brainways.transforms.image_to_atlas_transform import ImageToAtlasTransform
-from brainways.utils.atlas.duracell_atlas import AtlasSlice, BrainwaysAtlas
+from brainways.utils.atlas.brainways_atlas import AtlasSlice, BrainwaysAtlas
 from brainways.utils.image import ImageSizeHW, convert_to_uint8
 
 

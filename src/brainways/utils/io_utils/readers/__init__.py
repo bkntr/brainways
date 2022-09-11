@@ -1,8 +1,6 @@
 from pathlib import Path
 from typing import Union
 
-import aicsimageio
-
 from brainways.utils.image import ImageSizeHW
 from brainways.utils.io_utils.image_path import ImagePath
 from brainways.utils.io_utils.readers.aicsimageio_reader import AicsImageIoReader
@@ -19,8 +17,8 @@ def get_reader(path: ImagePath):
 
 
 def get_scenes(filename: Union[str, Path]):
-    aics_image = aicsimageio.AICSImage(filename)
-    return aics_image.scenes
+    reader = QupathReader(filename)
+    return reader.scenes
 
 
 def get_image_size(path: ImagePath) -> ImageSizeHW:
@@ -31,5 +29,5 @@ def get_image_size(path: ImagePath) -> ImageSizeHW:
 
 
 def get_channels(filename: Union[str, Path]):
-    aics_image = aicsimageio.AICSImage(filename)
-    return aics_image.channel_names
+    reader = QupathReader(filename)
+    return reader.channel_names

@@ -6,7 +6,7 @@ from click.testing import CliRunner
 
 from brainways.pipeline.cell_detector import CellDetector
 from brainways.scripts.cli import cli
-from brainways.utils.atlas.duracell_atlas import BrainwaysAtlas
+from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 from brainways.utils.image import ImageSizeHW
 from brainways.utils.io_utils import ImagePath
 

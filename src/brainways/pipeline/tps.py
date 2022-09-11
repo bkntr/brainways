@@ -7,7 +7,7 @@ import numpy as np
 from brainways.elastix.elastix import elastix_registration
 from brainways.pipeline.brainways_params import BrainwaysParams, TPSTransformParams
 from brainways.transforms.tps_transform import TPSTransform
-from brainways.utils.atlas.duracell_atlas import AtlasSlice
+from brainways.utils.atlas.brainways_atlas import AtlasSlice
 
 
 class TPS:

@@ -11,7 +11,7 @@ from skimage.measure import regionprops_table
 from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.pipeline.brainways_pipeline import BrainwaysPipeline, PipelineStep
 from brainways.project.brainways_project_settings import ProjectDocument
-from brainways.utils.atlas.duracell_atlas import BrainwaysAtlas
+from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 from brainways.utils.image import ImageSizeHW, brain_mask_simple
 
 

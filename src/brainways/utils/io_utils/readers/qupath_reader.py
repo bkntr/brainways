@@ -44,12 +44,15 @@ class QupathReader(Reader):
         if not is_qupath_downloaded():
             download_qupath()
         from paquo._logging import redirect
-        from paquo.java import BufferedImage, ImageServerProvider, JClass
+        from paquo.java import BufferedImage, ImageServerProvider, JClass, String
+        from paquo.projects import DEFAULT_IMAGE_PROVIDER
 
         QupathReader.ImageServerProvider = ImageServerProvider
         QupathReader.BufferedImage = BufferedImage
         QupathReader.RegionRequest = JClass("qupath.lib.regions.RegionRequest")
         QupathReader.redirect = redirect
+        QupathReader._image_provider = DEFAULT_IMAGE_PROVIDER
+        QupathReader.JString = String
 
     @staticmethod
     def _is_supported_image(fs: AbstractFileSystem, path: str, **kwargs: Any) -> bool:
@@ -73,6 +76,8 @@ class QupathReader(Reader):
             fs_kwargs=fs_kwargs or {},
         )
         self._current_level = 0
+        self.__current_server = None
+
         # Catch non-local file system
         if not isinstance(self._fs, LocalFileSystem):
             raise ValueError(
@@ -82,17 +87,16 @@ class QupathReader(Reader):
 
         with QupathReader.redirect(stderr=True, stdout=True):
             try:
+                img_uri = QupathReader._image_provider.uri(self._path)
                 support = QupathReader.ImageServerProvider.getPreferredUriImageSupport(
-                    QupathReader.BufferedImage.class_, self._path
+                    QupathReader.BufferedImage, QupathReader.JString(str(img_uri))
                 )
                 if support is None:
-                    self._servers = []
+                    self._builders = []
                 else:
-                    self._servers = [
-                        builder.build() for builder in support.getBuilders()
-                    ]
+                    self._builders = list(support.getBuilders())
                 self._scenes: Tuple[str, ...] = tuple(
-                    server.getMetadata().getName() for server in self._servers
+                    f"Scene #{i+1}" for i in range(len(self._builders))
                 )
             except RuntimeError:
                 raise
@@ -103,16 +107,18 @@ class QupathReader(Reader):
 
     def get_thumbnail(self, target_size: ImageSizeHW, channel: int):
         original_level = self.current_level
-        thumbnail_level = self.n_levels - 1
         target_downsample = max(
             self.dims.X / target_size[1], self.dims.Y / target_size[0]
         )
-        thumbnail_level = [
-            i for i, d in enumerate(self.downsamples) if d <= target_downsample
-        ][-1]
+        thumbnail_levels = [
+            i for i, d in enumerate(self.downsamples) if d <= target_downsample * 1.2
+        ]
+        thumbnail_level = (
+            thumbnail_levels[-1] if thumbnail_levels else self.n_levels - 1
+        )
         if thumbnail_level != original_level:
             self.set_level(thumbnail_level)
-        thumbnail = self.get_image_data("YX", channel=channel)
+        thumbnail = self.get_image_data("YX", C=channel)
         if thumbnail_level != original_level:
             self.set_level(original_level)
         if thumbnail.shape[:2] != target_size:
@@ -154,9 +160,15 @@ class QupathReader(Reader):
             colors.append((r / 255, g / 255, b / 255))
         return colors
 
+    def _reset_self(self) -> None:
+        super()._reset_self()
+        self.__current_server = None
+
     @property
     def _current_server(self):
-        return self._servers[self.current_scene_index]
+        if self.__current_server is None:
+            self.__current_server = self._builders[self._current_scene_index].build()
+        return self.__current_server
 
     @property
     def scenes(self) -> Tuple[str, ...]:

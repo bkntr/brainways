@@ -14,13 +14,14 @@ from pathlib import Path
 
 import click
 
+from brainways.utils.paths import DEFAULT_PATH
+
 CONFIG_FILENAME = "brainways_config.conf"
 CONFIG_DEFAULT_DIR = Path.home() / ".config" / "brainways"
 CONFIG_DIR = Path(os.environ.get("BRAINWAYS_CONFIG_DIR", CONFIG_DEFAULT_DIR))
 CONFIG_PATH = CONFIG_DIR / CONFIG_FILENAME
 
 # 2 level dictionary for sections and values:
-DEFAULT_PATH = Path.home() / ".brainways"
 TEMPLATE_CONF_DICT = {
     "default_dirs": {
         "brainways_dir": DEFAULT_PATH,

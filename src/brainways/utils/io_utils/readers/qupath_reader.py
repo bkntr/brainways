@@ -139,26 +139,29 @@ class QupathReader(Reader):
 
     @property
     def downsamples(self) -> List[float]:
-        _md = self._current_server.getMetadata()
-        return [float(x) for x in _md.getPreferredDownsamplesArray()]
+        with QupathReader.redirect(stderr=True, stdout=True):
+            _md = self._current_server.getMetadata()
+            return [float(x) for x in _md.getPreferredDownsamplesArray()]
 
     @property
     def channel_names(self) -> Optional[List[str]]:
-        return [
-            str(self._current_server.getChannel(i).getName())
-            for i in range(self.dims.C)
-        ]
+        with QupathReader.redirect(stderr=True, stdout=True):
+            return [
+                str(self._current_server.getChannel(i).getName())
+                for i in range(self.dims.C)
+            ]
 
     @property
     def channel_colors(self) -> Optional[List[Tuple[int, int, int]]]:
-        colors = []
-        for color_i in range(self.dims.C):
-            color_int = self._current_server.getChannel(color_i).getColor()
-            b = color_int & 255
-            g = (color_int >> 8) & 255
-            r = (color_int >> 16) & 255
-            colors.append((r / 255, g / 255, b / 255))
-        return colors
+        with QupathReader.redirect(stderr=True, stdout=True):
+            colors = []
+            for color_i in range(self.dims.C):
+                color_int = self._current_server.getChannel(color_i).getColor()
+                b = color_int & 255
+                g = (color_int >> 8) & 255
+                r = (color_int >> 16) & 255
+                colors.append((r / 255, g / 255, b / 255))
+            return colors
 
     def _reset_self(self) -> None:
         super()._reset_self()
@@ -167,7 +170,10 @@ class QupathReader(Reader):
     @property
     def _current_server(self):
         if self.__current_server is None:
-            self.__current_server = self._builders[self._current_scene_index].build()
+            with QupathReader.redirect(stderr=True, stdout=True):
+                self.__current_server = self._builders[
+                    self._current_scene_index
+                ].build()
         return self.__current_server
 
     @property
@@ -176,7 +182,8 @@ class QupathReader(Reader):
 
     @property
     def n_levels(self) -> int:
-        return int(self._current_server.nResolutions())
+        with QupathReader.redirect(stderr=True, stdout=True):
+            return int(self._current_server.nResolutions())
 
     def _read_delayed(self, level: Optional[int] = None) -> xr.DataArray:
         if level is None:
@@ -202,29 +209,31 @@ class QupathReader(Reader):
         We currently do not handle unit attachment to these values. Please see the file
         metadata for unit information.
         """
-        pixel_calibration = self._current_server.getPixelCalibration()
-        return PhysicalPixelSizes(
-            Z=None,
-            Y=pixel_calibration.getPixelHeightMicrons(),
-            X=pixel_calibration.getPixelWidthMicrons(),
-        )
+        with QupathReader.redirect(stderr=True, stdout=True):
+            pixel_calibration = self._current_server.getPixelCalibration()
+            return PhysicalPixelSizes(
+                Z=None,
+                Y=pixel_calibration.getPixelHeightMicrons(),
+                X=pixel_calibration.getPixelWidthMicrons(),
+            )
 
     def _to_xarray(self, delayed: bool = True, level: int = 0) -> xr.DataArray:
         if delayed:
             tile_manager = TileManager(self._current_server, level=level)
             image_data = tile_manager.to_dask()
         else:
-            request = QupathReader.RegionRequest.createInstance(
-                self._path,
-                self.downsamples[level],
-                0,
-                0,
-                self._current_server.getWidth(),
-                self._current_server.getHeight(),
-                0,
-                0,
-            )
-            buffered_image = self._current_server.readBufferedImage(request)
+            with QupathReader.redirect(stderr=True, stdout=True):
+                request = QupathReader.RegionRequest.createInstance(
+                    self._path,
+                    self.downsamples[level],
+                    0,
+                    0,
+                    self._current_server.getWidth(),
+                    self._current_server.getHeight(),
+                    0,
+                    0,
+                )
+                buffered_image = self._current_server.readBufferedImage(request)
             image_data = buffered_image_to_numpy_array(buffered_image)  # TCZYX
             image_data = image_data[np.newaxis, :, np.newaxis, :, :]
         return xr.DataArray(
@@ -308,15 +317,16 @@ class TileManager:
         self.image_server = image_server
         self.level = level
 
-        tile_requests = list(
-            self.image_server.getTileRequestManager().getTileRequestsForLevel(level)
-        )
-        tile_w = tile_requests[0].getImageWidth()
-        tile_h = tile_requests[0].getImageHeight()
-        self._tile_requests = {
-            (tr.getImageY() // tile_h, tr.getImageX() // tile_w): tr
-            for tr in tile_requests
-        }
+        with QupathReader.redirect(stderr=True, stdout=True):
+            tile_requests = list(
+                self.image_server.getTileRequestManager().getTileRequestsForLevel(level)
+            )
+            tile_w = tile_requests[0].getImageWidth()
+            tile_h = tile_requests[0].getImageHeight()
+            self._tile_requests = {
+                (tr.getImageY() // tile_h, tr.getImageX() // tile_w): tr
+                for tr in tile_requests
+            }
 
     def _dask_chunk(self, block_id: Tuple[int, ...]) -> np.ndarray:
         """Retrieve `block_id` from array.
@@ -330,7 +340,8 @@ class TileManager:
         t, c, z, y, x, *_ = block_id
 
         tile_request = self._tile_requests[(y, x)]
-        buffered_image = self.image_server.readTile(tile_request)
+        with QupathReader.redirect(stderr=True, stdout=True):
+            buffered_image = self.image_server.readTile(tile_request)
         im = buffered_image_to_numpy_array(buffered_image, channel=c)
 
         return im[np.newaxis, np.newaxis, np.newaxis]
@@ -351,22 +362,23 @@ class TileManager:
         -------
         ResourceBackedDaskArray
         """
-        chunks = (
-            (1,),
-            (1,) * self.image_server.nChannels(),
-            (1,),
-            self.tile_heights,
-            self.tile_widths,
-        )
-        dtype = _pixtype2dtype(
-            self.image_server.getPixelType().ordinal(), little_endian=True
-        )
-        arr = da.map_blocks(
-            self._dask_chunk,
-            chunks=chunks,
-            dtype=dtype,
-        )
-        return resource_backed_dask_array(arr, self)
+        with QupathReader.redirect(stderr=True, stdout=True):
+            chunks = (
+                (1,),
+                (1,) * self.image_server.nChannels(),
+                (1,),
+                self.tile_heights,
+                self.tile_widths,
+            )
+            dtype = _pixtype2dtype(
+                self.image_server.getPixelType().ordinal(), little_endian=True
+            )
+            arr = da.map_blocks(
+                self._dask_chunk,
+                chunks=chunks,
+                dtype=dtype,
+            )
+            return resource_backed_dask_array(arr, self)
 
     def to_numpy(self) -> np.ndarray:
         """Create numpy array for the specified or current series.

@@ -66,6 +66,8 @@ class BrainwaysProject:
                         raise FileExistsError(
                             f"New project directory {self.project_path} is not empty!"
                         )
+                else:
+                    self.project_path.mkdir()
 
         if not self.thumbnails_root.exists():
             self.thumbnails_root.mkdir()

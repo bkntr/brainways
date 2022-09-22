@@ -210,8 +210,23 @@ class QupathReader(Reader):
         )
 
     def _to_xarray(self, delayed: bool = True, level: int = 0) -> xr.DataArray:
-        tile_manager = TileManager(self._current_server, level=level)
-        image_data = tile_manager.to_dask() if delayed else tile_manager.to_numpy()
+        if delayed:
+            tile_manager = TileManager(self._current_server, level=level)
+            image_data = tile_manager.to_dask()
+        else:
+            request = QupathReader.RegionRequest.createInstance(
+                self._path,
+                self.downsamples[level],
+                0,
+                0,
+                self._current_server.getWidth(),
+                self._current_server.getHeight(),
+                0,
+                0,
+            )
+            buffered_image = self._current_server.readBufferedImage(request)
+            image_data = buffered_image_to_numpy_array(buffered_image)  # TCZYX
+            image_data = image_data[np.newaxis, :, np.newaxis, :, :]
         return xr.DataArray(
             image_data,
             dims=dimensions.DEFAULT_DIMENSION_ORDER_LIST,
@@ -316,10 +331,7 @@ class TileManager:
 
         tile_request = self._tile_requests[(y, x)]
         buffered_image = self.image_server.readTile(tile_request)
-        w = buffered_image.getWidth()
-        h = buffered_image.getHeight()
-        buffer = buffered_image.getData().getSamples(0, 0, w, h, c, jpype.JFloat[w * h])
-        im = np.array(buffer).reshape((h, w))
+        im = buffered_image_to_numpy_array(buffered_image, channel=c)
 
         return im[np.newaxis, np.newaxis, np.newaxis]
 
@@ -394,3 +406,24 @@ class TileManager:
     @property
     def closed(self) -> bool:
         return False
+
+
+def buffered_image_to_numpy_array(
+    buffered_image, channel: Optional[int] = None
+) -> np.ndarray:
+    w = buffered_image.getWidth()
+    h = buffered_image.getHeight()
+    if channel is None:
+        numpy_image_channels = []
+        for channel in range(int(buffered_image.getData().getNumBands())):
+            buffer = buffered_image.getData().getSamples(
+                0, 0, w, h, channel, jpype.JFloat[w * h]
+            )
+            numpy_image_channels.append(np.array(buffer).reshape((h, w)))
+        numpy_image = np.stack(numpy_image_channels)
+    else:
+        buffer = buffered_image.getData().getSamples(
+            0, 0, w, h, channel, jpype.JFloat[w * h]
+        )
+        numpy_image = np.array(buffer).reshape((h, w))
+    return numpy_image

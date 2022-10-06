@@ -6,6 +6,7 @@ from brainways.scripts.create_excel import create_excel
 from brainways.scripts.create_reg_model_data import create_reg_model_data
 from brainways.scripts.display_area import display_area
 from brainways.scripts.import_cells import import_cell_detections
+from brainways.scripts.move_images import move_images_root
 
 
 @click.group()
@@ -19,6 +20,7 @@ cli.add_command(display_area, name="display-area")
 cli.add_command(create_reg_model_data, name="create-reg-model-data")
 cli.add_command(import_cell_detections, name="import-cell-detections")
 cli.add_command(batch_create_thumbnails, name="batch-create-thumbnails")
+cli.add_command(move_images_root, name="batch-move-images")
 
 
 if __name__ == "__main__":

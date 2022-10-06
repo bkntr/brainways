@@ -65,6 +65,7 @@ def display_cells_2d(project: BrainwaysProject):
             edge_color=colors,
             face_color=colors,
         )
+        viewer.title = str(document.path)
         napari.run()
 
 

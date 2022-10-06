@@ -253,3 +253,26 @@ def test_init_project_with_nonempty_directory(
     (Path(tmpdir) / "test").touch()
     with pytest.raises(FileExistsError):
         BrainwaysProject(settings=mock_project_settings, project_path=Path(tmpdir))
+
+
+def test_move_images_root(brainways_project: BrainwaysProject, tmpdir):
+    new_images_root = Path(tmpdir) / "new"
+    new_images_root.mkdir()
+    new_image_path = (
+        new_images_root / Path(brainways_project.documents[0].path.filename).name
+    )
+    new_image_path.touch()
+    brainways_project.move_images_root(new_images_root)
+    assert brainways_project.documents[0].path.filename == str(new_image_path)
+
+
+def test_move_images_root_with_base(brainways_project: BrainwaysProject, tmpdir):
+    old_filename = Path(brainways_project.documents[0].path.filename)
+    old_images_root = old_filename.parent.parent
+    new_images_root = Path(tmpdir) / "new"
+    new_images_root.mkdir()
+    (new_images_root / old_filename.parent.name).mkdir()
+    new_image_path = new_images_root / old_filename.parent.name / old_filename.name
+    new_image_path.touch()
+    brainways_project.move_images_root(new_images_root, old_images_root=old_images_root)
+    assert brainways_project.documents[0].path.filename == str(new_image_path)

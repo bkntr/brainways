@@ -22,7 +22,7 @@ class ProjectDocument:
     path: ImagePath
     image_size: ImageSizeHW
     lowres_image_size: ImageSizeHW
-    params: BrainwaysParams = BrainwaysParams()
+    params: Optional[BrainwaysParams] = BrainwaysParams()
     region_areas: Optional[Dict[int, int]] = None
     cells: Optional[np.ndarray] = None
     ignore: bool = False

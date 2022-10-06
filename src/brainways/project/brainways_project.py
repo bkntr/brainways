@@ -192,6 +192,26 @@ class BrainwaysProject:
         with open(project_dir / "brainways.bin", "wb") as f:
             pickle.dump((serialized_settings, serialized_documents), f)
 
+    def move_images_root(
+        self,
+        new_images_root: Union[Path, str],
+        old_images_root: Optional[Union[Path, str]] = None,
+    ):
+        new_images_root = Path(new_images_root)
+        for i, document in enumerate(self.documents):
+            cur_filename = Path(document.path.filename)
+            if old_images_root is None:
+                cur_old_images_root = cur_filename.parent
+            else:
+                cur_old_images_root = Path(old_images_root)
+            cur_relative_filename = cur_filename.relative_to(cur_old_images_root)
+            new_filename = new_images_root / cur_relative_filename
+            if not new_filename.exists():
+                logging.warning(f"{new_filename} not found, skipping!")
+                continue
+            new_path = replace(document.path, filename=str(new_filename))
+            self.documents[i] = replace(document, path=new_path)
+
     def import_cell_detections_yield_progress(
         self, root: Path, cell_detection_importer: CellDetectionImporter
     ) -> Iterator[Tuple[int, ProjectDocument]]:

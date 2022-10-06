@@ -82,7 +82,7 @@ def create_reg_model_data(input: Path, output: Path):
                     "rot_frontal": rot_frontal,
                     "rot_horizontal": rot_horizontal,
                     "rot_sagittal": rot_sagittal,
-                    "ignore": document.ignore,
+                    "valid": "no" if document.ignore else "yes",
                     "hemisphere": hemisphere,
                 }
             )

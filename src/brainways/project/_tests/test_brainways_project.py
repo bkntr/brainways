@@ -92,7 +92,9 @@ def test_import_cells(brainways_project: BrainwaysProject, tmpdir):
             }
         )
         df.to_csv(root / csv_filename)
-    brainways_project.import_cells(root)
+    brainways_project.import_cell_detections(
+        root,
+    )
 
     for i, document in brainways_project.valid_documents:
         expected = cells[i, :, ::-1]

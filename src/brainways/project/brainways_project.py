@@ -18,12 +18,14 @@ from brainways.project.brainways_project_settings import (
     ProjectSettings,
 )
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
+from brainways.utils.cell_detection_importer.cell_detection_importer import (
+    CellDetectionImporter,
+)
 from brainways.utils.cells import (
     cell_count_summary,
     filter_cells_on_annotation,
     filter_cells_on_tissue,
     get_region_areas,
-    read_cells_csv,
 )
 from brainways.utils.image import get_resize_size, slice_to_uint8
 from brainways.utils.io_utils import ImagePath
@@ -190,26 +192,29 @@ class BrainwaysProject:
         with open(project_dir / "brainways.bin", "wb") as f:
             pickle.dump((serialized_settings, serialized_documents), f)
 
-    def import_cells_yield_progress(
-        self, path: Path
+    def import_cell_detections_yield_progress(
+        self, root: Path, cell_detection_importer: CellDetectionImporter
     ) -> Iterator[Tuple[int, ProjectDocument]]:
         for i, document in self.valid_documents:
-            csv_filename = (
-                f"{Path(document.path.filename).stem}_scene{document.path.scene}.csv"
+            cell_detections_path = cell_detection_importer.find_cell_detections_file(
+                root=root, document=document
             )
-            csv_path = path / csv_filename
-            if not csv_path.exists():
-                logging.warning(
-                    f"found no cells for document: '{document.path}', "
-                    f"csv path: {csv_path}"
-                )
+            if cell_detections_path is None:
+                logging.warning(f"found no cells for document: '{document.path}'")
                 continue
-            cells = read_cells_csv(csv_path=csv_path, document=document)
+
+            cells = cell_detection_importer.read_cells_file(
+                path=cell_detections_path, document=document
+            )
             self.documents[i] = replace(document, cells=cells)
             yield i, document
 
-    def import_cells(self, path: Path) -> None:
-        for _ in self.import_cells_yield_progress(path):
+    def import_cell_detections(
+        self, root: Path, cell_detection_importer: CellDetectionImporter
+    ) -> None:
+        for _ in self.import_cell_detections_yield_progress(
+            root=root, cell_detection_importer=cell_detection_importer
+        ):
             pass
 
     def get_valid_cells(self, document: ProjectDocument):

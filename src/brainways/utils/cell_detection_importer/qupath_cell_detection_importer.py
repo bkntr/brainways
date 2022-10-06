@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Optional
 
-import numpy as np
 import pandas as pd
 
 from brainways.project.brainways_project_settings import ProjectDocument
@@ -22,16 +21,29 @@ class QupathCellDetectionsImporter(CellDetectionImporter):
         else:
             return None
 
-    def read_cells_file(self, path: Path, document: ProjectDocument) -> np.ndarray:
+    def read_cells_file(self, path: Path, document: ProjectDocument) -> pd.DataFrame:
         reader = QupathReader(document.path.filename)
         reader.set_scene(document.path.scene)
-        cells_df = pd.read_csv(path, sep="\t")
-        cfos_cells = cells_df["Subcellular: Channel 5: Num single spots"] > 10
-        cells = cells_df.loc[cfos_cells, ["Centroid X µm", "Centroid Y µm"]].values
+        input_cells_df = pd.read_csv(path, sep="\t")
         image_size_um = [
             reader.dims.X * reader.physical_pixel_sizes.X,
             reader.dims.Y * reader.physical_pixel_sizes.Y,
         ]
-        cells = cells / image_size_um
-        assert (cells < 1).all()
-        return cells
+        cfos_cells_mask = (
+            input_cells_df["Subcellular: Channel 5: Num single spots"] > 10
+        )
+        input_cells_df = input_cells_df[cfos_cells_mask]
+        brainways_cells_df = pd.DataFrame(
+            {
+                "x": input_cells_df["Centroid X µm"] / image_size_um[0],
+                "y": input_cells_df["Centroid Y µm"] / image_size_um[1],
+                "LABEL-Drd1": input_cells_df["Subcellular: Channel 2: Num single spots"]
+                > 6,
+                "LABEL-Drd2": input_cells_df["Subcellular: Channel 3: Num single spots"]
+                > 6,
+                "LABEL-Oxtr": input_cells_df["Subcellular: Channel 4: Num single spots"]
+                > 3,
+            }
+        )
+        assert (brainways_cells_df.loc[:, ["x", "y"]] < 1).all()
+        return brainways_cells_df

@@ -13,6 +13,9 @@ from brainways.project.brainways_project_settings import (
     ProjectSettings,
 )
 from brainways.utils.atlas.brainways_atlas import AtlasSlice, BrainwaysAtlas
+from brainways.utils.cell_detection_importer.brainways_cell_detection_importer import (
+    BrainwaysCellDetectionsImporter,
+)
 from brainways.utils.io_utils import ImagePath
 
 
@@ -93,12 +96,21 @@ def test_import_cells(brainways_project: BrainwaysProject, tmpdir):
         )
         df.to_csv(root / csv_filename)
     brainways_project.import_cell_detections(
-        root,
+        root, cell_detection_importer=BrainwaysCellDetectionsImporter()
     )
 
     for i, document in brainways_project.valid_documents:
-        expected = cells[i, :, ::-1]
-        assert np.allclose(document.cells, expected)
+        assert brainways_project.cell_detections_path(document.path).exists()
+        # expected_df = pd.DataFrame(
+        #     {
+        #         "x": cells[i, :, 1],
+        #         "y": cells[i, :, 0],
+        #     }
+        # )
+        # cell_detections = pd.read_csv(
+        #     brainways_project.cell_detections_path(document.path)
+        # )
+        # pd.testing.assert_frame_equal(cell_detections, expected_df)
 
 
 def test_cell_count_summary(brainways_project: BrainwaysProject):
@@ -110,16 +122,16 @@ def test_cell_count_summary(brainways_project: BrainwaysProject):
                 "acronym": "TEST",
                 "name": "test_region",
                 "cell_count": 2,
-                "total_area_um2": 0,
-                "cells_per_um2": 2.0,
+                "total_area_um2": 469944,
+                "cells_per_um2": 2.0 / 469944,
             },
             {
                 "id": 1,
                 "acronym": "root",
                 "name": "root",
                 "cell_count": 2,
-                "total_area_um2": 0,
-                "cells_per_um2": 2.0,
+                "total_area_um2": 469944,
+                "cells_per_um2": 2.0 / 469944,
             },
         ]
     )

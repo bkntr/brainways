@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Optional
 
-import numpy as np
 import pandas as pd
 
 from brainways.project.brainways_project_settings import ProjectDocument
@@ -23,9 +22,15 @@ class BrainwaysCellDetectionsImporter(CellDetectionImporter):
         else:
             return None
 
-    def read_cells_file(self, path: Path, document: ProjectDocument) -> np.ndarray:
-        cells_df = pd.read_csv(path)
-        cells = cells_df[["centroid-1", "centroid-0"]].to_numpy()
-        if (cells > 1).any():
-            cells = cells / document.image_size[::-1]
-        return cells
+    def read_cells_file(self, path: Path, document: ProjectDocument) -> pd.DataFrame:
+        input_cells_df = pd.read_csv(path)
+        output_cells_df = pd.DataFrame(
+            {
+                "x": input_cells_df["centroid-1"],
+                "y": input_cells_df["centroid-0"],
+            }
+        )
+        if (output_cells_df > 1).any(axis=None):
+            output_cells_df["x"] /= document.image_size[1]
+            output_cells_df["y"] /= document.image_size[0]
+        return output_cells_df

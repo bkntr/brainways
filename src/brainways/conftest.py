@@ -37,6 +37,7 @@ def seed():
 @fixture
 def mock_atlas(test_data: Tuple[np.ndarray, AtlasSlice]) -> BrainwaysAtlas:
     test_image, test_atlas_slice = test_data
+    test_atlas_slice.annotation[test_atlas_slice.annotation > 0] = 10
     ATLAS_SIZE = 32
     ATLAS_DEPTH = 10
     mock_atlas = create_autospec(BrainwaysAtlas)

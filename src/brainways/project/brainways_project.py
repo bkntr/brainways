@@ -9,6 +9,7 @@ from typing import Iterator, List, Optional, Tuple, Union
 
 import dacite
 import numpy as np
+import pandas as pd
 from pandas import DataFrame
 from PIL import Image
 
@@ -18,6 +19,7 @@ from brainways.project.brainways_project_settings import (
     ProjectSettings,
 )
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
+from brainways.utils.cell_count_summary import cell_count_summary_co_labelling
 from brainways.utils.cell_detection_importer.cell_detection_importer import (
     CellDetectionImporter,
 )
@@ -73,6 +75,9 @@ class BrainwaysProject:
 
         if not self.thumbnails_root.exists():
             self.thumbnails_root.mkdir()
+
+        if not self.cell_detections_root.exists():
+            self.cell_detections_root.mkdir()
 
     def close(self):
         self.documents = []
@@ -212,7 +217,7 @@ class BrainwaysProject:
             new_path = replace(document.path, filename=str(new_filename))
             self.documents[i] = replace(document, path=new_path)
 
-    def import_cell_detections_yield_progress(
+    def import_cell_detections_iterator(
         self, root: Path, cell_detection_importer: CellDetectionImporter
     ) -> Iterator[Tuple[int, ProjectDocument]]:
         for i, document in self.valid_documents:
@@ -223,23 +228,27 @@ class BrainwaysProject:
                 logging.warning(f"found no cells for document: '{document.path}'")
                 continue
 
-            cells = cell_detection_importer.read_cells_file(
+            cells_df = cell_detection_importer.read_cells_file(
                 path=cell_detections_path, document=document
             )
-            self.documents[i] = replace(document, cells=cells)
+            cells_df.to_csv(self.cell_detections_path(document.path), index=False)
             yield i, document
+
+    def read_cell_detections(self, document: ProjectDocument):
+        return pd.read_csv(self.cell_detections_path(document.path))
 
     def import_cell_detections(
         self, root: Path, cell_detection_importer: CellDetectionImporter
     ) -> None:
-        for _ in self.import_cell_detections_yield_progress(
+        for _ in self.import_cell_detections_iterator(
             root=root, cell_detection_importer=cell_detection_importer
         ):
             pass
 
-    def get_valid_cells(self, document: ProjectDocument):
+    def get_valid_cells(self, document: ProjectDocument) -> pd.DataFrame:
         image = self.read_lowres_image(document)
-        valid_cells = filter_cells_on_tissue(cells=document.cells, image=image)
+        cells = self.read_cell_detections(document)
+        valid_cells = filter_cells_on_tissue(cells=cells, image=image)
         valid_cells = filter_cells_on_annotation(
             cells=valid_cells,
             lowres_image_size=document.lowres_image_size,
@@ -322,6 +331,54 @@ class BrainwaysProject:
         )
         return df
 
+    def cell_count_summary_co_labeling(self, min_region_area_um2: Optional[int] = None):
+        if self.pipeline is None:
+            self.load_pipeline()
+
+        all_region_areas = Counter()
+        all_cells_on_atlas = []
+        for _, document in self.valid_documents:
+            if not self.cell_detections_path(document.path).exists():
+                raise RuntimeError(
+                    f"{document.path}: missing cells, please run cell detection."
+                )
+            image = self.read_lowres_image(document)
+            image_to_atlas_transform = self.pipeline.get_image_to_atlas_transform(
+                brainways_params=document.params,
+                lowres_image_size=document.lowres_image_size,
+            )
+            image_to_atlas_slice_transform = self.pipeline.get_image_to_atlas_transform(
+                brainways_params=document.params,
+                lowres_image_size=document.lowres_image_size,
+                until_step=PipelineStep.TPS,
+            )
+            atlas_slice = self.pipeline.get_atlas_slice(document.params)
+            cells = self.get_valid_cells(document)
+            cells_on_image = cells[["x", "y"]].values * document.lowres_image_size[::-1]
+            registered_image = image_to_atlas_slice_transform.transform_image(
+                image,
+                output_size=atlas_slice.shape,
+            )
+            cells_on_atlas = image_to_atlas_transform.transform_points(cells_on_image)
+            region_areas = get_region_areas(
+                annotation=atlas_slice.annotation.numpy(),
+                atlas=self.atlas,
+                registered_image=registered_image,
+            )
+            cells["x"] = cells_on_atlas[:, 0]
+            cells["y"] = cells_on_atlas[:, 1]
+            all_cells_on_atlas.append(cells)
+            all_region_areas.update(region_areas)
+
+        all_cells_on_atlas = pd.concat(all_cells_on_atlas, axis=0)
+        df = cell_count_summary_co_labelling(
+            cells=all_cells_on_atlas,
+            region_areas=all_region_areas,
+            atlas=self.atlas,
+            min_region_area_um2=min_region_area_um2,
+        )
+        return df
+
     def thumbnail_path(self, image_path: ImagePath, channel: Optional[int] = None):
         if channel is None:
             channel = self.settings.channel
@@ -334,9 +391,16 @@ class BrainwaysProject:
         thumbnail_filename = f"{Path(image_path.filename).stem} [{suffix}].jpg"
         return self.thumbnails_root / thumbnail_filename
 
+    def cell_detections_path(self, image_path: ImagePath) -> Path:
+        return self.cell_detections_root / (str(image_path) + ".csv")
+
     @property
     def thumbnails_root(self) -> Path:
         return self.project_path / "thumbnails"
+
+    @property
+    def cell_detections_root(self) -> Path:
+        return self.project_path / "cell_detections"
 
     @property
     def valid_documents(self) -> List[Tuple[int, ProjectDocument]]:

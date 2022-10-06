@@ -24,9 +24,10 @@ def cell_mask_to_points(mask: np.ndarray, image: np.ndarray) -> np.ndarray:
     )
 
 
-def get_cell_struct_ids(cells: np.ndarray, bg_atlas: BrainGlobeAtlas) -> np.ndarray:
+def get_cell_struct_ids(cells: pd.DataFrame, bg_atlas: BrainGlobeAtlas) -> np.ndarray:
     struct_ids = []
-    for cell in cells:
+    cells_xy = cells[["x", "y"]]
+    for cell in cells_xy:
         try:
             struct_id = bg_atlas.structure_from_coords(cell[::-1].astype(int).tolist())
         except IndexError:
@@ -150,30 +151,33 @@ def cells_on_mask(
 
 
 def filter_cells_on_mask(
-    cells: np.ndarray,
-    mask: np.ndarray,
-    ignore_outliers: bool = False,
-) -> np.ndarray:
-    filtered_cells = cells[cells_on_mask(cells, mask, ignore_outliers=ignore_outliers)]
+    cells: pd.DataFrame, mask: np.ndarray, ignore_outliers: bool = False
+) -> pd.DataFrame:
+    cells_np = cells[["x", "y"]].values
+    filtered_cells = cells.loc[
+        cells_on_mask(cells_np, mask, ignore_outliers=ignore_outliers)
+    ]
     return filtered_cells
 
 
-def filter_cells_on_tissue(cells: np.ndarray, image: np.ndarray) -> np.ndarray:
-    cells = cells * image.shape[::-1]
+def filter_cells_on_tissue(cells: pd.DataFrame, image: np.ndarray) -> pd.DataFrame:
+    cells["x"] *= image.shape[1]
+    cells["y"] *= image.shape[0]
     tissue_mask = brain_mask_simple(image)
     cells = filter_cells_on_mask(cells=cells, mask=tissue_mask)
-    cells = cells / image.shape[::-1]
+    cells["x"] /= image.shape[1]
+    cells["y"] /= image.shape[0]
     return cells
 
 
 def filter_cells_on_annotation(
-    cells: np.ndarray,
+    cells: pd.DataFrame,
     lowres_image_size: ImageSizeHW,
     params: BrainwaysParams,
     pipeline: BrainwaysPipeline,
-) -> np.ndarray:
+) -> pd.DataFrame:
     annotation = pipeline.get_atlas_slice(params).annotation.numpy()
-    cells_on_image = cells * lowres_image_size[::-1]
+    cells_on_image = cells[["x", "y"]].values * lowres_image_size[::-1]
     image_to_atlas_transform = pipeline.get_image_to_atlas_transform(
         brainways_params=params,
         lowres_image_size=lowres_image_size,
@@ -183,5 +187,5 @@ def filter_cells_on_annotation(
     cells_on_slice_mask = cells_on_mask(
         cells=cells_on_slice, mask=annotation > 0, ignore_outliers=True
     )
-    result = cells[cells_on_slice_mask]
+    result = cells.loc[cells_on_slice_mask]
     return result

@@ -113,6 +113,13 @@ def test_import_cells(brainways_project: BrainwaysProject, tmpdir):
         # pd.testing.assert_frame_equal(cell_detections, expected_df)
 
 
+def test_cell_detections_path(brainways_project: BrainwaysProject):
+    assert (
+        brainways_project.cell_detections_path(brainways_project.documents[0].path)
+        == brainways_project.cell_detections_root / "image_0.jpg [Scene #0].csv"
+    )
+
+
 def test_cell_count_summary(brainways_project: BrainwaysProject):
     summary = brainways_project.cell_count_summary()
     expected = pd.DataFrame(

@@ -74,6 +74,9 @@ def cell_count_summary_co_labelling(
     )
 
     df = []
+    atlas_structure_leave_ids = [
+        node.identifier for node in atlas.atlas.structures.tree.leaves()
+    ]
     for struct_id in region_areas:
         if struct_id not in atlas.atlas.structures:
             continue
@@ -87,9 +90,9 @@ def cell_count_summary_co_labelling(
 
         df.append(
             {
-                "id": struct["id"],
                 "acronym": struct["acronym"],
                 "name": struct["name"],
+                "is_parent_structure": struct_id not in atlas_structure_leave_ids,
                 "total_area_um2": int(region_areas[struct_id]),
                 **dict(cell_counts.loc[struct_id]),
             }

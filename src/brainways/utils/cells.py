@@ -26,7 +26,7 @@ def cell_mask_to_points(mask: np.ndarray, image: np.ndarray) -> np.ndarray:
 
 def get_cell_struct_ids(cells: pd.DataFrame, bg_atlas: BrainGlobeAtlas) -> np.ndarray:
     struct_ids = []
-    cells_xy = cells[["x", "y"]]
+    cells_xy = cells[["x", "y", "z"]].values
     for cell in cells_xy:
         try:
             struct_id = bg_atlas.structure_from_coords(cell[::-1].astype(int).tolist())

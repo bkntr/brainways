@@ -45,5 +45,5 @@ class QupathCellDetectionsImporter(CellDetectionImporter):
                 > 3,
             }
         )
-        assert (brainways_cells_df.loc[:, ["x", "y"]] < 1).all()
+        assert (brainways_cells_df[["x", "y"]].values < 1).all()
         return brainways_cells_df

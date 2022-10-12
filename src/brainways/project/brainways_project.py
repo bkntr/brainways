@@ -105,11 +105,12 @@ class BrainwaysProject:
         return image
 
     def read_highres_image(
-        self,
-        document: ProjectDocument,
+        self, document: ProjectDocument, level: Optional[int] = None
     ):
         reader = QupathReader(document.path.filename)
         reader.set_scene(document.path.scene)
+        if level:
+            reader.set_level(level)
         image = reader.get_image_data("YX", C=self.settings.channel)
         # image = slice_to_uint8(image)
         return image
@@ -257,8 +258,10 @@ class BrainwaysProject:
         )
         return valid_cells
 
-    def get_cells_on_atlas(self, documents: Optional[List[ProjectDocument]] = None):
-        cells_on_atlas = []
+    def get_cells_on_atlas(
+        self, documents: Optional[List[ProjectDocument]] = None
+    ) -> pd.DataFrame:
+        all_cells_on_atlas = []
         if documents is None:
             documents = (document for i, document in self.valid_documents)
         for document in documents:
@@ -270,13 +273,13 @@ class BrainwaysProject:
                 lowres_image_size=document.lowres_image_size,
             )
             cells = self.get_valid_cells(document)
-            cells_on_image = cells * document.lowres_image_size[::-1]
-            cells_on_atlas.append(
-                image_to_atlas_transform.transform_points(cells_on_image)
-            )
+            cells_on_image = cells[["x", "y"]].values * document.lowres_image_size[::-1]
+            cells_on_atlas = image_to_atlas_transform.transform_points(cells_on_image)
+            cells[["x", "y", "z"]] = cells_on_atlas
+            all_cells_on_atlas.append(cells)
 
-        cells_on_atlas = np.concatenate(cells_on_atlas)
-        return cells_on_atlas
+        all_cells_on_atlas = pd.concat(all_cells_on_atlas, axis=0)
+        return all_cells_on_atlas
 
     def cell_count_summary(
         self, min_region_area_um2: Optional[int] = None
@@ -367,6 +370,7 @@ class BrainwaysProject:
             )
             cells["x"] = cells_on_atlas[:, 0]
             cells["y"] = cells_on_atlas[:, 1]
+            cells["z"] = cells_on_atlas[:, 2]
             all_cells_on_atlas.append(cells)
             all_region_areas.update(region_areas)
 
@@ -392,7 +396,7 @@ class BrainwaysProject:
         return self.thumbnails_root / thumbnail_filename
 
     def cell_detections_path(self, image_path: ImagePath) -> Path:
-        return self.cell_detections_root / (str(image_path) + ".csv")
+        return self.cell_detections_root / (Path(str(image_path)).name + ".csv")
 
     @property
     def thumbnails_root(self) -> Path:

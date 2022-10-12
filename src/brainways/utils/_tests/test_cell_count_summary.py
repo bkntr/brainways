@@ -2,10 +2,12 @@ import pandas as pd
 
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 from brainways.utils.cell_count_summary import (
+    cell_count_summary_co_labelling,
     extend_cell_counts_to_parent_regions,
     get_cell_counts,
     set_co_labelling_product,
 )
+from brainways.utils.cells import get_cell_struct_ids
 
 
 def test_set_co_labelling_product():
@@ -88,4 +90,62 @@ def test_get_cell_counts():
         }
     ).set_index("struct_id")
     result = get_cell_counts(cells)
+    pd.testing.assert_frame_equal(result, expected)
+
+
+def test_get_cell_struct_ids(mock_atlas: BrainwaysAtlas):
+    cells = pd.DataFrame(
+        {
+            "x": [0.5, 0.5, 0.5, 0.5],
+            "y": [0.5, 0.5, 0.5, 0.5],
+        }
+    )
+    struct_ids = get_cell_struct_ids(cells, mock_atlas.atlas)
+    expected_struct_ids = [10, 10, 10, 10]
+    assert all(struct_ids == expected_struct_ids)
+
+
+def test_get_cell_count_summary_co_labeling(mock_atlas: BrainwaysAtlas):
+    cells = pd.DataFrame(
+        {
+            "x": [0.5, 0.5, 0.5, 0.5],
+            "y": [0.5, 0.5, 0.5, 0.5],
+            "LABEL-a": [False, False, True, True],
+            "LABEL-b": [False, True, False, True],
+        }
+    )
+    region_areas = {10: 1}
+    expected = pd.DataFrame(
+        [
+            {
+                "acronym": "TEST",
+                "name": "test_region",
+                "is_parent_structure": False,
+                "total_area_um2": 1,
+                "LABEL-a": 2,
+                "LABEL-b": 2,
+                "COLABEL-a_neg-b_neg": 1,
+                "COLABEL-a_neg-b_pos": 1,
+                "COLABEL-a_pos-b_neg": 1,
+                "COLABEL-a_pos-b_pos": 1,
+                "cells": 4,
+            },
+            {
+                "acronym": "root",
+                "name": "root",
+                "is_parent_structure": True,
+                "total_area_um2": 1,
+                "LABEL-a": 2,
+                "LABEL-b": 2,
+                "COLABEL-a_neg-b_neg": 1,
+                "COLABEL-a_neg-b_pos": 1,
+                "COLABEL-a_pos-b_neg": 1,
+                "COLABEL-a_pos-b_pos": 1,
+                "cells": 4,
+            },
+        ]
+    )
+    result = cell_count_summary_co_labelling(
+        cells, region_areas=region_areas, atlas=mock_atlas
+    )
     pd.testing.assert_frame_equal(result, expected)

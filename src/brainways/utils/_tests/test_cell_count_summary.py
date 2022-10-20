@@ -47,14 +47,14 @@ def test_extend_cell_counts_to_parent_regions(mock_atlas: BrainwaysAtlas):
     ).set_index("struct_id")
     cell_counts_expected = pd.DataFrame(
         {
-            "struct_id": [10, 1],
-            "LABEL-a": [1, 1],
-            "COLABEL-a_neg": [1, 1],
+            "struct_id": [10, 1, 11],
+            "LABEL-a": [1, 1, 0],
+            "COLABEL-a_neg": [1, 1, 0],
         }
     ).set_index("struct_id")
 
-    region_areas = {10: 1}
-    region_areas_expected = {10: 1, 1: 1}
+    region_areas = {10: 1, 11: 1}
+    region_areas_expected = {10: 1, 1: 2, 11: 1}
 
     cell_counts_result, region_areas_result = extend_cell_counts_to_parent_regions(
         cell_counts=cell_counts, region_areas=region_areas, atlas=mock_atlas
@@ -68,6 +68,7 @@ def test_get_cell_counts():
         {
             "x": [0.5, 0.5, 0.5, 0.5],
             "y": [0.5, 0.5, 0.5, 0.5],
+            "z": [0.5, 0.5, 0.5, 0.5],
             "LABEL-a": [False, False, True, True],
             "LABEL-b": [False, True, False, True],
             "COLABEL-a_neg-b_neg": [True, False, False, False],
@@ -98,6 +99,7 @@ def test_get_cell_struct_ids(mock_atlas: BrainwaysAtlas):
         {
             "x": [0.5, 0.5, 0.5, 0.5],
             "y": [0.5, 0.5, 0.5, 0.5],
+            "z": [0.5, 0.5, 0.5, 0.5],
         }
     )
     struct_ids = get_cell_struct_ids(cells, mock_atlas.atlas)
@@ -110,6 +112,7 @@ def test_get_cell_count_summary_co_labeling(mock_atlas: BrainwaysAtlas):
         {
             "x": [0.5, 0.5, 0.5, 0.5],
             "y": [0.5, 0.5, 0.5, 0.5],
+            "z": [0.5, 0.5, 0.5, 0.5],
             "LABEL-a": [False, False, True, True],
             "LABEL-b": [False, True, False, True],
         }
@@ -118,6 +121,7 @@ def test_get_cell_count_summary_co_labeling(mock_atlas: BrainwaysAtlas):
     expected = pd.DataFrame(
         [
             {
+                "animal_id": "test",
                 "acronym": "TEST",
                 "name": "test_region",
                 "is_parent_structure": False,
@@ -131,6 +135,7 @@ def test_get_cell_count_summary_co_labeling(mock_atlas: BrainwaysAtlas):
                 "cells": 4,
             },
             {
+                "animal_id": "test",
                 "acronym": "root",
                 "name": "root",
                 "is_parent_structure": True,
@@ -146,6 +151,59 @@ def test_get_cell_count_summary_co_labeling(mock_atlas: BrainwaysAtlas):
         ]
     )
     result = cell_count_summary_co_labelling(
-        cells, region_areas=region_areas, atlas=mock_atlas
+        animal_id="test", cells=cells, region_areas_um=region_areas, atlas=mock_atlas
+    )
+    pd.testing.assert_frame_equal(result, expected)
+
+
+def test_get_cell_count_summary_co_labeling_cells_per_area(mock_atlas: BrainwaysAtlas):
+    cells = pd.DataFrame(
+        {
+            "x": [0.5, 0.5, 0.5, 0.5],
+            "y": [0.5, 0.5, 0.5, 0.5],
+            "z": [0.5, 0.5, 0.5, 0.5],
+            "LABEL-a": [False, False, True, True],
+            "LABEL-b": [False, True, False, True],
+        }
+    )
+    region_areas_um = {10: 16}
+    expected = pd.DataFrame(
+        [
+            {
+                "animal_id": "test",
+                "acronym": "TEST",
+                "name": "test_region",
+                "is_parent_structure": False,
+                "total_area_um2": 4,
+                "LABEL-a": 2.0,
+                "LABEL-b": 2.0,
+                "COLABEL-a_neg-b_neg": 1.0,
+                "COLABEL-a_neg-b_pos": 1.0,
+                "COLABEL-a_pos-b_neg": 1.0,
+                "COLABEL-a_pos-b_pos": 1.0,
+                "cells": 4.0,
+            },
+            {
+                "animal_id": "test",
+                "acronym": "root",
+                "name": "root",
+                "is_parent_structure": True,
+                "total_area_um2": 4,
+                "LABEL-a": 2.0,
+                "LABEL-b": 2.0,
+                "COLABEL-a_neg-b_neg": 1.0,
+                "COLABEL-a_neg-b_pos": 1.0,
+                "COLABEL-a_pos-b_neg": 1.0,
+                "COLABEL-a_pos-b_pos": 1.0,
+                "cells": 4.0,
+            },
+        ]
+    )
+    result = cell_count_summary_co_labelling(
+        animal_id="test",
+        cells=cells,
+        region_areas_um=region_areas_um,
+        atlas=mock_atlas,
+        cells_per_area_um2=4,
     )
     pd.testing.assert_frame_equal(result, expected)

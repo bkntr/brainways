@@ -265,6 +265,11 @@ class BrainwaysProject:
         if documents is None:
             documents = (document for i, document in self.valid_documents)
         for document in documents:
+            if not self.cell_detections_path(document.path).exists():
+                logging.warning(
+                    f"{document.path}: missing cells, please run cell detection."
+                )
+                continue
             image_to_atlas_transform = self.pipeline.get_image_to_atlas_transform(
                 brainways_params=document.params,
                 lowres_image_size=document.lowres_image_size,
@@ -287,12 +292,14 @@ class BrainwaysProject:
         all_region_areas = Counter()
         all_cells_on_atlas = []
         for _, document in self.valid_documents:
-            if document.cells is None:
-                logging.warning(f"{document.path}: missing cells, please run cell detection.")
+            if not self.cell_detections_path(document.path).exists():
+                logging.warning(
+                    f"{document.path}: missing cells, please run cell detection."
+                )
+                continue
                 # raise RuntimeError(
                 #     f"{document.path}: missing cells, please run cell detection."
                 # )
-                continue
             image = self.read_lowres_image(document)
             assert image.shape == document.lowres_image_size
             image_to_atlas_transform = self.pipeline.get_image_to_atlas_transform(
@@ -333,7 +340,11 @@ class BrainwaysProject:
         )
         return df
 
-    def cell_count_summary_co_labeling(self, min_region_area_um2: Optional[int] = None):
+    def cell_count_summary_co_labeling(
+        self,
+        min_region_area_um2: Optional[int] = None,
+        cells_per_area_um2: Optional[int] = None,
+    ):
         if self.pipeline is None:
             self.load_pipeline()
 
@@ -341,12 +352,19 @@ class BrainwaysProject:
         all_cells_on_atlas = []
         for _, document in self.valid_documents:
             if not self.cell_detections_path(document.path).exists():
-                logging.warning(f"{document.path}: missing cells, please run cell detection.")
+                logging.warning(
+                    f"{document.path}: missing cells, please run cell detection."
+                )
                 continue
                 # raise RuntimeError(
                 #     f"{document.path}: missing cells, please run cell detection."
                 # )
-            if document.params is None or document.params.atlas is None or document.params.affine is None or document.params.tps is None:
+            if (
+                document.params is None
+                or document.params.atlas is None
+                or document.params.affine is None
+                or document.params.tps is None
+            ):
                 logging.warning(f"{document.path}: missing params.")
                 continue
             image = self.read_lowres_image(document)
@@ -381,13 +399,15 @@ class BrainwaysProject:
         if len(all_cells_on_atlas) == 0:
             logging.warning(f"{document.path}: not found cells on atlas")
             return
-            
+
         all_cells_on_atlas = pd.concat(all_cells_on_atlas, axis=0)
         df = cell_count_summary_co_labelling(
+            animal_id=self.project_path.stem,
             cells=all_cells_on_atlas,
-            region_areas=all_region_areas,
+            region_areas_um=all_region_areas,
             atlas=self.atlas,
             min_region_area_um2=min_region_area_um2,
+            cells_per_area_um2=cells_per_area_um2,
         )
         return df
 

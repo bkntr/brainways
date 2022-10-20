@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import click
@@ -46,7 +47,10 @@ def display_cells_2d(project: BrainwaysProject):
         ) from None
 
     for _, document in project.valid_documents:
-        if document.cells is None:
+        if not project.cell_detections_path(document.path).exists():
+            logging.warning(
+                f"{document.path}: missing cells, please run cell detection."
+            )
             continue
 
         viewer = napari.Viewer()

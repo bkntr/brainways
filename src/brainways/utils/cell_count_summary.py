@@ -1,3 +1,4 @@
+import math
 from itertools import product
 from typing import Dict, Optional
 
@@ -35,15 +36,13 @@ def extend_cell_counts_to_parent_regions(
         for parent_struct_id in get_parent_struct_ids(struct_id, atlas):
             if struct_id not in cell_counts.index:
                 cell_counts.loc[struct_id] = 0
-                cell_counts.loc[parent_struct_id] = 0
-            elif parent_struct_id not in cell_counts.index:
+            if parent_struct_id not in cell_counts.index:
                 cell_counts.loc[parent_struct_id] = cell_counts.loc[struct_id]
             else:
                 cell_counts.loc[parent_struct_id] += cell_counts.loc[struct_id]
             if struct_id not in region_areas.keys():
                 region_areas[struct_id] = 0
-                region_areas[parent_struct_id] = 0
-            elif parent_struct_id not in region_areas:
+            if parent_struct_id not in region_areas:
                 region_areas[parent_struct_id] = region_areas[struct_id]
             else:
                 region_areas[parent_struct_id] += region_areas[struct_id]
@@ -66,40 +65,48 @@ def get_cell_counts(cells: pd.DataFrame) -> pd.DataFrame:
 
 
 def cell_count_summary_co_labelling(
+    animal_id: str,
     cells: pd.DataFrame,
-    region_areas: Dict[int, int],
+    region_areas_um: Dict[int, int],
     atlas: BrainwaysAtlas,
     min_region_area_um2: Optional[int] = None,
+    cells_per_area_um2: Optional[int] = None,
 ):
     cells = cells.copy()
     cells.loc[:, "struct_id"] = get_cell_struct_ids(cells=cells, bg_atlas=atlas.atlas)
     cells = set_co_labelling_product(cells)
     cell_counts = get_cell_counts(cells)
-    cell_counts, region_areas = extend_cell_counts_to_parent_regions(
-        cell_counts=cell_counts, region_areas=region_areas, atlas=atlas
+    cell_counts, region_areas_um = extend_cell_counts_to_parent_regions(
+        cell_counts=cell_counts, region_areas=region_areas_um, atlas=atlas
     )
+
+    if cells_per_area_um2:
+        region_areas_um_list = [region_areas_um[i] for i in cell_counts.index]
+        cell_counts = (
+            cell_counts.div(region_areas_um_list, axis=0) * cells_per_area_um2**2
+        )
 
     df = []
     atlas_structure_leave_ids = [
         node.identifier for node in atlas.atlas.structures.tree.leaves()
     ]
-    for struct_id in region_areas:
+    for struct_id in region_areas_um:
         if struct_id not in atlas.atlas.structures:
             continue
         struct = atlas.atlas.structures[struct_id]
 
-        if (
-            min_region_area_um2 is not None
-            and region_areas[struct_id] < min_region_area_um2
+        if min_region_area_um2 is not None and region_areas_um[struct_id] < (
+            min_region_area_um2**2
         ):
             continue
 
         df.append(
             {
+                "animal_id": animal_id,
                 "acronym": struct["acronym"],
                 "name": struct["name"],
                 "is_parent_structure": struct_id not in atlas_structure_leave_ids,
-                "total_area_um2": int(region_areas[struct_id]),
+                "total_area_um2": int(math.sqrt(region_areas_um[struct_id])),
                 **dict(cell_counts.loc[struct_id]),
             }
         )

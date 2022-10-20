@@ -1,7 +1,9 @@
+import logging
 from pathlib import Path
 
 import click
 import pandas as pd
+from pandas import ExcelWriter
 from tqdm import tqdm
 
 from brainways.project.brainways_project import BrainwaysProject
@@ -46,7 +48,10 @@ def display_cells_2d(project: BrainwaysProject):
         ) from None
 
     for _, document in project.valid_documents:
-        if document.cells is None:
+        if not project.cell_detections_path(document.path).exists():
+            logging.warning(
+                f"{document.path}: missing cells, please run cell detection."
+            )
             continue
 
         viewer = napari.Viewer()
@@ -80,20 +85,32 @@ def display_cells_2d(project: BrainwaysProject):
 @click.option(
     "--min-region-area-um2",
     type=int,
-    default=250 * 250,
+    default=250,
+    show_default=True,
+    help="Ignore regions that have area below this value (um^2).",
+)
+@click.option(
+    "--cells-per-area-um2",
+    type=int,
+    default=250,
     show_default=True,
     help="Ignore regions that have area below this value (um^2).",
 )
 @click.option("--display", is_flag=True, help="Display cells on atlas.")
 def create_excel_colabelling(
-    input: Path, output: Path, min_region_area_um2: int, display: bool
+    input: Path,
+    output: Path,
+    min_region_area_um2: int,
+    cells_per_area_um2: int,
+    display: bool,
 ):
     if (input / "brainways.bin").exists():
         paths = [input]
     else:
         paths = sorted(list(input.glob("*")))
     project = None
-    excel = []
+    cells_per_area_sheet = []
+    cells_count_sheet = []
     for project_path in tqdm(paths):
         if project is None:
             project = BrainwaysProject.open(project_path)
@@ -108,17 +125,31 @@ def create_excel_colabelling(
                     f" {project.atlas.atlas.atlas_name}"
                 )
 
-        project_summary = project.cell_count_summary_co_labeling(
-            min_region_area_um2=min_region_area_um2
+        cells_count_sheet.append(
+            project.cell_count_summary_co_labeling(
+                min_region_area_um2=min_region_area_um2,
+            )
         )
-        if project_summary is None:
-            continue
-        project_summary.insert(0, "animal_id", project.project_path.stem)
-        excel.append(project_summary)
+
+        cells_per_area_sheet.append(
+            project.cell_count_summary_co_labeling(
+                min_region_area_um2=min_region_area_um2,
+                cells_per_area_um2=cells_per_area_um2,
+            )
+        )
 
         if display:
             display_cells_3d(project)
             display_cells_2d(project)
 
-    excel = pd.concat(excel, axis=0)
-    excel.to_excel(output, index=False)
+    cells_count_sheet = pd.concat(
+        [sheet for sheet in cells_count_sheet if sheet is not None], axis=0
+    )
+    cells_per_area_sheet = pd.concat(
+        [sheet for sheet in cells_per_area_sheet if sheet is not None], axis=0
+    )
+    with ExcelWriter(output) as writer:
+        cells_per_area_sheet.to_excel(
+            writer, sheet_name=f"Cells per {cells_per_area_um2}um2", index=False
+        )
+        cells_count_sheet.to_excel(writer, sheet_name="Cell count", index=False)

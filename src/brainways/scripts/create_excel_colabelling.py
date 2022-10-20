@@ -111,6 +111,8 @@ def create_excel_colabelling(
         project_summary = project.cell_count_summary_co_labeling(
             min_region_area_um2=min_region_area_um2
         )
+        if project_summary is None:
+            continue
         project_summary.insert(0, "animal_id", project.project_path.stem)
         excel.append(project_summary)
 
@@ -118,5 +120,5 @@ def create_excel_colabelling(
             display_cells_3d(project)
             display_cells_2d(project)
 
-    excel = pd.concat(excel, axis=1)
+    excel = pd.concat(excel, axis=0)
     excel.to_excel(output, index=False)

@@ -22,7 +22,7 @@ def set_co_labelling_product(cells: pd.DataFrame):
             [cells[label_columns[i]] == mask[i] for i in range(len(label_columns))],
             axis=0,
         )
-        cells[colabel_title] = colabel_value
+        cells.loc[:, colabel_title] = colabel_value
     return cells
 
 
@@ -33,11 +33,17 @@ def extend_cell_counts_to_parent_regions(
     all_leaf_structures = set(list(cell_counts.index) + list(region_areas.keys()))
     for struct_id in all_leaf_structures:
         for parent_struct_id in get_parent_struct_ids(struct_id, atlas):
-            if parent_struct_id not in cell_counts.index:
+            if struct_id not in cell_counts.index:
+                cell_counts.loc[struct_id] = 0
+                cell_counts.loc[parent_struct_id] = 0
+            elif parent_struct_id not in cell_counts.index:
                 cell_counts.loc[parent_struct_id] = cell_counts.loc[struct_id]
             else:
                 cell_counts.loc[parent_struct_id] += cell_counts.loc[struct_id]
-            if parent_struct_id not in region_areas:
+            if struct_id not in region_areas.keys():
+                region_areas[struct_id] = 0
+                region_areas[parent_struct_id] = 0
+            elif parent_struct_id not in region_areas:
                 region_areas[parent_struct_id] = region_areas[struct_id]
             else:
                 region_areas[parent_struct_id] += region_areas[struct_id]
@@ -55,7 +61,7 @@ def get_cell_counts(cells: pd.DataFrame) -> pd.DataFrame:
     ]
     cell_counts_total = cells.groupby("struct_id")["x"].count()
     cell_counts = cell_counts[label_columns]
-    cell_counts["cells"] = cell_counts_total
+    cell_counts.loc[:, "cells"] = cell_counts_total
     return cell_counts
 
 
@@ -66,7 +72,7 @@ def cell_count_summary_co_labelling(
     min_region_area_um2: Optional[int] = None,
 ):
     cells = cells.copy()
-    cells["struct_id"] = get_cell_struct_ids(cells=cells, bg_atlas=atlas.atlas)
+    cells.loc[:, "struct_id"] = get_cell_struct_ids(cells=cells, bg_atlas=atlas.atlas)
     cells = set_co_labelling_product(cells)
     cell_counts = get_cell_counts(cells)
     cell_counts, region_areas = extend_cell_counts_to_parent_regions(

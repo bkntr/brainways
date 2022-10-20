@@ -153,20 +153,20 @@ def cells_on_mask(
 def filter_cells_on_mask(
     cells: pd.DataFrame, mask: np.ndarray, ignore_outliers: bool = False
 ) -> pd.DataFrame:
-    cells_np = cells[["x", "y"]].values
+    cells_np = cells.loc[:, ["x", "y"]].values
     filtered_cells = cells.loc[
         cells_on_mask(cells_np, mask, ignore_outliers=ignore_outliers)
     ]
-    return filtered_cells
+    return filtered_cells.copy()
 
 
 def filter_cells_on_tissue(cells: pd.DataFrame, image: np.ndarray) -> pd.DataFrame:
-    cells["x"] *= image.shape[1]
-    cells["y"] *= image.shape[0]
+    cells.loc[:, "x"] *= image.shape[1]
+    cells.loc[:, "y"] *= image.shape[0]
     tissue_mask = brain_mask_simple(image)
     cells = filter_cells_on_mask(cells=cells, mask=tissue_mask)
-    cells["x"] /= image.shape[1]
-    cells["y"] /= image.shape[0]
+    cells.loc[:, "x"] /= image.shape[1]
+    cells.loc[:, "y"] /= image.shape[0]
     return cells
 
 
@@ -188,4 +188,4 @@ def filter_cells_on_annotation(
         cells=cells_on_slice, mask=annotation > 0, ignore_outliers=True
     )
     result = cells.loc[cells_on_slice_mask]
-    return result
+    return result.copy()

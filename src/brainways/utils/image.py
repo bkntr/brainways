@@ -26,10 +26,14 @@ def normalize_contrast(
     return image
 
 
-def convert_to_uint8(image: np.ndarray, normalize: bool = True):
+def convert_to_uint8(image: Union[np.ndarray, torch.Tensor], normalize: bool = True):
     if normalize:
         image = normalize_min_max(image)
-    image = (image * 255).round().astype(np.uint8)
+    image = (image * 255).round()
+    if isinstance(image, torch.Tensor):
+        image = image.to(dtype=torch.uint8)
+    else:
+        image = image.astype(np.uint8)
     return image
 
 
@@ -184,8 +188,13 @@ def annotation_outline(annotation: Union[torch.Tensor, np.ndarray]):
     return outline[0, 0]
 
 
-def slice_contrast_values(slice_image: np.ndarray, saturation: float = 0.001):
-    hist, bin_edges = np.histogram(slice_image.flat, bins=1024)
+def slice_contrast_values(
+    slice_image: Union[np.ndarray, torch.Tensor], saturation: float = 0.001
+):
+    if isinstance(slice_image, torch.Tensor):
+        hist, bin_edges = torch.histogram(slice_image.flat, bins=1024)
+    else:
+        hist, bin_edges = np.histogram(slice_image.flat, bins=1024)
     if hist[0] > hist[1]:
         hist = hist[1:]
         bin_edges = bin_edges[1:]
@@ -222,10 +231,23 @@ def slice_contrast_values(slice_image: np.ndarray, saturation: float = 0.001):
     return min_display, max_display
 
 
-def slice_to_uint8(slice_image: np.ndarray):
+def slice_to_uint8(slice_image: Union[np.ndarray, torch.Tensor]):
     min_val, max_val = slice_contrast_values(slice_image)
-    slice_image = np.clip(slice_image, min_val, max_val)
+    if isinstance(slice_image, torch.Tensor):
+        slice_image = torch.clip(slice_image, min_val, max_val)
+    else:
+        slice_image = np.clip(slice_image, min_val, max_val)
     slice_image = convert_to_uint8(slice_image)
+    return slice_image
+
+
+def normalize_contrast_qupath(slice_image: np.ndarray):
+    min_val, max_val = slice_contrast_values(slice_image)
+    if isinstance(slice_image, torch.Tensor):
+        slice_image = torch.clip(slice_image, min_val, max_val)
+    else:
+        slice_image = np.clip(slice_image, min_val, max_val)
+    slice_image = normalize_min_max(slice_image)
     return slice_image
 
 

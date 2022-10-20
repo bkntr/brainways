@@ -5,9 +5,11 @@ import click
 import pandas as pd
 import yaml
 from click import confirm
+from PIL import Image
 from tqdm import tqdm
 
 from brainways.project.brainways_project import BrainwaysProject
+from brainways.utils.io_utils.readers.qupath_reader import QupathReader
 
 
 @click.command()
@@ -68,29 +70,34 @@ def create_reg_model_data(input: Path, output: Path):
                 rot_sagittal = document.params.atlas.rot_sagittal
                 hemisphere = document.params.atlas.hemisphere
                 if document.params.affine is not None:
-                    rot_frontal = document.params.affine.angle
-            output_image_filename = (
-                project_path.parent.relative_to(input)
-                / project.thumbnail_path(document.path).name
-            )
-            labels.append(
-                {
-                    "filename": str(output_image_filename),
-                    "animal_id": Path(project.project_path).name,
-                    "image_id": str(document.path),
-                    "ap": ap,
-                    "rot_frontal": rot_frontal,
-                    "rot_horizontal": rot_horizontal,
-                    "rot_sagittal": rot_sagittal,
-                    "valid": "no" if document.ignore else "yes",
-                    "hemisphere": hemisphere,
-                }
-            )
-            project.read_lowres_image(document)
-            src_image_path = project.thumbnail_path(document.path)
-            output_image_path = output_images_dir / output_image_filename
-            output_image_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy(src_image_path, output_image_path)
+                    rot_frontal = -document.params.affine.angle
+
+            reader = QupathReader(document.path.filename)
+            reader.set_scene(document.path.scene)
+            for channel_index, channel in enumerate(reader.channel_names):
+                output_image_filename = project_path.parent.relative_to(input) / (
+                    Path(str(document.path.with_channel(channel_index))).name + ".tif"
+                )
+                labels.append(
+                    {
+                        "filename": str(output_image_filename),
+                        "animal_id": Path(project.project_path).name,
+                        "image_id": str(document.path),
+                        "ap": ap,
+                        "rot_frontal": rot_frontal,
+                        "rot_horizontal": rot_horizontal,
+                        "rot_sagittal": rot_sagittal,
+                        "valid": "no" if document.ignore else "yes",
+                        "hemisphere": hemisphere,
+                        "channel": channel,
+                    }
+                )
+                output_image_path = output_images_dir / output_image_filename
+                output_image_path.parent.mkdir(parents=True, exist_ok=True)
+                image = reader.get_thumbnail(
+                    target_size=document.lowres_image_size, channel=channel_index
+                )
+                Image.fromarray(image).save(output_image_path)
 
     # write labels
     pd.DataFrame(labels).to_csv(output / "labels.csv", index=False)

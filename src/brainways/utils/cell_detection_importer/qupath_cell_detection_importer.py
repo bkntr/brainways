@@ -11,7 +11,7 @@ from brainways.utils.io_utils.readers import QupathReader
 
 
 class KerenCellDetectionsImporter(CellDetectionImporter):
-    def __int__(
+    def __init__(
         self,
         cfos_threshold: int,
         drd1_threshold: int,

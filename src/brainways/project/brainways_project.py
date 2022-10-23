@@ -150,8 +150,8 @@ class BrainwaysProject:
     @staticmethod
     def _get_project_dir(path: Union[Path, str]):
         project_dir = Path(path)
-        if path.name == "brainways.bin":
-            project_dir = path.parent
+        if project_dir.name == "brainways.bin":
+            project_dir = project_dir.parent
         return project_dir
 
     @classmethod

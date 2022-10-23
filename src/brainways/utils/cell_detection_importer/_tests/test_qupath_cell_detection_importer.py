@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from brainways.utils.cell_detection_importer.qupath_cell_detection_importer import (
-    QupathCellDetectionsImporter,
+    KerenCellDetectionsImporter,
 )
 
 
@@ -12,7 +12,7 @@ from brainways.utils.cell_detection_importer.qupath_cell_detection_importer impo
 def test_read_cell_detections(mock_project_documents):
     document = mock_project_documents[0]
     sample_file = Path(__file__).parent / "qupath_sample_file.txt"
-    importer = QupathCellDetectionsImporter()
+    importer = KerenCellDetectionsImporter()
     importer.read_cells_file(sample_file, document)
 
 
@@ -24,7 +24,7 @@ def test_find_cell_detections_file(mock_project_documents, tmpdir):
         Path(tmpdir) / f"{Path(document.path.filename).name} 2 Detections.txt"
     )
     decoy_csv_path.touch()
-    importer = QupathCellDetectionsImporter()
+    importer = KerenCellDetectionsImporter()
     found_csv_path = importer.find_cell_detections_file(
         root=Path(tmpdir), document=document
     )
@@ -37,7 +37,7 @@ def test_find_cell_detections_file_doest_exist(mock_project_documents, tmpdir):
         Path(tmpdir) / f"{Path(document.path.filename).name} 2 Detections.txt"
     )
     decoy_csv_path.touch()
-    importer = QupathCellDetectionsImporter()
+    importer = KerenCellDetectionsImporter()
     found_csv_path = importer.find_cell_detections_file(
         root=Path(tmpdir), document=document
     )

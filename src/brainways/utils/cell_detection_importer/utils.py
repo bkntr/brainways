@@ -7,12 +7,12 @@ from brainways.utils.cell_detection_importer.cell_detection_importer import (
     CellDetectionImporter,
 )
 from brainways.utils.cell_detection_importer.qupath_cell_detection_importer import (
-    QupathCellDetectionsImporter,
+    KerenCellDetectionsImporter,
 )
 
 _CELL_DETECTION_IMPORTERS = {
     "brainways": BrainwaysCellDetectionsImporter,
-    "qupath": QupathCellDetectionsImporter,
+    "keren": KerenCellDetectionsImporter,
 }
 
 

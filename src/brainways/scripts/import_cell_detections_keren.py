@@ -54,15 +54,15 @@ def import_cell_detections_keren(
     oxtr_threshold: int,
 ):
     paths = list(input.glob("*"))
-    cell_detection_importer = KerenCellDetectionsImporter()
+    cell_detection_importer = KerenCellDetectionsImporter(cfos_threshold=cfos_threshold,
+            drd1_threshold=drd1_threshold,
+            drd2_threshold=drd2_threshold,
+            oxtr_threshold=oxtr_threshold,)
     for project_path in tqdm(paths):
         project = BrainwaysProject.open(project_path)
         project.import_cell_detections(
             root=cell_detections_root,
             cell_detection_importer=cell_detection_importer,
-            cfos_threshold=cfos_threshold,
-            drd1_threshold=drd1_threshold,
-            drd2_threshold=drd2_threshold,
-            oxtr_threshold=oxtr_threshold,
+            
         )
         project.save(project_path)

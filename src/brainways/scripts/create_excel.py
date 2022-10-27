@@ -21,8 +21,8 @@ def display_cells_3d(project: BrainwaysProject):
         ) from None
 
     all_cells = project.get_cells_on_atlas()
-    struct_ids = get_cell_struct_ids(all_cells, project.atlas.atlas)
-    colors = get_struct_colors(struct_ids, project.atlas.atlas)
+    struct_ids = get_cell_struct_ids(all_cells, project.atlas.brainglobe_atlas)
+    colors = get_struct_colors(struct_ids, project.atlas.brainglobe_atlas)
 
     viewer = napari.Viewer()
     viewer.dims.ndisplay = 3
@@ -59,8 +59,8 @@ def display_cells_2d(project: BrainwaysProject):
 
         cells_atlas = project.get_cells_on_atlas([document])
         cells = project.get_valid_cells(document)
-        struct_ids = get_cell_struct_ids(cells_atlas, project.atlas.atlas)
-        colors = get_struct_colors(struct_ids, project.atlas.atlas)
+        struct_ids = get_cell_struct_ids(cells_atlas, project.atlas.brainglobe_atlas)
+        colors = get_struct_colors(struct_ids, project.atlas.brainglobe_atlas)
 
         viewer.add_points(
             cells[:, ::-1] * [image.shape[0], image.shape[1]],
@@ -105,7 +105,7 @@ def create_excel(input: Path, output: Path, min_region_area_um2: int, display: b
 
             structures = {
                 struct["acronym"]: struct["name"]
-                for struct in project.atlas.atlas.structures.values()
+                for struct in project.atlas.brainglobe_atlas.structures.values()
             }
             first_row = {"animal": "", **structures}
             cell_count_sheet += [first_row]
@@ -115,10 +115,10 @@ def create_excel(input: Path, output: Path, min_region_area_um2: int, display: b
             project = BrainwaysProject.open(
                 project_path, atlas=project.atlas, pipeline=project.pipeline
             )
-            if project.settings.atlas != project.atlas.atlas.atlas_name:
+            if project.settings.atlas != project.atlas.brainglobe_atlas.atlas_name:
                 raise RuntimeError(
                     f"Multiple atlases detected: {project.settings.atlas},"
-                    f" {project.atlas.atlas.atlas_name}"
+                    f" {project.atlas.brainglobe_atlas.atlas_name}"
                 )
         summary = project.cell_count_summary(min_region_area_um2=min_region_area_um2)
         cell_count_sheet.append(
@@ -153,8 +153,8 @@ def create_excel(input: Path, output: Path, min_region_area_um2: int, display: b
     total_area_um2_sheet = pd.DataFrame(total_area_um2_sheet)
     cell_count_sheet = pd.DataFrame(cell_count_sheet)
     struct_leafs = [
-        project.atlas.atlas.structures[node.identifier]["acronym"]
-        for node in project.atlas.atlas.structures.tree.leaves()
+        project.atlas.brainglobe_atlas.structures[node.identifier]["acronym"]
+        for node in project.atlas.brainglobe_atlas.structures.tree.leaves()
     ]
     cells_per_250um2_leaves_sheet = cells_per_250um2_sheet[["animal"] + struct_leafs]
     total_area_um2_leaves_sheet = total_area_um2_sheet[["animal"] + struct_leafs]

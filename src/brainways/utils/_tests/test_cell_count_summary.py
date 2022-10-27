@@ -102,7 +102,7 @@ def test_get_cell_struct_ids(mock_atlas: BrainwaysAtlas):
             "z": [0.5, 0.5, 0.5, 0.5],
         }
     )
-    struct_ids = get_cell_struct_ids(cells, mock_atlas.atlas)
+    struct_ids = get_cell_struct_ids(cells, mock_atlas.brainglobe_atlas)
     expected_struct_ids = [10, 10, 10, 10]
     assert all(struct_ids == expected_struct_ids)
 

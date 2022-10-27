@@ -19,7 +19,7 @@ class ClaheNormalizer(Normalizer):
         self.clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(16, 16))
 
     def before(self, x, axes):
-        x = self.clahe.apply(x)
+        x = self.clahe.apply(x.astype(np.uint16))
         x = x.astype(np.float32)
         x = normalize_contrast(x, 0.0, 99.8)
         x = x.squeeze()

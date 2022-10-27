@@ -44,10 +44,10 @@ def mock_atlas(test_data: Tuple[np.ndarray, AtlasSlice]) -> BrainwaysAtlas:
     mock_atlas.bounding_boxes = [(0, 0, ATLAS_SIZE, ATLAS_SIZE)] * ATLAS_DEPTH
     mock_atlas.shape = (ATLAS_DEPTH, ATLAS_SIZE, ATLAS_SIZE)
     mock_atlas.reference = torch.rand(ATLAS_DEPTH, ATLAS_SIZE, ATLAS_SIZE)
-    mock_atlas.atlas = Mock()
-    mock_atlas.atlas.structure_from_coords = Mock(return_value=10)
-    mock_atlas.atlas.resolution = (1, 2, 3)
-    mock_atlas.atlas.atlas_name = "MOCK_ATLAS"
+    mock_atlas.brainglobe_atlas = Mock()
+    mock_atlas.brainglobe_atlas.structure_from_coords = Mock(return_value=10)
+    mock_atlas.brainglobe_atlas.resolution = (1, 2, 3)
+    mock_atlas.brainglobe_atlas.atlas_name = "MOCK_ATLAS"
     structures_list = [
         {
             "name": "root",
@@ -75,7 +75,7 @@ def mock_atlas(test_data: Tuple[np.ndarray, AtlasSlice]) -> BrainwaysAtlas:
         },
     ]
     structures = StructuresDict(structures_list=structures_list)
-    mock_atlas.atlas.structures = structures
+    mock_atlas.brainglobe_atlas.structures = structures
     mock_atlas.slice = Mock(return_value=test_atlas_slice)
     return mock_atlas
 

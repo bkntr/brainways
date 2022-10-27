@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
-import PIL.Image
 
 from brainways.pipeline.brainways_params import AtlasRegistrationParams
 from brainways.transforms.depth_registration import (
@@ -10,7 +9,6 @@ from brainways.transforms.depth_registration import (
 )
 from brainways.utils._imports import BRAINWAYS_REG_MODEL_AVAILABLE
 from brainways.utils.atlas.brainways_atlas import AtlasSlice, BrainwaysAtlas
-from brainways.utils.image import slice_to_uint8
 from brainways.utils.paths import REG_MODEL
 
 if TYPE_CHECKING:
@@ -30,6 +28,7 @@ class AtlasRegistration:
                 "`pip install brainways[all]`"
             )
 
+        import torch
         from brainways_reg_model.model.model import BrainwaysRegModel
 
         if self.brainways_reg_model is None:
@@ -37,8 +36,7 @@ class AtlasRegistration:
                 REG_MODEL, atlas=self.atlas
             )
             self.brainways_reg_model.freeze()
-        image = slice_to_uint8(image)
-        params = self.brainways_reg_model.predict(PIL.Image.fromarray(image))
+        params = self.brainways_reg_model.predict(torch.as_tensor(image).float())
         return params
 
     def get_atlas_slice(self, params: AtlasRegistrationParams) -> AtlasSlice:

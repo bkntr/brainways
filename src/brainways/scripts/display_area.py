@@ -54,7 +54,7 @@ def display_area(input: Path, struct: str, print_all: bool):
         else:
             project = BrainwaysProject.open(project_path)
             project.load_pipeline()
-        struct_id = project.pipeline.atlas.atlas.structures[struct]["id"]
+        struct_id = project.pipeline.atlas.brainglobe_atlas.structures[struct]["id"]
         struct_images = []
         struct_annotations = []
         struct_cells = []

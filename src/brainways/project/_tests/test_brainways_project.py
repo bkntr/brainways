@@ -255,7 +255,7 @@ def test_init_brainways_with_wrong_atlas_raises_exception(
     mock_project_settings: ProjectSettings,
 ):
     mock_atlas = Mock()
-    mock_atlas.atlas.atlas_name = "test"
+    mock_atlas.brainglobe_atlas.atlas_name = "test"
     with pytest.raises(ValueError):
         BrainwaysProject(settings=mock_project_settings, documents=[], atlas=mock_atlas)
 

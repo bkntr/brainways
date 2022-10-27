@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from enum import Enum, auto
 
 import numpy as np
+import skimage.transform
 
 from brainways.pipeline.affine_2d import Affine2D
 from brainways.pipeline.atlas_registration import AtlasRegistration
@@ -62,9 +64,13 @@ class BrainwaysPipeline:
         self, image: np.ndarray, params: BrainwaysParams
     ) -> AffineTransform2DParams:
         atlas_slice = self.get_atlas_slice(params)
-        return self.affine_2d.find_transformation_params(
+        image = skimage.transform.rotate(
+            image, angle=-params.atlas.rot_frontal, mode="reflect"
+        )
+        affine_params = self.affine_2d.find_transformation_params(
             image=image, atlas_slice=atlas_slice
         )
+        return replace(affine_params, angle=params.atlas.rot_frontal)
 
     def transform_image(
         self,

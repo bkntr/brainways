@@ -54,7 +54,7 @@ def cell_count_summary(
     atlas: BrainwaysAtlas,
     min_region_area_um2: Optional[int] = None,
 ):
-    struct_ids = get_cell_struct_ids(cells=cells, bg_atlas=atlas.atlas)
+    struct_ids = get_cell_struct_ids(cells=cells, bg_atlas=atlas.brainglobe_atlas)
     cell_counts = Counter()
     for struct_id in struct_ids.tolist():
         cell_counts[struct_id] += 1
@@ -68,9 +68,9 @@ def cell_count_summary(
 
     df = []
     for struct_id in region_areas:
-        if struct_id not in atlas.atlas.structures:
+        if struct_id not in atlas.brainglobe_atlas.structures:
             continue
-        struct = atlas.atlas.structures[struct_id]
+        struct = atlas.brainglobe_atlas.structures[struct_id]
 
         if (
             min_region_area_um2 is not None
@@ -105,7 +105,9 @@ def get_region_areas(
     """
     mask = brain_mask_simple(registered_image)
     masked_annotation = annotation * mask
-    pixel_to_um2 = atlas.atlas.resolution[1] * atlas.atlas.resolution[2]
+    pixel_to_um2 = (
+        atlas.brainglobe_atlas.resolution[1] * atlas.brainglobe_atlas.resolution[2]
+    )
     struct_ids, areas_pixel = np.unique(masked_annotation, return_counts=True)
     region_areas_um2 = Counter()
     for struct_id, area in zip(struct_ids.tolist(), areas_pixel.tolist()):
@@ -114,12 +116,12 @@ def get_region_areas(
 
 
 def get_parent_struct_ids(struct_id: int, atlas: BrainwaysAtlas) -> List[int]:
-    if struct_id not in atlas.atlas.structures:
+    if struct_id not in atlas.brainglobe_atlas.structures:
         return []
 
     parents = []
     while True:
-        parent = atlas.atlas.structures.tree.parent(struct_id)
+        parent = atlas.brainglobe_atlas.structures.tree.parent(struct_id)
         if parent is None:
             break
 

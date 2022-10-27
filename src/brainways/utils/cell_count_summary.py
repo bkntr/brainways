@@ -73,7 +73,9 @@ def cell_count_summary_co_labelling(
     cells_per_area_um2: Optional[int] = None,
 ):
     cells = cells.copy()
-    cells.loc[:, "struct_id"] = get_cell_struct_ids(cells=cells, bg_atlas=atlas.atlas)
+    cells.loc[:, "struct_id"] = get_cell_struct_ids(
+        cells=cells, bg_atlas=atlas.brainglobe_atlas
+    )
     cells = set_co_labelling_product(cells)
     cell_counts = get_cell_counts(cells)
     cell_counts, region_areas_um = extend_cell_counts_to_parent_regions(
@@ -88,12 +90,12 @@ def cell_count_summary_co_labelling(
 
     df = []
     atlas_structure_leave_ids = [
-        node.identifier for node in atlas.atlas.structures.tree.leaves()
+        node.identifier for node in atlas.brainglobe_atlas.structures.tree.leaves()
     ]
     for struct_id in region_areas_um:
-        if struct_id not in atlas.atlas.structures:
+        if struct_id not in atlas.brainglobe_atlas.structures:
             continue
-        struct = atlas.atlas.structures[struct_id]
+        struct = atlas.brainglobe_atlas.structures[struct_id]
 
         if min_region_area_um2 is not None and region_areas_um[struct_id] < (
             min_region_area_um2**2

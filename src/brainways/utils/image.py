@@ -99,7 +99,7 @@ def brain_mask(image: np.ndarray):
 
     connected_components, nr_objects = ndimage.label(quantized)
     # don't attempt to compute mask when n_objects is very large
-    if nr_objects > 50:
+    if nr_objects > 200:
         return np.ones_like(image, dtype=bool)
     cc_sizes = {
         cc: (connected_components == cc).sum() for cc in range(1, nr_objects + 1)
@@ -135,7 +135,9 @@ def brain_mask_simple(image: np.ndarray):
     # quantize image to black and white
     h, w = image.shape[:2]
     image_flat = image.reshape((h * w, 1))
-    kmeans = MiniBatchKMeans(n_clusters=2, random_state=0, batch_size=2048)  # deterministic
+    kmeans = MiniBatchKMeans(
+        n_clusters=2, random_state=0, batch_size=2048
+    )  # deterministic
     labels = kmeans.fit_predict(image_flat)
     labels_order = kmeans.cluster_centers_.flatten().argsort()
     quantized = labels_order[labels].astype("uint8").reshape((h, w))

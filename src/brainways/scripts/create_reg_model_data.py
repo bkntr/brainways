@@ -44,9 +44,9 @@ def create_reg_model_data(input: Path, output: Path):
             project.load_atlas(load_volumes=False)
             metadata = {
                 "atlas": project.settings.atlas,
-                "ap_size": project.atlas.atlas.shape[0],
-                "si_size": project.atlas.atlas.shape[1],
-                "lr_size": project.atlas.atlas.shape[2],
+                "ap_size": project.atlas.brainglobe_atlas.shape[0],
+                "si_size": project.atlas.brainglobe_atlas.shape[1],
+                "lr_size": project.atlas.brainglobe_atlas.shape[2],
             }
             with open(output / "metadata.yaml", "w") as outfile:
                 yaml.dump(metadata, outfile, default_flow_style=False)

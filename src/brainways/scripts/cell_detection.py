@@ -5,11 +5,11 @@ import click
 import numpy as np
 from tqdm import tqdm
 
-from brainways.pipeline.cell_detector import CellDetector, MinMaxNormalizer
+from brainways.pipeline.cell_detector import CellDetector, ClaheNormalizer
 from brainways.project.brainways_project import BrainwaysProject
 from brainways.utils._imports import NAPARI_AVAILABLE
 from brainways.utils.io_utils import ImagePath
-from brainways.utils.io_utils.readers import get_reader, get_scenes
+from brainways.utils.io_utils.readers import QupathReader, get_scenes
 
 if NAPARI_AVAILABLE:
     import napari
@@ -54,18 +54,20 @@ def run_cell_detector(
     if output_filename.exists() and not display:
         return
 
-    reader = get_reader(path=image_path)
-    image = reader.read_image(channel=channel, scale=1)
-    min_val, max_val = np.percentile(image, CFOS_CONTRAST_LIMITS)
-    print(min_val, max_val)
-    normalizer = MinMaxNormalizer(min=min_val, max=max_val)
+    reader = QupathReader(image_path.filename)
+    reader.set_scene(image_path.scene)
+    image = reader.get_image_data("YX", C=channel)
+    # min_val, max_val = np.percentile(image, CFOS_CONTRAST_LIMITS)
+    # print(min_val, max_val)
+    # normalizer = MinMaxNormalizer(min=min_val, max=max_val)
+    normalizer = ClaheNormalizer()
     labels = cell_detector.run_cell_detector(image, normalizer=normalizer)
     cells = cell_detector.cells(labels, image)
 
     if display:
         dapi = None
         if dapi_channel is not None:
-            dapi = reader.read_image(channel=dapi_channel, scale=1)
+            dapi = reader.get_image_data("YX", C=dapi_channel)
         display_results(cfos=image, dapi=dapi, labels=labels)
     else:
         cells.to_csv(output_filename)

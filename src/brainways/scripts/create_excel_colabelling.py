@@ -22,8 +22,8 @@ def display_cells_3d(project: BrainwaysProject):
         ) from None
 
     all_cells = project.get_cells_on_atlas()
-    struct_ids = get_cell_struct_ids(all_cells, project.atlas.atlas)
-    colors = get_struct_colors(struct_ids, project.atlas.atlas)
+    struct_ids = get_cell_struct_ids(all_cells, project.atlas.brainglobe_atlas)
+    colors = get_struct_colors(struct_ids, project.atlas.brainglobe_atlas)
 
     viewer = napari.Viewer()
     viewer.dims.ndisplay = 3
@@ -60,8 +60,8 @@ def display_cells_2d(project: BrainwaysProject):
 
         cells_atlas = project.get_cells_on_atlas([document])
         cells = project.get_valid_cells(document)
-        struct_ids = get_cell_struct_ids(cells_atlas, project.atlas.atlas)
-        colors = get_struct_colors(struct_ids, project.atlas.atlas)
+        struct_ids = get_cell_struct_ids(cells_atlas, project.atlas.brainglobe_atlas)
+        colors = get_struct_colors(struct_ids, project.atlas.brainglobe_atlas)
 
         viewer.add_points(
             cells[["y", "x"]].values * [image.shape[0], image.shape[1]],
@@ -119,10 +119,10 @@ def create_excel_colabelling(
             project = BrainwaysProject.open(
                 project_path, atlas=project.atlas, pipeline=project.pipeline
             )
-            if project.settings.atlas != project.atlas.atlas.atlas_name:
+            if project.settings.atlas != project.atlas.brainglobe_atlas.atlas_name:
                 raise RuntimeError(
                     f"Multiple atlases detected: {project.settings.atlas},"
-                    f" {project.atlas.atlas.atlas_name}"
+                    f" {project.atlas.brainglobe_atlas.atlas_name}"
                 )
 
         cells_count_sheet.append(

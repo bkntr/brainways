@@ -12,6 +12,8 @@ from brainways.utils.cells import get_cell_struct_ids, get_parent_struct_ids
 def set_co_labelling_product(cells: pd.DataFrame):
     cells = cells.copy()
     label_columns = [c for c in cells.columns if c.startswith("LABEL-")]
+    if len(label_columns) == 0:
+        return cells
     colabel_title_suffixes = ["neg", "pos"]
     for mask in product((False, True), repeat=len(label_columns)):
         colabel_subtitles = [

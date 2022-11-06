@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import multiprocessing
 from typing import Optional, Tuple, Union
 
 import cv2
@@ -136,7 +137,7 @@ def brain_mask_simple(image: np.ndarray):
     h, w = image.shape[:2]
     image_flat = image.reshape((h * w, 1))
     kmeans = MiniBatchKMeans(
-        n_clusters=2, random_state=0, batch_size=2048
+        n_clusters=2, random_state=0, batch_size=256 * multiprocessing.cpu_count()
     )  # deterministic
     labels = kmeans.fit_predict(image_flat)
     labels_order = kmeans.cluster_centers_.flatten().argsort()

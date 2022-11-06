@@ -177,8 +177,8 @@ def filter_cells_on_annotation(
     lowres_image_size: ImageSizeHW,
     params: BrainwaysParams,
     pipeline: BrainwaysPipeline,
+    annotation: np.ndarray,
 ) -> pd.DataFrame:
-    annotation = pipeline.get_atlas_slice(params).annotation.numpy()
     cells_on_image = cells[["x", "y"]].values * lowres_image_size[::-1]
     image_to_atlas_transform = pipeline.get_image_to_atlas_transform(
         brainways_params=params,

@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from PIL import Image
+from tqdm import tqdm
 
 from brainways.pipeline.brainways_pipeline import BrainwaysPipeline, PipelineStep
 from brainways.project.brainways_project_settings import (
@@ -246,7 +247,9 @@ class BrainwaysProject:
         ):
             pass
 
-    def get_valid_cells(self, document: ProjectDocument) -> pd.DataFrame:
+    def get_valid_cells(
+        self, document: ProjectDocument, annotation: np.ndarray
+    ) -> pd.DataFrame:
         image = self.read_lowres_image(document)
         cells = self.read_cell_detections(document)
         valid_cells = filter_cells_on_tissue(cells=cells, image=image)
@@ -255,6 +258,7 @@ class BrainwaysProject:
             lowres_image_size=document.lowres_image_size,
             params=document.params,
             pipeline=self.pipeline,
+            annotation=annotation,
         )
         return valid_cells
 
@@ -350,7 +354,7 @@ class BrainwaysProject:
 
         all_region_areas = Counter()
         all_cells_on_atlas = []
-        for _, document in self.valid_documents:
+        for _, document in tqdm(self.valid_documents):
             if not self.cell_detections_path(document.path).exists():
                 logging.warning(
                     f"{document.path}: missing cells, please run cell detection."
@@ -378,7 +382,8 @@ class BrainwaysProject:
                 until_step=PipelineStep.TPS,
             )
             atlas_slice = self.pipeline.get_atlas_slice(document.params)
-            cells = self.get_valid_cells(document)
+            annotation = atlas_slice.annotation.numpy()
+            cells = self.get_valid_cells(document, annotation=annotation)
             cells_on_image = cells[["x", "y"]].values * document.lowres_image_size[::-1]
             registered_image = image_to_atlas_slice_transform.transform_image(
                 image,
@@ -386,7 +391,7 @@ class BrainwaysProject:
             )
             cells_on_atlas = image_to_atlas_transform.transform_points(cells_on_image)
             region_areas = get_region_areas(
-                annotation=atlas_slice.annotation.numpy(),
+                annotation=annotation,
                 atlas=self.atlas,
                 registered_image=registered_image,
             )

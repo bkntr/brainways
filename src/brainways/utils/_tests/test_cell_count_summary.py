@@ -37,6 +37,25 @@ def test_set_co_labelling_product():
     pd.testing.assert_frame_equal(result, expected)
 
 
+def test_set_co_labelling_product_no_labels():
+    cells = pd.DataFrame(
+        {
+            "x": [0.5, 0.5, 0.5, 0.5],
+            "y": [0.5, 0.5, 0.5, 0.5],
+        }
+    )
+
+    expected = pd.DataFrame(
+        {
+            "x": [0.5, 0.5, 0.5, 0.5],
+            "y": [0.5, 0.5, 0.5, 0.5],
+        }
+    )
+
+    result = set_co_labelling_product(cells)
+    pd.testing.assert_frame_equal(result, expected)
+
+
 def test_extend_cell_counts_to_parent_regions(mock_atlas: BrainwaysAtlas):
     cell_counts = pd.DataFrame(
         {

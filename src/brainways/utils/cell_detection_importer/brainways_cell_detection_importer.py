@@ -24,10 +24,16 @@ class BrainwaysCellDetectionsImporter(CellDetectionImporter):
 
     def read_cells_file(self, path: Path, document: ProjectDocument) -> pd.DataFrame:
         input_cells_df = pd.read_csv(path)
+        label_columns = {
+            c: input_cells_df[c]
+            for c in input_cells_df.columns
+            if c.startswith("LABEL-")
+        }
         output_cells_df = pd.DataFrame(
             {
                 "x": input_cells_df["centroid-1"],
                 "y": input_cells_df["centroid-0"],
+                **label_columns,
             }
         )
         if (output_cells_df > 1).any(axis=None):

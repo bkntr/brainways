@@ -71,7 +71,7 @@ def test_region_areas(mock_atlas):
     result = get_region_areas(
         annotation=annotation,
         atlas=mock_atlas,
-        registered_image=registered_image,
+        mask=registered_image,
     )
     assert result == expected
 
@@ -83,7 +83,7 @@ def test_region_areas_mask(mock_atlas):
     result = get_region_areas(
         annotation=annotation,
         atlas=mock_atlas,
-        registered_image=registered_image,
+        mask=registered_image,
     )
     assert result == expected
 

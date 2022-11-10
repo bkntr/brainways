@@ -30,7 +30,7 @@ from brainways.utils.cells import (
     filter_cells_on_tissue,
     get_region_areas,
 )
-from brainways.utils.image import get_resize_size, slice_to_uint8
+from brainways.utils.image import brain_mask_simple, get_resize_size, slice_to_uint8
 from brainways.utils.io_utils import ImagePath
 from brainways.utils.io_utils.readers import get_image_size
 from brainways.utils.io_utils.readers.qupath_reader import QupathReader
@@ -325,10 +325,11 @@ class BrainwaysProject:
 
             cells_on_atlas = image_to_atlas_transform.transform_points(cells_on_image)
 
+            brain_mask = brain_mask_simple(registered_image)
             region_areas = get_region_areas(
                 annotation=atlas_slice.annotation.numpy(),
                 atlas=self.atlas,
-                registered_image=registered_image,
+                mask=brain_mask,
             )
 
             all_cells_on_atlas.append(cells_on_atlas)
@@ -390,10 +391,12 @@ class BrainwaysProject:
                 output_size=atlas_slice.shape,
             )
             cells_on_atlas = image_to_atlas_transform.transform_points(cells_on_image)
+
+            brain_mask = brain_mask_simple(registered_image)
             region_areas = get_region_areas(
                 annotation=annotation,
                 atlas=self.atlas,
-                registered_image=registered_image,
+                mask=brain_mask,
             )
             cells.loc[:, "x"] = cells_on_atlas[:, 0]
             cells.loc[:, "y"] = cells_on_atlas[:, 1]

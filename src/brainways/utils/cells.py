@@ -95,7 +95,7 @@ def cell_count_summary(
 
 
 def get_region_areas(
-    annotation: np.ndarray, atlas: BrainwaysAtlas, registered_image: np.ndarray
+    annotation: np.ndarray, atlas: BrainwaysAtlas, mask: np.ndarray
 ) -> Dict[int, int]:
     """
     area in μm^2
@@ -103,7 +103,6 @@ def get_region_areas(
     :param atlas:
     :return: {struct_id: area (μm^2)}
     """
-    mask = brain_mask_simple(registered_image)
     masked_annotation = annotation * mask
     pixel_to_um2 = (
         atlas.brainglobe_atlas.resolution[1] * atlas.brainglobe_atlas.resolution[2]

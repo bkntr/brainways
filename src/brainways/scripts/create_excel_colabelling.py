@@ -83,6 +83,11 @@ def display_cells_2d(project: BrainwaysProject):
 )
 @click.option("--output", type=Path, required=True, help="Output excel file.")
 @click.option(
+    "--ignore-single-hemisphere",
+    is_flag=True,
+    help="Ignore slices that have only a single annotated hemisphere.",
+)
+@click.option(
     "--min-region-area-um2",
     type=int,
     default=250,
@@ -100,6 +105,7 @@ def display_cells_2d(project: BrainwaysProject):
 def create_excel_colabelling(
     input: Path,
     output: Path,
+    ignore_single_hemisphere: bool,  # TODO: need to incorporate this more cleanly
     min_region_area_um2: int,
     cells_per_area_um2: int,
     display: bool,
@@ -127,12 +133,14 @@ def create_excel_colabelling(
 
         cells_count_sheet.append(
             project.cell_count_summary_co_labeling(
+                ignore_single_hemisphere=ignore_single_hemisphere,
                 min_region_area_um2=min_region_area_um2,
             )
         )
 
         cells_per_area_sheet.append(
             project.cell_count_summary_co_labeling(
+                ignore_single_hemisphere=ignore_single_hemisphere,
                 min_region_area_um2=min_region_area_um2,
                 cells_per_area_um2=cells_per_area_um2,
             )

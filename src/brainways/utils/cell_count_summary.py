@@ -1,6 +1,6 @@
 import math
 from itertools import product
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -30,11 +30,13 @@ def set_co_labelling_product(cells: pd.DataFrame):
 
 
 def extend_cell_counts_to_parent_regions(
-    cell_counts: pd.DataFrame, region_areas: Dict[int, int], atlas: BrainwaysAtlas
+    cell_counts: pd.DataFrame,
+    atlas: BrainwaysAtlas,
+    structure_ids: Optional[List[int]] = None,
 ):
-    # extend cell counts and region areas to parent structures
-    all_leaf_structures = set(list(cell_counts.index) + list(region_areas.keys()))
-    for struct_id in all_leaf_structures:
+    if structure_ids is None:
+        structure_ids = list(cell_counts.index)
+    for struct_id in structure_ids:
         for parent_struct_id in get_parent_struct_ids(struct_id, atlas):
             if struct_id not in cell_counts.index:
                 cell_counts.loc[struct_id] = 0
@@ -42,6 +44,20 @@ def extend_cell_counts_to_parent_regions(
                 cell_counts.loc[parent_struct_id] = cell_counts.loc[struct_id]
             else:
                 cell_counts.loc[parent_struct_id] += cell_counts.loc[struct_id]
+
+    return cell_counts
+
+
+def extend_region_areas_to_parent_regions(
+    region_areas: Dict[int, int],
+    atlas: BrainwaysAtlas,
+    structure_ids: Optional[List[int]] = None,
+):
+    if structure_ids is None:
+        structure_ids = list(region_areas.keys())
+
+    for struct_id in structure_ids:
+        for parent_struct_id in get_parent_struct_ids(struct_id, atlas):
             if struct_id not in region_areas.keys():
                 region_areas[struct_id] = 0
             if parent_struct_id not in region_areas:
@@ -49,7 +65,7 @@ def extend_cell_counts_to_parent_regions(
             else:
                 region_areas[parent_struct_id] += region_areas[struct_id]
 
-    return cell_counts, region_areas
+    return region_areas
 
 
 def get_cell_counts(cells: pd.DataFrame) -> pd.DataFrame:
@@ -80,8 +96,14 @@ def cell_count_summary_co_labelling(
     )
     cells = set_co_labelling_product(cells)
     cell_counts = get_cell_counts(cells)
-    cell_counts, region_areas_um = extend_cell_counts_to_parent_regions(
-        cell_counts=cell_counts, region_areas=region_areas_um, atlas=atlas
+    all_leaf_structures = list(
+        set(list(cell_counts.index) + list(region_areas_um.keys()))
+    )
+    cell_counts = extend_cell_counts_to_parent_regions(
+        cell_counts=cell_counts, atlas=atlas, structure_ids=all_leaf_structures
+    )
+    region_areas_um = extend_region_areas_to_parent_regions(
+        region_areas=region_areas_um, atlas=atlas, structure_ids=all_leaf_structures
     )
 
     if cells_per_area_um2:
@@ -94,6 +116,9 @@ def cell_count_summary_co_labelling(
     atlas_structure_leave_ids = [
         node.identifier for node in atlas.brainglobe_atlas.structures.tree.leaves()
     ]
+    # TODO: this is atlas-specific
+    gray_matter_struct_id = atlas.brainglobe_atlas.structures["GM"]["id"]
+
     for struct_id in region_areas_um:
         if struct_id not in atlas.brainglobe_atlas.structures:
             continue
@@ -104,12 +129,17 @@ def cell_count_summary_co_labelling(
         ):
             continue
 
+        is_gray_matter = atlas.brainglobe_atlas.structures.tree.is_ancestor(
+            gray_matter_struct_id, struct_id
+        )
+
         df.append(
             {
                 "animal_id": animal_id,
                 "acronym": struct["acronym"],
                 "name": struct["name"],
                 "is_parent_structure": struct_id not in atlas_structure_leave_ids,
+                "is_gray_matter": is_gray_matter,
                 "total_area_um2": int(math.sqrt(region_areas_um[struct_id])),
                 **dict(cell_counts.loc[struct_id]),
             }

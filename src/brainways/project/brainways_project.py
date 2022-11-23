@@ -89,9 +89,11 @@ class BrainwaysProject:
         if self._tmpdir is not None:
             self._tmpdir.cleanup()
 
-    def read_lowres_image(self, document: ProjectDocument) -> np.ndarray:
+    def read_lowres_image(
+        self, document: ProjectDocument, channel: Optional[int] = None
+    ) -> np.ndarray:
         thumbnail_path = self.thumbnail_path(
-            document.path, channel=self.settings.channel
+            document.path, channel=channel or self.settings.channel
         )
         if thumbnail_path.exists():
             image = np.array(Image.open(thumbnail_path))
@@ -99,7 +101,8 @@ class BrainwaysProject:
             reader = QupathReader(document.path.filename)
             reader.set_scene(document.path.scene)
             image = reader.get_thumbnail(
-                target_size=document.lowres_image_size, channel=self.settings.channel
+                target_size=document.lowres_image_size,
+                channel=channel or self.settings.channel,
             )
             image = slice_to_uint8(image)
             Image.fromarray(image).save(thumbnail_path)
@@ -161,6 +164,7 @@ class BrainwaysProject:
         path: Union[Path, str],
         atlas: Optional[BrainwaysAtlas] = None,
         pipeline: Optional[BrainwaysPipeline] = None,
+        lazy_init: bool = True,
     ):
         project_dir = BrainwaysProject._get_project_dir(path)
         if not project_dir.exists():
@@ -177,6 +181,11 @@ class BrainwaysProject:
             atlas=atlas,
             pipeline=pipeline,
         )
+
+        if not lazy_init:
+            project.load_atlas()
+            project.load_pipeline()
+
         return project
 
     def save(self, path: Optional[Union[Path, str]] = None):
@@ -248,8 +257,12 @@ class BrainwaysProject:
             pass
 
     def get_valid_cells(
-        self, document: ProjectDocument, annotation: np.ndarray
+        self, document: ProjectDocument, annotation: Optional[np.ndarray] = None
     ) -> pd.DataFrame:
+        if annotation is None:
+            atlas_slice = self.pipeline.get_atlas_slice(document.params)
+            annotation = atlas_slice.annotation.numpy()
+
         image = self.read_lowres_image(document)
         cells = self.read_cell_detections(document)
         valid_cells = filter_cells_on_tissue(cells=cells, image=image)
@@ -347,6 +360,7 @@ class BrainwaysProject:
 
     def cell_count_summary_co_labeling(
         self,
+        ignore_single_hemisphere: bool,
         min_region_area_um2: Optional[int] = None,
         cells_per_area_um2: Optional[int] = None,
     ):
@@ -356,6 +370,9 @@ class BrainwaysProject:
         all_region_areas = Counter()
         all_cells_on_atlas = []
         for _, document in tqdm(self.valid_documents):
+            document: ProjectDocument
+            if ignore_single_hemisphere and document.params.atlas.hemisphere != "both":
+                continue
             if not self.cell_detections_path(document.path).exists():
                 logging.warning(
                     f"{document.path}: missing cells, please run cell detection."

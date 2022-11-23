@@ -10,7 +10,6 @@ from typing import Iterator, List, Optional, Tuple, Union
 import dacite
 import numpy as np
 import pandas as pd
-from pandas import DataFrame
 from PIL import Image
 from tqdm import tqdm
 
@@ -25,7 +24,6 @@ from brainways.utils.cell_detection_importer.cell_detection_importer import (
     CellDetectionImporter,
 )
 from brainways.utils.cells import (
-    cell_count_summary,
     filter_cells_on_annotation,
     filter_cells_on_tissue,
     get_region_areas,
@@ -299,64 +297,6 @@ class BrainwaysProject:
 
         all_cells_on_atlas = pd.concat(all_cells_on_atlas, axis=0)
         return all_cells_on_atlas
-
-    def cell_count_summary(
-        self, min_region_area_um2: Optional[int] = None
-    ) -> DataFrame:
-        if self.pipeline is None:
-            self.load_pipeline()
-
-        all_region_areas = Counter()
-        all_cells_on_atlas = []
-        for _, document in self.valid_documents:
-            if not self.cell_detections_path(document.path).exists():
-                logging.warning(
-                    f"{document.path}: missing cells, please run cell detection."
-                )
-                continue
-                # raise RuntimeError(
-                #     f"{document.path}: missing cells, please run cell detection."
-                # )
-            image = self.read_lowres_image(document)
-            assert image.shape == document.lowres_image_size
-            image_to_atlas_transform = self.pipeline.get_image_to_atlas_transform(
-                brainways_params=document.params,
-                lowres_image_size=document.lowres_image_size,
-            )
-            image_to_atlas_slice_transform = self.pipeline.get_image_to_atlas_transform(
-                brainways_params=document.params,
-                lowres_image_size=document.lowres_image_size,
-                until_step=PipelineStep.TPS,
-            )
-            atlas_slice = self.pipeline.get_atlas_slice(document.params)
-            cells = self.get_valid_cells(document)
-            cells_on_image = cells * document.lowres_image_size[::-1]
-            registered_image = image_to_atlas_slice_transform.transform_image(
-                image,
-                output_size=atlas_slice.shape,
-            )
-
-            cells_on_atlas = image_to_atlas_transform.transform_points(cells_on_image)
-
-            brain_mask = brain_mask_simple(registered_image)
-            region_areas = get_region_areas(
-                annotation=atlas_slice.annotation.numpy(),
-                atlas=self.atlas,
-                mask=brain_mask,
-            )
-
-            all_cells_on_atlas.append(cells_on_atlas)
-
-            all_region_areas.update(region_areas)
-
-        all_cells_on_atlas = np.concatenate(all_cells_on_atlas)
-        df = cell_count_summary(
-            cells=all_cells_on_atlas,
-            region_areas=all_region_areas,
-            atlas=self.atlas,
-            min_region_area_um2=min_region_area_um2,
-        )
-        return df
 
     def cell_count_summary_co_labeling(
         self,

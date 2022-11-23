@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -46,52 +46,6 @@ def get_struct_colors(struct_ids: np.ndarray, bg_atlas: BrainGlobeAtlas):
         colors.append(color)
     colors = np.array(colors) / 255
     return colors
-
-
-def cell_count_summary(
-    cells: np.ndarray,
-    region_areas: Dict[int, int],
-    atlas: BrainwaysAtlas,
-    min_region_area_um2: Optional[int] = None,
-):
-    struct_ids = get_cell_struct_ids(cells=cells, bg_atlas=atlas.brainglobe_atlas)
-    cell_counts = Counter()
-    for struct_id in struct_ids.tolist():
-        cell_counts[struct_id] += 1
-
-    # extend cell counts and region areas to parent structures
-    all_leaf_structures = set(list(cell_counts.keys()) + list(region_areas.keys()))
-    for struct_id in all_leaf_structures:
-        for parent_struct_id in get_parent_struct_ids(struct_id, atlas):
-            cell_counts[parent_struct_id] += cell_counts[struct_id]
-            region_areas[parent_struct_id] += region_areas[struct_id]
-
-    df = []
-    for struct_id in region_areas:
-        if struct_id not in atlas.brainglobe_atlas.structures:
-            continue
-        struct = atlas.brainglobe_atlas.structures[struct_id]
-
-        if (
-            min_region_area_um2 is not None
-            and region_areas[struct_id] < min_region_area_um2
-        ):
-            continue
-
-        df.append(
-            {
-                "id": struct["id"],
-                "acronym": struct["acronym"],
-                "name": struct["name"],
-                "cell_count": int(cell_counts[struct_id]),
-                "total_area_um2": int(region_areas[struct_id]),
-                "cells_per_um2": float(
-                    cell_counts[struct_id] / max(region_areas[struct_id], 1)
-                ),
-            }
-        )
-    df = pd.DataFrame(df)
-    return df
 
 
 def get_region_areas(

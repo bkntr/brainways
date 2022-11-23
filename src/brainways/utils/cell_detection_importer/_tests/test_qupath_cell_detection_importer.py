@@ -24,7 +24,12 @@ def test_find_cell_detections_file(mock_project_documents, tmpdir):
         Path(tmpdir) / f"{Path(document.path.filename).name} 2 Detections.txt"
     )
     decoy_csv_path.touch()
-    importer = KerenCellDetectionsImporter()
+    importer = KerenCellDetectionsImporter(
+        cfos_threshold=0,
+        drd1_threshold=0,
+        drd2_threshold=0,
+        oxtr_threshold=0,
+    )
     found_csv_path = importer.find_cell_detections_file(
         root=Path(tmpdir), document=document
     )
@@ -37,7 +42,12 @@ def test_find_cell_detections_file_doest_exist(mock_project_documents, tmpdir):
         Path(tmpdir) / f"{Path(document.path.filename).name} 2 Detections.txt"
     )
     decoy_csv_path.touch()
-    importer = KerenCellDetectionsImporter()
+    importer = KerenCellDetectionsImporter(
+        cfos_threshold=0,
+        drd1_threshold=0,
+        drd2_threshold=0,
+        oxtr_threshold=0,
+    )
     found_csv_path = importer.find_cell_detections_file(
         root=Path(tmpdir), document=document
     )

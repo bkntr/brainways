@@ -82,6 +82,18 @@ def get_cell_counts(cells: pd.DataFrame) -> pd.DataFrame:
     return cell_counts
 
 
+def get_struct_is_gray_matter(struct_id: int, atlas: BrainwaysAtlas) -> Optional[bool]:
+    # TODO: this is atlas-specific
+    if "GM" in atlas.brainglobe_atlas.structures:
+        gray_matter_struct_id = atlas.brainglobe_atlas.structures["GM"]["id"]
+        is_gray_matter = atlas.brainglobe_atlas.structures.tree.is_ancestor(
+            gray_matter_struct_id, struct_id
+        )
+        return is_gray_matter
+    else:
+        return None
+
+
 def cell_count_summary_co_labelling(
     animal_id: str,
     cells: pd.DataFrame,
@@ -116,8 +128,6 @@ def cell_count_summary_co_labelling(
     atlas_structure_leave_ids = [
         node.identifier for node in atlas.brainglobe_atlas.structures.tree.leaves()
     ]
-    # TODO: this is atlas-specific
-    gray_matter_struct_id = atlas.brainglobe_atlas.structures["GM"]["id"]
 
     for struct_id in region_areas_um:
         if struct_id not in atlas.brainglobe_atlas.structures:
@@ -129,17 +139,15 @@ def cell_count_summary_co_labelling(
         ):
             continue
 
-        is_gray_matter = atlas.brainglobe_atlas.structures.tree.is_ancestor(
-            gray_matter_struct_id, struct_id
-        )
-
         df.append(
             {
                 "animal_id": animal_id,
                 "acronym": struct["acronym"],
                 "name": struct["name"],
                 "is_parent_structure": struct_id not in atlas_structure_leave_ids,
-                "is_gray_matter": is_gray_matter,
+                "is_gray_matter": get_struct_is_gray_matter(
+                    struct_id=struct_id, atlas=atlas
+                ),
                 "total_area_um2": int(math.sqrt(region_areas_um[struct_id])),
                 **dict(cell_counts.loc[struct_id]),
             }

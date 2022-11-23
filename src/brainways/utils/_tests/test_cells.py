@@ -1,67 +1,13 @@
-from collections import Counter
-
 import numpy as np
 import pandas as pd
 import pytest
 
 from brainways.utils.cells import (
-    cell_count_summary,
     cells_on_mask,
     filter_cells_on_mask,
     get_parent_struct_ids,
     get_region_areas,
 )
-
-
-def test_cell_counts(mock_atlas):
-    cells = np.array([[0, 0, 0]])
-    areas = Counter({10: 100})
-    summary = cell_count_summary(cells=cells, region_areas=areas, atlas=mock_atlas)
-    expected = pd.DataFrame(
-        [
-            {
-                "id": 10,
-                "acronym": "TEST",
-                "name": "test_region",
-                "cell_count": 1,
-                "total_area_um2": 100,
-                "cells_per_um2": 1 / 100,
-            },
-            {
-                "id": 1,
-                "acronym": "root",
-                "name": "root",
-                "cell_count": 1,
-                "total_area_um2": 100,
-                "cells_per_um2": 1 / 100,
-            },
-        ]
-    )
-    pd.testing.assert_frame_equal(summary, expected)
-
-
-def test_cell_counts_min_region_area_um2(mock_atlas):
-    cells = np.array([[0, 0, 0]])
-    areas = Counter({10: 100})
-    summary = cell_count_summary(
-        cells=cells,
-        region_areas=areas,
-        atlas=mock_atlas,
-        min_region_area_um2=200,
-    )
-    assert len(summary) == 0
-
-
-def test_cell_counts_empty_region(mock_atlas):
-    cells = np.array([[0, 0, 0]])
-    areas = Counter({10: 100, 11: 100})
-    summary = cell_count_summary(
-        cells=cells,
-        region_areas=areas,
-        atlas=mock_atlas,
-    )
-    empty_region_cell_count = summary.loc[summary["id"] == 11, "cell_count"].item()
-    assert empty_region_cell_count == 0
 
 
 def test_region_areas(mock_atlas):
@@ -96,11 +42,12 @@ def test_get_parent_struct_ids(mock_atlas):
 
 def test_filter_cells_on_tissue():
     cells = np.random.rand(50, 2) * (10, 10)
+    cells = pd.DataFrame({"x": cells[:, 0], "y": cells[:, 1]})
     tissue_mask = np.zeros((10, 10), dtype=bool)
     tissue_mask[:, 5:] = True
     filtered_cells = filter_cells_on_mask(cells=cells, mask=tissue_mask)
-    expected = cells[cells[:, 0] > 5]
-    assert (filtered_cells == expected).all()
+    expected = cells[cells["x"] > 5]
+    assert (filtered_cells[["x", "y"]].values == expected[["x", "y"]].values).all()
 
 
 def test_cells_on_mask_sets_outliers_to_false():
@@ -118,6 +65,6 @@ def test_cells_on_mask_raises_error_on_outliers_when_no_ignore():
 
 
 def test_cells_on_mask_ignore_outliers_empty_cells():
-    cells = np.empty((0, 2))
+    cells = pd.DataFrame({"x": [0], "y": [2]})
     mask = np.ones((20, 5), dtype=bool)
     filter_cells_on_mask(cells=cells, mask=mask, ignore_outliers=True)

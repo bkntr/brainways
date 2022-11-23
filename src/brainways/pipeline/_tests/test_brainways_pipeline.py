@@ -8,4 +8,4 @@ def test_find_2d_affine_transform(test_data, mock_atlas: BrainwaysAtlas):
     params = BrainwaysParams(atlas=AtlasRegistrationParams(rot_frontal=10.0))
     pipeline = BrainwaysPipeline(mock_atlas)
     affine_params = pipeline.find_2d_affine_transform(image, params)
-    assert affine_params.angle == -10
+    assert affine_params.angle == 10

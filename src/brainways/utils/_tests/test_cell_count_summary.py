@@ -4,6 +4,7 @@ from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 from brainways.utils.cell_count_summary import (
     cell_count_summary_co_labelling,
     extend_cell_counts_to_parent_regions,
+    extend_region_areas_to_parent_regions,
     get_cell_counts,
     set_co_labelling_product,
 )
@@ -75,8 +76,11 @@ def test_extend_cell_counts_to_parent_regions(mock_atlas: BrainwaysAtlas):
     region_areas = {10: 1, 11: 1}
     region_areas_expected = {10: 1, 1: 2, 11: 1}
 
-    cell_counts_result, region_areas_result = extend_cell_counts_to_parent_regions(
-        cell_counts=cell_counts, region_areas=region_areas, atlas=mock_atlas
+    cell_counts_result = extend_cell_counts_to_parent_regions(
+        cell_counts=cell_counts, atlas=mock_atlas, structure_ids=[10, 1, 11]
+    )
+    region_areas_result = extend_region_areas_to_parent_regions(
+        region_areas=region_areas, atlas=mock_atlas, structure_ids=[10, 1, 11]
     )
     pd.testing.assert_frame_equal(cell_counts_result, cell_counts_expected)
     assert region_areas_result == region_areas_expected
@@ -144,6 +148,7 @@ def test_get_cell_count_summary_co_labeling(mock_atlas: BrainwaysAtlas):
                 "acronym": "TEST",
                 "name": "test_region",
                 "is_parent_structure": False,
+                "is_gray_matter": None,
                 "total_area_um2": 1,
                 "LABEL-a": 2,
                 "LABEL-b": 2,
@@ -158,6 +163,7 @@ def test_get_cell_count_summary_co_labeling(mock_atlas: BrainwaysAtlas):
                 "acronym": "root",
                 "name": "root",
                 "is_parent_structure": True,
+                "is_gray_matter": None,
                 "total_area_um2": 1,
                 "LABEL-a": 2,
                 "LABEL-b": 2,
@@ -193,6 +199,7 @@ def test_get_cell_count_summary_co_labeling_cells_per_area(mock_atlas: Brainways
                 "acronym": "TEST",
                 "name": "test_region",
                 "is_parent_structure": False,
+                "is_gray_matter": None,
                 "total_area_um2": 4,
                 "LABEL-a": 2.0,
                 "LABEL-b": 2.0,
@@ -207,6 +214,7 @@ def test_get_cell_count_summary_co_labeling_cells_per_area(mock_atlas: Brainways
                 "acronym": "root",
                 "name": "root",
                 "is_parent_structure": True,
+                "is_gray_matter": None,
                 "total_area_um2": 4,
                 "LABEL-a": 2.0,
                 "LABEL-b": 2.0,

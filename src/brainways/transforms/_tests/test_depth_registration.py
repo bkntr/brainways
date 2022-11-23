@@ -32,7 +32,7 @@ def test_depth_registration_slice_volume_rx():
     volume = torch.rand(3, 3, 3)
     slice = transform.slice_volume(volume)
     expected = volume[:, 1, :]
-    npt.assert_allclose(slice, expected, rtol=1e-5)
+    npt.assert_allclose(slice, expected, rtol=1e-4)
 
 
 def test_depth_registration_slice_volume_ry():

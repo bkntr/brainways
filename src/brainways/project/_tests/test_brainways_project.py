@@ -120,31 +120,6 @@ def test_cell_detections_path(brainways_project: BrainwaysProject):
     )
 
 
-def test_cell_count_summary(brainways_project: BrainwaysProject):
-    summary = brainways_project.cell_count_summary()
-    expected = pd.DataFrame(
-        [
-            {
-                "id": 10,
-                "acronym": "TEST",
-                "name": "test_region",
-                "cell_count": 2,
-                "total_area_um2": 469944,
-                "cells_per_um2": 2.0 / 469944,
-            },
-            {
-                "id": 1,
-                "acronym": "root",
-                "name": "root",
-                "cell_count": 2,
-                "total_area_um2": 469944,
-                "cells_per_um2": 2.0 / 469944,
-            },
-        ]
-    )
-    pd.testing.assert_frame_equal(summary, expected)
-
-
 def test_add_image_adds_document(
     brainways_project: BrainwaysProject,
     test_data: Tuple[np.ndarray, AtlasSlice],
@@ -155,7 +130,7 @@ def test_add_image_adds_document(
     expected_document = ProjectDocument(
         path=mock_image_path,
         image_size=image.shape,
-        lowres_image_size=image.shape,
+        lowres_image_size=(788, 1024),
     )
     assert brainways_project.documents[-1] == expected_document
 
@@ -169,7 +144,7 @@ def test_add_image_saves_lowres_image(
     thumbnail_path = brainways_project.thumbnail_path(mock_image_path)
     brainways_project.add_image(path=mock_image_path)
     thumbnail_image = np.array(Image.open(thumbnail_path))
-    assert image.shape == thumbnail_image.shape
+    assert thumbnail_image.shape == (788, 1024)
 
 
 def test_close_project(brainways_project: BrainwaysProject):

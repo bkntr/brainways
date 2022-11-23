@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Union
 
 from paquo.images import ImageProvider
-from paquo.subjects import QuPathsubject
+from paquo.subjects import QuPathProject
 
 from brainways.utils.io_utils.file_iterators.image_entry import ImageEntry
 from brainways.utils.io_utils.readers.czi import CziReader
@@ -11,7 +11,7 @@ from brainways.utils.io_utils.readers.czi import CziReader
 
 class QuPathFileIterator:
     def __init__(self, path: Union[str, Path]):
-        self.subject = QuPathsubject(path)
+        self.subject = QuPathProject(path)
 
     def __iter__(self):
         for entry in self.subject.images:

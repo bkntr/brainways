@@ -5,8 +5,8 @@ from brainways.utils.cell_detection_importer.brainways_cell_detection_importer i
 )
 
 
-def test_find_cell_detections_file(mock_project_documents, tmpdir):
-    document = mock_project_documents[0]
+def test_find_cell_detections_file(mock_subject_documents, tmpdir):
+    document = mock_subject_documents[0]
     csv_path = (
         Path(tmpdir)
         / f"{Path(document.path.filename).stem}_scene{document.path.scene}.csv"
@@ -24,8 +24,8 @@ def test_find_cell_detections_file(mock_project_documents, tmpdir):
     assert found_csv_path == csv_path
 
 
-def test_find_cell_detections_file_doest_exist(mock_project_documents, tmpdir):
-    document = mock_project_documents[0]
+def test_find_cell_detections_file_doest_exist(mock_subject_documents, tmpdir):
+    document = mock_subject_documents[0]
     decoy_csv_path = (
         Path(tmpdir)
         / f"{Path(document.path.filename).stem}_scene{document.path.scene + 1}.csv"

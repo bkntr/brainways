@@ -6,7 +6,7 @@ import numpy as np
 from tqdm import tqdm
 
 from brainways.pipeline.cell_detector import CellDetector, ClaheNormalizer
-from brainways.project.brainways_project import BrainwaysProject
+from brainways.project.brainways_subject import BrainwaysSubject
 from brainways.utils._imports import NAPARI_AVAILABLE
 from brainways.utils.io_utils import ImagePath
 from brainways.utils.io_utils.readers import QupathReader, get_scenes
@@ -79,7 +79,7 @@ def run_cell_detector(
     type=Path,
     required=True,
     help=(
-        "Input project file / directory of project files / directory of images to "
+        "Input subject file / directory of subject files / directory of images to "
         "run cell detector for."
     ),
 )
@@ -113,14 +113,14 @@ def cell_detection(
 
     cell_detector = CellDetector()
 
-    project_paths = sorted(list(input.glob("*")))
-    with tqdm(project_paths) as t:
+    subject_paths = sorted(list(input.glob("*")))
+    with tqdm(subject_paths) as t:
         for path in t:
             try:
                 if (path / "brainways.bin").exists():
-                    project = BrainwaysProject.open(path / "brainways.bin")
+                    subject = BrainwaysSubject.open(path / "brainways.bin")
                     image_paths = [
-                        document.path for i, document in project.valid_documents
+                        document.path for i, document in subject.valid_documents
                     ]
                 else:
                     image_paths = [

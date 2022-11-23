@@ -6,7 +6,7 @@ import pandas as pd
 from pandas import ExcelWriter
 from tqdm import tqdm
 
-from brainways.project.brainways_project import BrainwaysProject
+from brainways.project.brainways_subject import BrainwaysSubject
 from brainways.utils._imports import NAPARI_AVAILABLE
 from brainways.utils.cells import get_cell_struct_ids, get_struct_colors
 
@@ -14,20 +14,20 @@ if NAPARI_AVAILABLE:
     import napari
 
 
-def display_cells_3d(project: BrainwaysProject):
+def display_cells_3d(subject: BrainwaysSubject):
     if not NAPARI_AVAILABLE:
         raise ImportError(
             "Please install napari to display results: "
             "`pip install napari` or `pip install brainways[all]`"
         ) from None
 
-    all_cells = project.get_cells_on_atlas()
-    struct_ids = get_cell_struct_ids(all_cells, project.atlas.brainglobe_atlas)
-    colors = get_struct_colors(struct_ids, project.atlas.brainglobe_atlas)
+    all_cells = subject.get_cells_on_atlas()
+    struct_ids = get_cell_struct_ids(all_cells, subject.atlas.brainglobe_atlas)
+    colors = get_struct_colors(struct_ids, subject.atlas.brainglobe_atlas)
 
     viewer = napari.Viewer()
     viewer.dims.ndisplay = 3
-    viewer.add_image(project.atlas.reference.numpy(), name="Atlas")
+    viewer.add_image(subject.atlas.reference.numpy(), name="Atlas")
     viewer.add_points(
         all_cells[["z", "y", "x"]].values,
         name="Cells",
@@ -36,32 +36,32 @@ def display_cells_3d(project: BrainwaysProject):
         edge_color=colors,
         face_color=colors,
     )
-    viewer.title = project.project_path.name
+    viewer.title = subject.subject_path.name
     napari.run()
 
 
-def display_cells_2d(project: BrainwaysProject):
+def display_cells_2d(subject: BrainwaysSubject):
     if not NAPARI_AVAILABLE:
         raise ImportError(
             "Please install napari to display results: "
             "`pip install napari` or `pip install brainways[all]`"
         ) from None
 
-    for _, document in project.valid_documents:
-        if not project.cell_detections_path(document.path).exists():
+    for _, document in subject.valid_documents:
+        if not subject.cell_detections_path(document.path).exists():
             logging.warning(
                 f"{document.path}: missing cells, please run cell detection."
             )
             continue
 
         viewer = napari.Viewer()
-        image = project.read_highres_image(document, level=1)
+        image = subject.read_highres_image(document, level=1)
         viewer.add_image(image, name=str(document.path))
 
-        cells_atlas = project.get_cells_on_atlas([document])
-        cells = project.get_valid_cells(document)
-        struct_ids = get_cell_struct_ids(cells_atlas, project.atlas.brainglobe_atlas)
-        colors = get_struct_colors(struct_ids, project.atlas.brainglobe_atlas)
+        cells_atlas = subject.get_cells_on_atlas([document])
+        cells = subject.get_valid_cells(document)
+        struct_ids = get_cell_struct_ids(cells_atlas, subject.atlas.brainglobe_atlas)
+        colors = get_struct_colors(struct_ids, subject.atlas.brainglobe_atlas)
 
         viewer.add_points(
             cells[["y", "x"]].values * [image.shape[0], image.shape[1]],
@@ -79,7 +79,7 @@ def display_cells_2d(project: BrainwaysProject):
     "--input",
     type=Path,
     required=True,
-    help="Input project file / directory of project files to generate excel for.",
+    help="Input subject file / directory of subject files to generate excel for.",
 )
 @click.option("--output", type=Path, required=True, help="Output excel file.")
 @click.option(
@@ -114,32 +114,32 @@ def create_excel_colabelling(
         paths = [input]
     else:
         paths = sorted(list(input.glob("*")))
-    project = None
+    subject = None
     cells_per_area_sheet = []
     cells_count_sheet = []
-    for project_path in tqdm(paths):
-        if project is None:
-            project = BrainwaysProject.open(project_path)
-            project.load_pipeline()
+    for subject_path in tqdm(paths):
+        if subject is None:
+            subject = BrainwaysSubject.open(subject_path)
+            subject.load_pipeline()
         else:
-            project = BrainwaysProject.open(
-                project_path, atlas=project.atlas, pipeline=project.pipeline
+            subject = BrainwaysSubject.open(
+                subject_path, atlas=subject.atlas, pipeline=subject.pipeline
             )
-            if project.settings.atlas != project.atlas.brainglobe_atlas.atlas_name:
+            if subject.settings.atlas != subject.atlas.brainglobe_atlas.atlas_name:
                 raise RuntimeError(
-                    f"Multiple atlases detected: {project.settings.atlas},"
-                    f" {project.atlas.brainglobe_atlas.atlas_name}"
+                    f"Multiple atlases detected: {subject.settings.atlas},"
+                    f" {subject.atlas.brainglobe_atlas.atlas_name}"
                 )
 
         cells_count_sheet.append(
-            project.cell_count_summary_co_labeling(
+            subject.cell_count_summary_co_labeling(
                 ignore_single_hemisphere=ignore_single_hemisphere,
                 min_region_area_um2=min_region_area_um2,
             )
         )
 
         cells_per_area_sheet.append(
-            project.cell_count_summary_co_labeling(
+            subject.cell_count_summary_co_labeling(
                 ignore_single_hemisphere=ignore_single_hemisphere,
                 min_region_area_um2=min_region_area_um2,
                 cells_per_area_um2=cells_per_area_um2,
@@ -147,8 +147,8 @@ def create_excel_colabelling(
         )
 
         if display:
-            display_cells_3d(project)
-            display_cells_2d(project)
+            display_cells_3d(subject)
+            display_cells_2d(subject)
 
     cells_count_sheet = pd.concat(
         [sheet for sheet in cells_count_sheet if sheet is not None], axis=0

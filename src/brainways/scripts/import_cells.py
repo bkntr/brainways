@@ -3,7 +3,7 @@ from pathlib import Path
 import click
 from tqdm import tqdm
 
-from brainways.project.brainways_project import BrainwaysProject
+from brainways.project.brainways_subject import BrainwaysSubject
 from brainways.utils.cell_detection_importer.utils import (
     cell_detection_importer_types,
     get_cell_detection_importer,
@@ -16,7 +16,7 @@ from brainways.utils.cell_detection_importer.utils import (
     type=Path,
     required=True,
     help=(
-        "Input directory of project files to create registration model training data"
+        "Input directory of subject files to create registration model training data"
         " for."
     ),
 )
@@ -35,9 +35,9 @@ from brainways.utils.cell_detection_importer.utils import (
 def import_cell_detections(input: Path, cell_detections_root: Path, type: str):
     paths = list(input.glob("*"))
     cell_detection_importer = get_cell_detection_importer(type)
-    for project_path in tqdm(paths):
-        project = BrainwaysProject.open(project_path)
-        project.import_cell_detections(
+    for subject_path in tqdm(paths):
+        subject = BrainwaysSubject.open(subject_path)
+        subject.import_cell_detections(
             root=cell_detections_root, cell_detection_importer=cell_detection_importer
         )
-        project.save(project_path)
+        subject.save(subject_path)

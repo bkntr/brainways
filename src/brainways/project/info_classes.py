@@ -18,7 +18,7 @@ class ProjectSettings:
 
 
 @dataclass(frozen=True, eq=False)
-class ProjectDocument:
+class SliceInfo:
     path: ImagePath
     image_size: ImageSizeHW
     lowres_image_size: ImageSizeHW

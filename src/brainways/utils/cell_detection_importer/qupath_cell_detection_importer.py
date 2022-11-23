@@ -3,7 +3,7 @@ from typing import Optional
 
 import pandas as pd
 
-from brainways.project.brainways_project_settings import ProjectDocument
+from brainways.project.info_classes import SliceInfo
 from brainways.utils.cell_detection_importer.cell_detection_importer import (
     CellDetectionImporter,
 )
@@ -26,7 +26,7 @@ class KerenCellDetectionsImporter(CellDetectionImporter):
     def find_cell_detections_file(
         self,
         root: Path,
-        document: ProjectDocument,
+        document: SliceInfo,
     ) -> Optional[Path]:
         csv_filename = f"{Path(document.path.filename).name} Detections.txt"
         csv_path = root / csv_filename
@@ -35,7 +35,7 @@ class KerenCellDetectionsImporter(CellDetectionImporter):
         else:
             return None
 
-    def read_cells_file(self, path: Path, document: ProjectDocument) -> pd.DataFrame:
+    def read_cells_file(self, path: Path, document: SliceInfo) -> pd.DataFrame:
         reader = QupathReader(document.path.filename)
         reader.set_scene(document.path.scene)
         input_cells_df = pd.read_csv(path, sep="\t")

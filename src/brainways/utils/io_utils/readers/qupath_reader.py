@@ -45,7 +45,7 @@ class QupathReader(Reader):
             download_qupath()
         from paquo._logging import redirect
         from paquo.java import BufferedImage, ImageServerProvider, JClass, String
-        from paquo.projects import DEFAULT_IMAGE_PROVIDER
+        from paquo.subjects import DEFAULT_IMAGE_PROVIDER
 
         QupathReader.ImageServerProvider = ImageServerProvider
         QupathReader.BufferedImage = BufferedImage

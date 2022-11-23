@@ -46,12 +46,12 @@ source_suffix = ".rst"
 # The master toctree document.
 master_doc = "index"
 
-# General information about the project.
-project = "Brainways"
+# General information about the subject.
+subject = "Brainways"
 copyright = "2022, Ben Kantor"
 author = "Ben Kantor"
 
-# The version info for the project you're documenting, acts as replacement
+# The version info for the subject you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
 # the built documents.
 #
@@ -154,7 +154,7 @@ texinfo_documents = [
         "Brainways Documentation",
         author,
         "brainways",
-        "One line description of project.",
+        "One line description of subject.",
         "Miscellaneous",
     ),
 ]

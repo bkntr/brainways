@@ -8,7 +8,7 @@ from click import confirm
 from PIL import Image
 from tqdm import tqdm
 
-from brainways.project.brainways_project import BrainwaysProject
+from brainways.project.brainways_subject import BrainwaysSubject
 from brainways.utils.io_utils.readers.qupath_reader import QupathReader
 
 
@@ -18,7 +18,7 @@ from brainways.utils.io_utils.readers.qupath_reader import QupathReader
     type=Path,
     required=True,
     help=(
-        "Input project file / directory of project files to create registration model"
+        "Input subject file / directory of subject files to create registration model"
         " training data for."
     ),
 )
@@ -38,26 +38,26 @@ def create_reg_model_data(input: Path, output: Path):
     output_images_dir = output / "images"
     output.mkdir()
     output_images_dir.mkdir()
-    for project_path in tqdm(paths):
-        project = BrainwaysProject.open(project_path)
+    for subject_path in tqdm(paths):
+        subject = BrainwaysSubject.open(subject_path)
         if metadata is None:
-            project.load_atlas(load_volumes=False)
+            subject.load_atlas(load_volumes=False)
             metadata = {
-                "atlas": project.settings.atlas,
-                "ap_size": project.atlas.brainglobe_atlas.shape[0],
-                "si_size": project.atlas.brainglobe_atlas.shape[1],
-                "lr_size": project.atlas.brainglobe_atlas.shape[2],
+                "atlas": subject.settings.atlas,
+                "ap_size": subject.atlas.brainglobe_atlas.shape[0],
+                "si_size": subject.atlas.brainglobe_atlas.shape[1],
+                "lr_size": subject.atlas.brainglobe_atlas.shape[2],
             }
             with open(output / "metadata.yaml", "w") as outfile:
                 yaml.dump(metadata, outfile, default_flow_style=False)
-        if project.settings.atlas != metadata["atlas"]:
+        if subject.settings.atlas != metadata["atlas"]:
             print(
-                f"Project {project_path.parent.name} has a different atlas"
-                f" {project.settings.atlas} (expected  {metadata['atlas']})"
+                f"subject {subject_path.parent.name} has a different atlas"
+                f" {subject.settings.atlas} (expected  {metadata['atlas']})"
             )
             continue
         for document in tqdm(
-            project.documents, desc=project_path.parent.name, leave=False
+            subject.documents, desc=subject_path.parent.name, leave=False
         ):
             ap = None
             rot_frontal = None
@@ -75,13 +75,13 @@ def create_reg_model_data(input: Path, output: Path):
             reader = QupathReader(document.path.filename)
             reader.set_scene(document.path.scene)
             for channel_index, channel in enumerate(reader.channel_names):
-                output_image_filename = project_path.parent.relative_to(input) / (
+                output_image_filename = subject_path.parent.relative_to(input) / (
                     Path(str(document.path.with_channel(channel_index))).name + ".tif"
                 )
                 labels.append(
                     {
                         "filename": str(output_image_filename),
-                        "animal_id": Path(project.project_path).name,
+                        "animal_id": Path(subject.subject_path).name,
                         "image_id": str(document.path),
                         "ap": ap,
                         "rot_frontal": rot_frontal,

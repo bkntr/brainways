@@ -6,7 +6,7 @@ import numpy as np
 import scipy.ndimage
 from tqdm import tqdm
 
-from brainways.project.brainways_project import BrainwaysProject
+from brainways.project.brainways_subject import BrainwaysSubject
 from brainways.utils._imports import NAPARI_AVAILABLE
 
 
@@ -28,7 +28,7 @@ cur_index = -1
 @click.option(
     "--input",
     type=Path,
-    help="Input directory of projects to display area for.",
+    help="Input directory of subjects to display area for.",
 )
 @click.option("--struct", help="Structure acronym to display")
 @click.option("--print-all", is_flag=True, help="Print all structures to console.")
@@ -45,24 +45,24 @@ def display_area(input: Path, struct: str, print_all: bool):
     all_struct_images = {}
     all_struct_annotations = {}
     all_struct_cells = {}
-    project: Optional[BrainwaysProject] = None
-    for project_path in tqdm(paths):
-        if project is not None:
-            project = BrainwaysProject.open(
-                project_path, atlas=project.atlas, pipeline=project.pipeline
+    subject: Optional[BrainwaysSubject] = None
+    for subject_path in tqdm(paths):
+        if subject is not None:
+            subject = BrainwaysSubject.open(
+                subject_path, atlas=subject.atlas, pipeline=subject.pipeline
             )
         else:
-            project = BrainwaysProject.open(project_path)
-            project.load_pipeline()
-        struct_id = project.pipeline.atlas.brainglobe_atlas.structures[struct]["id"]
+            subject = BrainwaysSubject.open(subject_path)
+            subject.load_pipeline()
+        struct_id = subject.pipeline.atlas.brainglobe_atlas.structures[struct]["id"]
         struct_images = []
         struct_annotations = []
         struct_cells = []
-        for i, document in tqdm(project.valid_documents):
-            image_to_atlas_transform = project.pipeline.get_image_to_atlas_transform(
+        for i, document in tqdm(subject.valid_documents):
+            image_to_atlas_transform = subject.pipeline.get_image_to_atlas_transform(
                 document.params, document.lowres_image_size
             )
-            atlas_slice = project.pipeline.atlas_registration.get_atlas_slice(
+            atlas_slice = subject.pipeline.atlas_registration.get_atlas_slice(
                 document.params.atlas
             )
             annotation = atlas_slice.annotation.numpy()
@@ -70,7 +70,7 @@ def display_area(input: Path, struct: str, print_all: bool):
             if struct_id not in annotation:
                 continue
 
-            lowres_image = project.read_lowres_image(document)
+            lowres_image = subject.read_lowres_image(document)
             annotation_on_lowres_image = (
                 image_to_atlas_transform.inv()
                 .transform_image(
@@ -81,7 +81,7 @@ def display_area(input: Path, struct: str, print_all: bool):
                 .astype(int)
             )
 
-            highres_image = project.read_highres_image(document)
+            highres_image = subject.read_highres_image(document)
             highres_to_lowres_ratio = highres_image.shape[0] / lowres_image.shape[0]
             annotation_on_highres_image = scipy.ndimage.zoom(
                 annotation_on_lowres_image,
@@ -118,9 +118,9 @@ def display_area(input: Path, struct: str, print_all: bool):
             )
         struct_cells_disp = np.concatenate(struct_cells_disp)
 
-        all_struct_images[project_path] = struct_images
-        all_struct_annotations[project_path] = struct_annotations
-        all_struct_cells[project_path] = struct_cells_disp
+        all_struct_images[subject_path] = struct_images
+        all_struct_annotations[subject_path] = struct_annotations
+        all_struct_cells[subject_path] = struct_cells_disp
         break
 
     viewer = napari.Viewer()

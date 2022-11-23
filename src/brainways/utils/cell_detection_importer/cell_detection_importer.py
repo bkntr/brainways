@@ -4,14 +4,14 @@ from typing import Optional
 
 import pandas as pd
 
-from brainways.project.brainways_project_settings import ProjectDocument
+from brainways.project.info_classes import SliceInfo
 
 
 class CellDetectionImporter(abc.ABC):
     def find_cell_detections_file(
-        self, root: Path, document: ProjectDocument
+        self, root: Path, document: SliceInfo
     ) -> Optional[Path]:
         raise NotImplementedError()
 
-    def read_cells_file(self, path: Path, document: ProjectDocument) -> pd.DataFrame:
+    def read_cells_file(self, path: Path, document: SliceInfo) -> pd.DataFrame:
         raise NotImplementedError()

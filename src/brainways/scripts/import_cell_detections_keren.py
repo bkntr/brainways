@@ -3,7 +3,7 @@ from pathlib import Path
 import click
 from tqdm import tqdm
 
-from brainways.project.brainways_project import BrainwaysProject
+from brainways.project.brainways_subject import BrainwaysSubject
 from brainways.utils.cell_detection_importer.qupath_cell_detection_importer import (
     KerenCellDetectionsImporter,
 )
@@ -15,7 +15,7 @@ from brainways.utils.cell_detection_importer.qupath_cell_detection_importer impo
     type=Path,
     required=True,
     help=(
-        "Input directory of project files to create registration model training data"
+        "Input directory of subject files to create registration model training data"
         " for."
     ),
 )
@@ -54,15 +54,16 @@ def import_cell_detections_keren(
     oxtr_threshold: int,
 ):
     paths = list(input.glob("*"))
-    cell_detection_importer = KerenCellDetectionsImporter(cfos_threshold=cfos_threshold,
-            drd1_threshold=drd1_threshold,
-            drd2_threshold=drd2_threshold,
-            oxtr_threshold=oxtr_threshold,)
-    for project_path in tqdm(paths):
-        project = BrainwaysProject.open(project_path)
-        project.import_cell_detections(
+    cell_detection_importer = KerenCellDetectionsImporter(
+        cfos_threshold=cfos_threshold,
+        drd1_threshold=drd1_threshold,
+        drd2_threshold=drd2_threshold,
+        oxtr_threshold=oxtr_threshold,
+    )
+    for subject_path in tqdm(paths):
+        subject = BrainwaysSubject.open(subject_path)
+        subject.import_cell_detections(
             root=cell_detections_root,
             cell_detection_importer=cell_detection_importer,
-            
         )
-        project.save(project_path)
+        subject.save(subject_path)

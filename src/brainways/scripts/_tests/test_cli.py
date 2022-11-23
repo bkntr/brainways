@@ -32,7 +32,7 @@ def test_cell_detection(
     assert Path(tmpdir / "image_scene0.csv").exists()
 
 
-def test_create_excel(project_path: Path, mock_atlas: BrainwaysAtlas, tmpdir):
+def test_create_excel(subject_path: Path, mock_atlas: BrainwaysAtlas, tmpdir):
     runner = CliRunner()
     result = runner.invoke(
         cli,

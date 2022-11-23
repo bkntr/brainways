@@ -3,7 +3,7 @@ from typing import Optional
 
 import pandas as pd
 
-from brainways.project.brainways_project_settings import ProjectDocument
+from brainways.project.info_classes import SliceInfo
 from brainways.utils.cell_detection_importer.cell_detection_importer import (
     CellDetectionImporter,
 )
@@ -11,7 +11,7 @@ from brainways.utils.cell_detection_importer.cell_detection_importer import (
 
 class BrainwaysCellDetectionsImporter(CellDetectionImporter):
     def find_cell_detections_file(
-        self, root: Path, document: ProjectDocument
+        self, root: Path, document: SliceInfo
     ) -> Optional[Path]:
         csv_filename = (
             f"{Path(document.path.filename).stem}_scene{document.path.scene}.csv"
@@ -22,7 +22,7 @@ class BrainwaysCellDetectionsImporter(CellDetectionImporter):
         else:
             return None
 
-    def read_cells_file(self, path: Path, document: ProjectDocument) -> pd.DataFrame:
+    def read_cells_file(self, path: Path, document: SliceInfo) -> pd.DataFrame:
         input_cells_df = pd.read_csv(path)
         label_columns = {
             c: input_cells_df[c]

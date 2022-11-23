@@ -14,10 +14,7 @@ from PIL import Image
 from tqdm import tqdm
 
 from brainways.pipeline.brainways_pipeline import BrainwaysPipeline, PipelineStep
-from brainways.project.brainways_project_settings import (
-    ProjectDocument,
-    ProjectSettings,
-)
+from brainways.project.info_classes import ProjectSettings, SliceInfo
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 from brainways.utils.cell_count_summary import cell_count_summary_co_labelling
 from brainways.utils.cell_detection_importer.cell_detection_importer import (
@@ -34,43 +31,43 @@ from brainways.utils.io_utils.readers import get_image_size
 from brainways.utils.io_utils.readers.qupath_reader import QupathReader
 
 
-class BrainwaysProject:
+class BrainwaysSubject:
     def __init__(
         self,
         settings: ProjectSettings,
-        documents: List[ProjectDocument] = None,
-        project_path: Optional[Union[Path, str]] = None,
+        documents: List[SliceInfo] = None,
+        subject_path: Optional[Union[Path, str]] = None,
         atlas: Optional[BrainwaysAtlas] = None,
         pipeline: Optional[BrainwaysPipeline] = None,
     ):
         if atlas is not None:
             if atlas.brainglobe_atlas.atlas_name != settings.atlas:
                 raise ValueError(
-                    "Input atlas doesn't match atlas in project settings "
+                    "Input atlas doesn't match atlas in subject settings "
                     f"({atlas.brainglobe_atlas.atlas_name} != {settings.atlas})"
                 )
-        self.documents: List[ProjectDocument] = documents or []
+        self.documents: List[SliceInfo] = documents or []
         self.settings = settings
         self.atlas = atlas
         self.pipeline = pipeline
         self._tmpdir = None
 
-        # TODO: refactor, BrainwaysProject.create() and BrainwaysProject.open()
-        if project_path is None:
+        # TODO: refactor, BrainwaysSubject.create() and BrainwaysSubject.open()
+        if subject_path is None:
             self._tmpdir = tempfile.TemporaryDirectory()
-            self.project_path = Path(self._tmpdir.name)
+            self.subject_path = Path(self._tmpdir.name)
         else:
-            self.project_path = self._get_project_dir(project_path)
-            if not (self.project_path / "brainways.bin").exists():
-                if self.project_path.exists():
-                    if not self.project_path.is_dir() or any(
-                        self.project_path.iterdir()
+            self.subject_path = self._get_subject_dir(subject_path)
+            if not (self.subject_path / "brainways.bin").exists():
+                if self.subject_path.exists():
+                    if not self.subject_path.is_dir() or any(
+                        self.subject_path.iterdir()
                     ):
                         raise FileExistsError(
-                            f"New project directory {self.project_path} is not empty!"
+                            f"New subject directory {self.subject_path} is not empty!"
                         )
                 else:
-                    self.project_path.mkdir()
+                    self.subject_path.mkdir()
 
         if not self.thumbnails_root.exists():
             self.thumbnails_root.mkdir()
@@ -83,12 +80,12 @@ class BrainwaysProject:
         self.settings = None
         self.atlas = None
         self.pipeline = None
-        self.project_path = None
+        self.subject_path = None
         if self._tmpdir is not None:
             self._tmpdir.cleanup()
 
     def read_lowres_image(
-        self, document: ProjectDocument, channel: Optional[int] = None
+        self, document: SliceInfo, channel: Optional[int] = None
     ) -> np.ndarray:
         thumbnail_path = self.thumbnail_path(
             document.path, channel=channel or self.settings.channel
@@ -106,9 +103,7 @@ class BrainwaysProject:
             Image.fromarray(image).save(thumbnail_path)
         return image
 
-    def read_highres_image(
-        self, document: ProjectDocument, level: Optional[int] = None
-    ):
+    def read_highres_image(self, document: SliceInfo, level: Optional[int] = None):
         reader = QupathReader(document.path.filename)
         reader.set_scene(document.path.scene)
         if level:
@@ -132,14 +127,12 @@ class BrainwaysProject:
             self.load_atlas()
         self.pipeline = BrainwaysPipeline(self.atlas)
 
-    def add_image(
-        self, path: ImagePath, load_thumbnail: bool = True
-    ) -> ProjectDocument:
+    def add_image(self, path: ImagePath, load_thumbnail: bool = True) -> SliceInfo:
         image_size = get_image_size(path)
         lowres_image_size = get_resize_size(
             input_size=image_size, output_size=(1024, 1024), keep_aspect=True
         )
-        document = ProjectDocument(
+        document = SliceInfo(
             path=path,
             image_size=image_size,
             lowres_image_size=lowres_image_size,
@@ -150,11 +143,11 @@ class BrainwaysProject:
         return document
 
     @staticmethod
-    def _get_project_dir(path: Union[Path, str]):
-        project_dir = Path(path)
-        if project_dir.name == "brainways.bin":
-            project_dir = project_dir.parent
-        return project_dir
+    def _get_subject_dir(path: Union[Path, str]):
+        subject_dir = Path(path)
+        if subject_dir.name == "brainways.bin":
+            subject_dir = subject_dir.parent
+        return subject_dir
 
     @classmethod
     def open(
@@ -164,46 +157,46 @@ class BrainwaysProject:
         pipeline: Optional[BrainwaysPipeline] = None,
         lazy_init: bool = True,
     ):
-        project_dir = BrainwaysProject._get_project_dir(path)
-        if not project_dir.exists():
-            raise FileNotFoundError(f"Project path not found: {path}")
+        subject_dir = BrainwaysSubject._get_subject_dir(path)
+        if not subject_dir.exists():
+            raise FileNotFoundError(f"subject path not found: {path}")
 
-        with open(project_dir / "brainways.bin", "rb") as f:
+        with open(subject_dir / "brainways.bin", "rb") as f:
             serialized_settings, serialized_documents = pickle.load(f)
         settings = dacite.from_dict(ProjectSettings, serialized_settings)
-        documents = [dacite.from_dict(ProjectDocument, d) for d in serialized_documents]
-        project = BrainwaysProject(
+        documents = [dacite.from_dict(SliceInfo, d) for d in serialized_documents]
+        subject = BrainwaysSubject(
             settings=settings,
             documents=documents,
-            project_path=project_dir,
+            subject_path=subject_dir,
             atlas=atlas,
             pipeline=pipeline,
         )
 
         if not lazy_init:
-            project.load_atlas()
-            project.load_pipeline()
+            subject.load_atlas()
+            subject.load_pipeline()
 
-        return project
+        return subject
 
     def save(self, path: Optional[Union[Path, str]] = None):
         if path is None:
-            path = self.project_path
+            path = self.subject_path
         path = Path(path)
-        project_dir = self._get_project_dir(path)
-        if project_dir != self.project_path:
-            if project_dir.exists():
-                if project_dir.is_dir() and not any(project_dir.iterdir()):
-                    shutil.rmtree(str(project_dir))
+        subject_dir = self._get_subject_dir(path)
+        if subject_dir != self.subject_path:
+            if subject_dir.exists():
+                if subject_dir.is_dir() and not any(subject_dir.iterdir()):
+                    shutil.rmtree(str(subject_dir))
                 else:
                     raise FileExistsError(
-                        f"Project directory {project_dir} is not empty!"
+                        f"subject directory {subject_dir} is not empty!"
                     )
-            shutil.move(str(self.project_path), str(project_dir))
-            self.project_path = project_dir
+            shutil.move(str(self.subject_path), str(subject_dir))
+            self.subject_path = subject_dir
         serialized_settings = asdict(self.settings)
         serialized_documents = [asdict(d) for d in self.documents]
-        with open(project_dir / "brainways.bin", "wb") as f:
+        with open(subject_dir / "brainways.bin", "wb") as f:
             pickle.dump((serialized_settings, serialized_documents), f)
 
     def move_images_root(
@@ -228,7 +221,7 @@ class BrainwaysProject:
 
     def import_cell_detections_iterator(
         self, root: Path, cell_detection_importer: CellDetectionImporter
-    ) -> Iterator[Tuple[int, ProjectDocument]]:
+    ) -> Iterator[Tuple[int, SliceInfo]]:
         for i, document in self.valid_documents:
             cell_detections_path = cell_detection_importer.find_cell_detections_file(
                 root=root, document=document
@@ -243,7 +236,7 @@ class BrainwaysProject:
             cells_df.to_csv(self.cell_detections_path(document.path), index=False)
             yield i, document
 
-    def read_cell_detections(self, document: ProjectDocument):
+    def read_cell_detections(self, document: SliceInfo):
         return pd.read_csv(self.cell_detections_path(document.path))
 
     def import_cell_detections(
@@ -255,7 +248,7 @@ class BrainwaysProject:
             pass
 
     def get_valid_cells(
-        self, document: ProjectDocument, annotation: Optional[np.ndarray] = None
+        self, document: SliceInfo, annotation: Optional[np.ndarray] = None
     ) -> pd.DataFrame:
         if annotation is None:
             atlas_slice = self.pipeline.get_atlas_slice(document.params)
@@ -274,7 +267,7 @@ class BrainwaysProject:
         return valid_cells
 
     def get_cells_on_atlas(
-        self, documents: Optional[List[ProjectDocument]] = None
+        self, documents: Optional[List[SliceInfo]] = None
     ) -> pd.DataFrame:
         all_cells_on_atlas = []
         if documents is None:
@@ -310,7 +303,7 @@ class BrainwaysProject:
         all_region_areas = Counter()
         all_cells_on_atlas = []
         for _, document in tqdm(self.valid_documents):
-            document: ProjectDocument
+            document: SliceInfo
             if ignore_single_hemisphere and document.params.atlas.hemisphere != "both":
                 continue
             if not self.cell_detections_path(document.path).exists():
@@ -367,7 +360,7 @@ class BrainwaysProject:
 
         all_cells_on_atlas = pd.concat(all_cells_on_atlas, axis=0)
         df = cell_count_summary_co_labelling(
-            animal_id=self.project_path.stem,
+            animal_id=self.subject_path.stem,
             cells=all_cells_on_atlas,
             region_areas_um=all_region_areas,
             atlas=self.atlas,
@@ -393,14 +386,14 @@ class BrainwaysProject:
 
     @property
     def thumbnails_root(self) -> Path:
-        return self.project_path / "thumbnails"
+        return self.subject_path / "thumbnails"
 
     @property
     def cell_detections_root(self) -> Path:
-        return self.project_path / "cell_detections"
+        return self.subject_path / "cell_detections"
 
     @property
-    def valid_documents(self) -> List[Tuple[int, ProjectDocument]]:
+    def valid_documents(self) -> List[Tuple[int, SliceInfo]]:
         return [
             (i, document)
             for i, document in enumerate(self.documents)

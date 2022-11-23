@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Union
 
 from paquo.images import ImageProvider
-from paquo.subjects import QuPathProject
+from paquo.projects import QuPathProject
 
 from brainways.utils.io_utils.file_iterators.image_entry import ImageEntry
 from brainways.utils.io_utils.readers.czi import CziReader

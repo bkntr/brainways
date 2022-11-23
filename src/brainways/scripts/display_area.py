@@ -88,7 +88,8 @@ def display_area(input: Path, struct: str, print_all: bool):
                 zoom=highres_to_lowres_ratio,
                 order=0,
             )
-            cells_on_highres_image = document.cells * (
+            cells = subject.get_valid_cells(document)
+            cells_on_highres_image = cells[["x", "y"]].values * (
                 highres_image.shape[1],
                 highres_image.shape[0],
             )

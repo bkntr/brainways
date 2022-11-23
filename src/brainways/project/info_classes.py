@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Optional, Union
 
-import numpy as np
-
+import brainways._version
 from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.utils.dataclasses import dataclass_eq
 from brainways.utils.image import ImageSizeHW
@@ -14,7 +13,13 @@ from brainways.utils.io_utils import ImagePath
 @dataclass(frozen=True)
 class ProjectSettings:
     atlas: str
-    channel: int
+    channel: Union[int, str]
+
+
+@dataclass(frozen=True)
+class SubjectSettings:
+    condition: Optional[str] = None
+    ignore: bool = False
 
 
 @dataclass(frozen=True, eq=False)
@@ -23,9 +28,8 @@ class SliceInfo:
     image_size: ImageSizeHW
     lowres_image_size: ImageSizeHW
     params: Optional[BrainwaysParams] = BrainwaysParams()
-    region_areas: Optional[Dict[int, int]] = None
-    cells: Optional[np.ndarray] = None
     ignore: bool = False
+    version: str = brainways._version.version
 
     def __eq__(self, other):
         return dataclass_eq(self, other)

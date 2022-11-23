@@ -84,8 +84,10 @@ def get_cell_counts(cells: pd.DataFrame) -> pd.DataFrame:
 
 def get_struct_is_gray_matter(struct_id: int, atlas: BrainwaysAtlas) -> Optional[bool]:
     # TODO: this is atlas-specific
-    if "GM" in atlas.brainglobe_atlas.structures:
-        gray_matter_struct_id = atlas.brainglobe_atlas.structures["GM"]["id"]
+    if "GM" in atlas.brainglobe_atlas.structures.acronym_to_id_map:
+        gray_matter_struct_id = atlas.brainglobe_atlas.structures.acronym_to_id_map[
+            "GM"
+        ]
         is_gray_matter = atlas.brainglobe_atlas.structures.tree.is_ancestor(
             gray_matter_struct_id, struct_id
         )

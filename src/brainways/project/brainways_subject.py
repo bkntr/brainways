@@ -5,7 +5,7 @@ import tempfile
 from collections import Counter
 from dataclasses import asdict, replace
 from pathlib import Path
-from typing import Iterator, List, Optional, Tuple, Union
+from typing import Callable, Iterator, List, Optional, Tuple, Union
 
 import dacite
 import numpy as np
@@ -293,7 +293,7 @@ class BrainwaysSubject:
 
     def cell_count_summary_co_labeling(
         self,
-        ignore_single_hemisphere: bool,
+        slice_info_predicate: Optional[Callable[[SliceInfo], bool]] = None,
         min_region_area_um2: Optional[int] = None,
         cells_per_area_um2: Optional[int] = None,
     ):
@@ -304,7 +304,10 @@ class BrainwaysSubject:
         all_cells_on_atlas = []
         for _, document in tqdm(self.valid_documents):
             document: SliceInfo
-            if ignore_single_hemisphere and document.params.atlas.hemisphere != "both":
+            if (
+                slice_info_predicate is not None
+                and slice_info_predicate(document) is False
+            ):
                 continue
             if not self.cell_detections_path(document.path).exists():
                 logging.warning(

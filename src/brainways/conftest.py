@@ -163,7 +163,6 @@ def mock_subject_documents(
                 image_size=(image_height, image_width),
                 lowres_image_size=(image_height, image_width),
                 params=params,
-                cells=np.array([[0.5, 0.5]]),
                 ignore=i == 0,
             )
         )
@@ -171,19 +170,19 @@ def mock_subject_documents(
 
 
 @pytest.fixture
-def mock_subject_settings() -> ProjectSettings:
+def mock_project_settings() -> ProjectSettings:
     return ProjectSettings(atlas="MOCK_ATLAS", channel=0)
 
 
 @pytest.fixture
 def subject_path(
     tmpdir,
-    mock_subject_settings: ProjectSettings,
+    mock_project_settings: ProjectSettings,
     mock_subject_documents: List[SliceInfo],
 ) -> Path:
     subject_path = Path(tmpdir) / "subject/brainways.bin"
     subject_path.parent.mkdir()
-    serialized_subject_settings = asdict(mock_subject_settings)
+    serialized_subject_settings = asdict(mock_project_settings)
     serialized_subject_documents = [asdict(doc) for doc in mock_subject_documents]
     with open(subject_path, "wb") as f:
         pickle.dump((serialized_subject_settings, serialized_subject_documents), f)

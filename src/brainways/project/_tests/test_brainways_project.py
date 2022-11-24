@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List
 from unittest.mock import Mock
 
 import pandas as pd
@@ -6,7 +7,7 @@ import pytest
 
 from brainways.project.brainways_project import BrainwaysProject
 from brainways.project.brainways_subject import BrainwaysSubject
-from brainways.project.info_classes import ProjectSettings
+from brainways.project.info_classes import ProjectSettings, SliceInfo
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 
 
@@ -41,3 +42,15 @@ def test_brainways_project_move_images(brainways_project: BrainwaysProject):
     )
     for subject in brainways_project.subjects:
         subject.move_images_root.assert_called_once()
+
+
+def test_open_brainways_project(
+    project_path: Path,
+    subject_path: Path,
+    mock_project_settings: ProjectSettings,
+    mock_subject_documents: List[SliceInfo],
+):
+    project = BrainwaysProject.open(project_path, lazy_init=True)
+    assert project.settings == mock_project_settings
+    assert len(project.subjects) == 1
+    assert project.subjects[0].documents == mock_subject_documents

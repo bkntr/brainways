@@ -175,12 +175,25 @@ def mock_project_settings() -> ProjectSettings:
 
 
 @pytest.fixture
-def subject_path(
+def project_path(
     tmpdir,
+    mock_project_settings: ProjectSettings,
+) -> Path:
+    project_path = Path(tmpdir) / "project/project.bwp"
+    project_path.parent.mkdir()
+    serialized_project_settings = asdict(mock_project_settings)
+    with open(project_path, "wb") as f:
+        pickle.dump(serialized_project_settings, f)
+    yield project_path
+
+
+@pytest.fixture
+def subject_path(
+    project_path: Path,
     mock_project_settings: ProjectSettings,
     mock_subject_documents: List[SliceInfo],
 ) -> Path:
-    subject_path = Path(tmpdir) / "subject/brainways.bin"
+    subject_path = project_path.parent / "subject1/brainways.bin"
     subject_path.parent.mkdir()
     serialized_subject_settings = asdict(mock_project_settings)
     serialized_subject_documents = [asdict(doc) for doc in mock_subject_documents]

@@ -17,8 +17,10 @@ class BrainwaysProject:
         self,
         subjects: List[BrainwaysSubject],
         settings: ProjectSettings,
+        path: Optional[Path] = None,
         lazy_init: bool = False,
     ):
+        self.path = path
         self.subjects = subjects
         self.settings = settings
 
@@ -29,7 +31,8 @@ class BrainwaysProject:
             self.load_atlas()
             self.load_pipeline()
 
-    def open(self, path: Union[Path, str], lazy_init: bool = False):
+    @classmethod
+    def open(cls, path: Union[Path, str], lazy_init: bool = False):
         if not path.exists():
             raise FileNotFoundError(f"BrainwaysProject file not found: {path}")
         if not path.suffix == ".bwp":
@@ -39,13 +42,11 @@ class BrainwaysProject:
             serialized_settings = pickle.load(f)
 
         settings = dacite.from_dict(ProjectSettings, serialized_settings)
-        subject_directories = [d for d in path.glob("*") if d.is_dir()]
+        subject_directories = [d for d in path.parent.glob("*") if d.is_dir()]
         subjects = [
             BrainwaysSubject.open(subject_path) for subject_path in subject_directories
         ]
-        return BrainwaysProject(
-            subjects=subjects, settings=settings, lazy_init=lazy_init
-        )
+        return cls(subjects=subjects, settings=settings, lazy_init=lazy_init)
 
     def load_atlas(self, load_volumes: bool = True):
         self.atlas = BrainwaysAtlas.load(

@@ -46,7 +46,6 @@ def test_brainways_project_move_images(brainways_project: BrainwaysProject):
 
 def test_open_brainways_project(
     project_path: Path,
-    subject_path: Path,
     mock_project_settings: ProjectSettings,
     mock_subject_documents: List[SliceInfo],
 ):

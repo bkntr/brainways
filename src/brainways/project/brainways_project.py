@@ -1,4 +1,5 @@
-import pickle
+import json
+from dataclasses import asdict
 from pathlib import Path
 from typing import Callable, List, Optional, Union
 
@@ -20,6 +21,9 @@ class BrainwaysProject:
         path: Optional[Path] = None,
         lazy_init: bool = False,
     ):
+        if path is not None and path.suffix != ".bwp":
+            raise ValueError(f"Brainways project must be of .bwp file type, got {path}")
+
         self.path = path
         self.subjects = subjects
         self.settings = settings
@@ -32,21 +36,44 @@ class BrainwaysProject:
             self.load_pipeline()
 
     @classmethod
+    def create(
+        cls,
+        path: Union[Path, str],
+        settings: ProjectSettings,
+        lazy_init: bool = False,
+        force: bool = False,
+    ):
+        if path.suffix == ".bwp":
+            project_dir = path.parent
+        else:
+            project_dir = path
+            path = path / "brainways.bwp"
+
+        if not force and project_dir.exists() and len(list(project_dir.glob("*"))) > 0:
+            raise FileExistsError(f"Directory is not empty: {path}")
+
+        serialized_settings = asdict(settings)
+        with open(path, "w") as f:
+            json.dump(serialized_settings, f)
+
+        return cls.open(path, lazy_init=lazy_init)
+
+    @classmethod
     def open(cls, path: Union[Path, str], lazy_init: bool = False):
         if not path.exists():
             raise FileNotFoundError(f"BrainwaysProject file not found: {path}")
         if not path.suffix == ".bwp":
             raise FileNotFoundError(f"File is not a Brainways project file: {path}")
 
-        with open(path, "rb") as f:
-            serialized_settings = pickle.load(f)
+        with open(path) as f:
+            serialized_settings = json.load(f)
 
         settings = dacite.from_dict(ProjectSettings, serialized_settings)
         subject_directories = [d for d in path.parent.glob("*") if d.is_dir()]
         subjects = [
             BrainwaysSubject.open(subject_path) for subject_path in subject_directories
         ]
-        return cls(subjects=subjects, settings=settings, lazy_init=lazy_init)
+        return cls(subjects=subjects, settings=settings, path=path, lazy_init=lazy_init)
 
     def load_atlas(self, load_volumes: bool = True):
         self.atlas = BrainwaysAtlas.load(

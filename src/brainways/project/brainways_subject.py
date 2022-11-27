@@ -11,7 +11,6 @@ import dacite
 import numpy as np
 import pandas as pd
 from PIL import Image
-from tqdm import tqdm
 
 from brainways.pipeline.brainways_pipeline import BrainwaysPipeline, PipelineStep
 from brainways.project.info_classes import ProjectSettings, SliceInfo
@@ -219,9 +218,14 @@ class BrainwaysSubject:
             new_path = replace(document.path, filename=str(new_filename))
             self.documents[i] = replace(document, path=new_path)
 
-    def import_cell_detections_iterator(
-        self, root: Path, cell_detection_importer: CellDetectionImporter
-    ) -> Iterator[Tuple[int, SliceInfo]]:
+    def read_cell_detections(self, document: SliceInfo):
+        return pd.read_csv(self.cell_detections_path(document.path))
+
+    def import_cell_detections_iter(
+        self,
+        root: Path,
+        cell_detection_importer: CellDetectionImporter,
+    ) -> Iterator:
         for i, document in self.valid_documents:
             cell_detections_path = cell_detection_importer.find_cell_detections_file(
                 root=root, document=document
@@ -234,15 +238,14 @@ class BrainwaysSubject:
                 path=cell_detections_path, document=document
             )
             cells_df.to_csv(self.cell_detections_path(document.path), index=False)
-            yield i, document
-
-    def read_cell_detections(self, document: SliceInfo):
-        return pd.read_csv(self.cell_detections_path(document.path))
+            yield
 
     def import_cell_detections(
-        self, root: Path, cell_detection_importer: CellDetectionImporter
+        self,
+        root: Path,
+        cell_detection_importer: CellDetectionImporter,
     ) -> None:
-        for _ in self.import_cell_detections_iterator(
+        for _ in self.import_cell_detections_iter(
             root=root, cell_detection_importer=cell_detection_importer
         ):
             pass
@@ -302,7 +305,7 @@ class BrainwaysSubject:
 
         all_region_areas = Counter()
         all_cells_on_atlas = []
-        for _, document in tqdm(self.valid_documents):
+        for _, document in self.valid_documents:
             document: SliceInfo
             if (
                 slice_info_predicate is not None

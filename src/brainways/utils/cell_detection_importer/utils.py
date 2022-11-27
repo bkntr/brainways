@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Type
 
 from brainways.utils.cell_detection_importer.brainways_cell_detection_importer import (
     BrainwaysCellDetectionsImporter,
@@ -20,5 +20,5 @@ def cell_detection_importer_types() -> List[str]:
     return list(_CELL_DETECTION_IMPORTERS.keys())
 
 
-def get_cell_detection_importer(name: str) -> CellDetectionImporter:
-    return _CELL_DETECTION_IMPORTERS[name]()
+def get_cell_detection_importer(name: str) -> Type[CellDetectionImporter]:
+    return _CELL_DETECTION_IMPORTERS[name]

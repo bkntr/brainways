@@ -1,7 +1,7 @@
 import json
 from dataclasses import asdict
 from pathlib import Path
-from typing import Callable, List, Optional, Union
+from typing import Callable, Iterator, List, Optional, Union
 
 import dacite
 import pandas as pd
@@ -11,6 +11,9 @@ from brainways.pipeline.brainways_pipeline import BrainwaysPipeline
 from brainways.project.brainways_subject import BrainwaysSubject
 from brainways.project.info_classes import ProjectSettings, SliceInfo
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
+from brainways.utils.cell_detection_importer.cell_detection_importer import (
+    CellDetectionImporter,
+)
 
 
 class BrainwaysProject:
@@ -99,13 +102,16 @@ class BrainwaysProject:
             )
             subject.save()
 
-    def create_excel(
+    def create_excel_iter(
         self,
         path: Union[Path, str],
         slice_info_predicate: Optional[Callable[[SliceInfo], bool]] = None,
         min_region_area_um2: Optional[int] = None,
         cells_per_area_um2: Optional[int] = None,
-    ):
+    ) -> Iterator:
+        if not path.suffix == ".xlsx":
+            path = Path(str(path) + ".xlsx")
+
         cells_per_area_sheet = []
         cells_count_sheet = []
         for subject in self.subjects:
@@ -124,6 +130,8 @@ class BrainwaysProject:
                 )
             )
 
+            yield
+
         cells_count_sheet = pd.concat(
             [sheet for sheet in cells_count_sheet if sheet is not None], axis=0
         )
@@ -135,3 +143,44 @@ class BrainwaysProject:
                 writer, sheet_name=f"Cells per {cells_per_area_um2}um2", index=False
             )
             cells_count_sheet.to_excel(writer, sheet_name="Cell count", index=False)
+
+    def create_excel(
+        self,
+        path: Union[Path, str],
+        slice_info_predicate: Optional[Callable[[SliceInfo], bool]] = None,
+        min_region_area_um2: Optional[int] = None,
+        cells_per_area_um2: Optional[int] = None,
+    ) -> None:
+        for _ in self.create_excel_iter(
+            path=path,
+            slice_info_predicate=slice_info_predicate,
+            min_region_area_um2=min_region_area_um2,
+            cells_per_area_um2=cells_per_area_um2,
+        ):
+            pass
+
+    def import_cell_detections_iter(
+        self,
+        importer: CellDetectionImporter,
+        cell_detections_root: Path,
+    ) -> Iterator:
+        for subject in self.subjects:
+            yield from subject.import_cell_detections_iter(
+                root=cell_detections_root,
+                cell_detection_importer=importer,
+            )
+
+    def import_cell_detections(
+        self,
+        importer: CellDetectionImporter,
+        cell_detections_root: Path,
+    ) -> None:
+        for subject in self.subjects:
+            subject.import_cell_detections(
+                root=cell_detections_root,
+                cell_detection_importer=importer,
+            )
+
+    @property
+    def n_valid_images(self):
+        return sum(len(subject.valid_documents) for subject in self.subjects)

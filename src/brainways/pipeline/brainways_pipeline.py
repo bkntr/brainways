@@ -36,6 +36,7 @@ class BrainwaysPipeline:
         brainways_params: BrainwaysParams,
         lowres_image_size: ImageSizeHW,
         until_step: PipelineStep | None = None,
+        scale: float | None = None,
     ) -> ImageToAtlasTransform:
         until_step_value = 1000 if until_step is None else until_step.value
         affine_2d_transform = None
@@ -45,9 +46,10 @@ class BrainwaysPipeline:
             affine_2d_transform = self.affine_2d.get_transform(
                 brainways_params.affine,
                 input_size=lowres_image_size,
+                scale=scale,
             )
         if until_step_value >= PipelineStep.TPS.value:
-            tps_transform = self.tps.get_transform(brainways_params.tps)
+            tps_transform = self.tps.get_transform(brainways_params.tps, scale=scale)
         if until_step_value >= PipelineStep.ATLAS_REGISTRATION.value:
             atlas_registration_transform = self.atlas_registration.get_transform(
                 brainways_params.atlas
@@ -77,15 +79,23 @@ class BrainwaysPipeline:
         image: np.ndarray,
         params: BrainwaysParams,
         until_step: PipelineStep | None = None,
+        scale: float | None = None,
     ):
+        scale = scale or 1.0
         transform = self.get_image_to_atlas_transform(
             brainways_params=params,
             lowres_image_size=image.shape,
             until_step=until_step,
+            scale=scale,
+        )
+
+        output_size = (
+            int(self.atlas.shape[1] * scale),
+            int(self.atlas.shape[2] * scale),
         )
 
         transformed_image = transform.transform_image(
-            image=image, output_size=self.atlas.shape[1:]
+            image=image, output_size=output_size
         )
 
         if image.dtype == np.uint8:

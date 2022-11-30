@@ -20,8 +20,10 @@ class BrainwaysAffineTransform2D(BrainwaysTransform):
         params: Optional[AffineTransform2DParams] = None,
         mat: Optional[Tensor] = None,
         input_size: ImageSizeHW = None,
+        scale: Optional[float] = None,
     ):
         self.input_size = input_size
+        self.scale = scale
 
         if (params is None) == (mat is None):
             raise ValueError("Please provide either mat or params")
@@ -48,10 +50,20 @@ class BrainwaysAffineTransform2D(BrainwaysTransform):
             self.params = None
             self.mat = mat
 
+        if scale is not None:
+            scale_mat = KG.get_affine_matrix2d(
+                translations=torch.as_tensor([[0, 0]], dtype=torch.float32),
+                center=torch.as_tensor([[0, 0]], dtype=torch.float32),
+                scale=torch.as_tensor([[scale, scale]], dtype=torch.float32),
+                angle=torch.as_tensor([0], dtype=torch.float32),
+            )
+            self.mat = scale_mat @ self.mat
+
     def inv(self):
         return BrainwaysAffineTransform2D(
             mat=torch.inverse(self.mat),
             input_size=self.input_size,
+            scale=self.scale,
         )
 
     def transform_image(

@@ -25,5 +25,8 @@ class Affine2D:
         self,
         params: AffineTransform2DParams,
         input_size: ImageSizeHW,
+        scale: float | None,
     ) -> Optional[BrainwaysAffineTransform2D]:
-        return BrainwaysAffineTransform2D(params=params, input_size=input_size)
+        return BrainwaysAffineTransform2D(
+            params=params, input_size=input_size, scale=scale
+        )

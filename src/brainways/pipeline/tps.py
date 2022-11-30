@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from typing import Optional
 
 import numpy as np
 
@@ -44,5 +45,7 @@ class TPS:
             ),
         )
 
-    def get_transform(self, params: TPSTransformParams) -> TPSTransform:
-        return TPSTransform(params=params)
+    def get_transform(
+        self, params: TPSTransformParams, scale: Optional[float] = None
+    ) -> TPSTransform:
+        return TPSTransform(params=params, scale=scale)

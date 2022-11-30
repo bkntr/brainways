@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Optional
+
 import cv2
 import numpy as np
 
@@ -9,22 +11,22 @@ from brainways.utils.image import ImageSizeHW
 
 
 class TPSTransform(BrainwaysTransform):
-    def __init__(
-        self,
-        params: TPSTransformParams,
-    ):
+    def __init__(self, params: TPSTransformParams, scale: Optional[float] = None):
+        self.scale = scale
+
+        scale = scale or 1.0
         self.params = params
         matches = [cv2.DMatch(i, i, 0) for i in range(len(self.params.points_src))]
         self.tps_image = cv2.createThinPlateSplineShapeTransformer()
         self.tps_image.estimateTransformation(
-            self.params.points_dst[None],
-            self.params.points_src[None],
+            self.params.points_dst[None] * scale,
+            self.params.points_src[None] * scale,
             matches,
         )
         self.tps_points = cv2.createThinPlateSplineShapeTransformer()
         self.tps_points.estimateTransformation(
-            self.params.points_src[None],
-            self.params.points_dst[None],
+            self.params.points_src[None] * scale,
+            self.params.points_dst[None] * scale,
             matches,
         )
 
@@ -33,7 +35,7 @@ class TPSTransform(BrainwaysTransform):
             points_src=self.params.points_dst,
             points_dst=self.params.points_src,
         )
-        return TPSTransform(params=params_inv)
+        return TPSTransform(params=params_inv, scale=self.scale)
 
     def transform_image(
         self,

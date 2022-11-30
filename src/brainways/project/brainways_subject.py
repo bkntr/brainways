@@ -13,9 +13,9 @@ import pandas as pd
 from PIL import Image
 
 from brainways.pipeline.brainways_pipeline import BrainwaysPipeline, PipelineStep
-from brainways.project.info_classes import ProjectSettings, SliceInfo
+from brainways.project.info_classes import ExcelMode, ProjectSettings, SliceInfo
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
-from brainways.utils.cell_count_summary import cell_count_summary_co_labelling
+from brainways.utils.cell_count_summary import cell_count_summary
 from brainways.utils.cell_detection_importer.cell_detection_importer import (
     CellDetectionImporter,
 )
@@ -294,17 +294,19 @@ class BrainwaysSubject:
         all_cells_on_atlas = pd.concat(all_cells_on_atlas, axis=0)
         return all_cells_on_atlas
 
-    def cell_count_summary_co_labeling(
+    def cell_count_summary(
         self,
         slice_info_predicate: Optional[Callable[[SliceInfo], bool]] = None,
         min_region_area_um2: Optional[int] = None,
         cells_per_area_um2: Optional[int] = None,
+        excel_mode: ExcelMode = ExcelMode.ROW_PER_SUBJECT,
     ):
         if self.pipeline is None:
             self.load_pipeline()
 
         all_region_areas = Counter()
         all_cells_on_atlas = []
+        image_dfs = []
         for _, document in self.valid_documents:
             document: SliceInfo
             if (
@@ -357,22 +359,38 @@ class BrainwaysSubject:
             cells.loc[:, "x"] = cells_on_atlas[:, 0]
             cells.loc[:, "y"] = cells_on_atlas[:, 1]
             cells.loc[:, "z"] = cells_on_atlas[:, 2]
-            all_cells_on_atlas.append(cells)
-            all_region_areas.update(region_areas)
 
-        if len(all_cells_on_atlas) == 0:
-            logging.warning(f"{document.path}: not found cells on atlas")
-            return
+            if excel_mode == ExcelMode.ROW_PER_IMAGE:
+                image_dfs.append(
+                    cell_count_summary(
+                        animal_id=str(document.path),
+                        cells=cells,
+                        region_areas_um=region_areas,
+                        atlas=self.atlas,
+                        min_region_area_um2=min_region_area_um2,
+                        cells_per_area_um2=cells_per_area_um2,
+                    )
+                )
+            else:
+                all_cells_on_atlas.append(cells)
+                all_region_areas.update(region_areas)
 
-        all_cells_on_atlas = pd.concat(all_cells_on_atlas, axis=0)
-        df = cell_count_summary_co_labelling(
-            animal_id=self.subject_path.stem,
-            cells=all_cells_on_atlas,
-            region_areas_um=all_region_areas,
-            atlas=self.atlas,
-            min_region_area_um2=min_region_area_um2,
-            cells_per_area_um2=cells_per_area_um2,
-        )
+        if excel_mode == ExcelMode.ROW_PER_IMAGE:
+            df = pd.concat(image_dfs, axis=0)
+        else:
+            if len(all_cells_on_atlas) == 0:
+                logging.warning(f"{document.path}: not found cells on atlas")
+                return
+
+            all_cells_on_atlas = pd.concat(all_cells_on_atlas, axis=0)
+            df = cell_count_summary(
+                animal_id=self.subject_path.stem,
+                cells=all_cells_on_atlas,
+                region_areas_um=all_region_areas,
+                atlas=self.atlas,
+                min_region_area_um2=min_region_area_um2,
+                cells_per_area_um2=cells_per_area_um2,
+            )
         return df
 
     def thumbnail_path(self, image_path: ImagePath, channel: Optional[int] = None):

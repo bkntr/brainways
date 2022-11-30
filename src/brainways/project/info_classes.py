@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum, auto
 from typing import Optional, Union
 
 import brainways._version
@@ -33,3 +34,8 @@ class SliceInfo:
 
     def __eq__(self, other):
         return dataclass_eq(self, other)
+
+
+class ExcelMode(Enum):
+    ROW_PER_SUBJECT = auto()
+    ROW_PER_IMAGE = auto()

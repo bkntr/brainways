@@ -2,7 +2,7 @@ import pandas as pd
 
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 from brainways.utils.cell_count_summary import (
-    cell_count_summary_co_labelling,
+    cell_count_summary,
     extend_cell_counts_to_parent_regions,
     extend_region_areas_to_parent_regions,
     get_cell_counts,
@@ -175,7 +175,7 @@ def test_get_cell_count_summary_co_labeling(mock_atlas: BrainwaysAtlas):
             },
         ]
     )
-    result = cell_count_summary_co_labelling(
+    result = cell_count_summary(
         animal_id="test", cells=cells, region_areas_um=region_areas, atlas=mock_atlas
     )
     pd.testing.assert_frame_equal(result, expected)
@@ -226,7 +226,7 @@ def test_get_cell_count_summary_co_labeling_cells_per_area(mock_atlas: Brainways
             },
         ]
     )
-    result = cell_count_summary_co_labelling(
+    result = cell_count_summary(
         animal_id="test",
         cells=cells,
         region_areas_um=region_areas_um,

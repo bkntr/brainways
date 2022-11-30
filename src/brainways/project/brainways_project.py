@@ -9,7 +9,7 @@ from pandas import ExcelWriter
 
 from brainways.pipeline.brainways_pipeline import BrainwaysPipeline
 from brainways.project.brainways_subject import BrainwaysSubject
-from brainways.project.info_classes import ProjectSettings, SliceInfo
+from brainways.project.info_classes import ExcelMode, ProjectSettings, SliceInfo
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 from brainways.utils.cell_detection_importer.cell_detection_importer import (
     CellDetectionImporter,
@@ -108,6 +108,7 @@ class BrainwaysProject:
         slice_info_predicate: Optional[Callable[[SliceInfo], bool]] = None,
         min_region_area_um2: Optional[int] = None,
         cells_per_area_um2: Optional[int] = None,
+        excel_mode: ExcelMode = ExcelMode.ROW_PER_SUBJECT,
     ) -> Iterator:
         if not path.suffix == ".xlsx":
             path = Path(str(path) + ".xlsx")
@@ -116,17 +117,19 @@ class BrainwaysProject:
         cells_count_sheet = []
         for subject in self.subjects:
             cells_per_area_sheet.append(
-                subject.cell_count_summary_co_labeling(
+                subject.cell_count_summary(
                     slice_info_predicate=slice_info_predicate,
                     min_region_area_um2=min_region_area_um2,
                     cells_per_area_um2=cells_per_area_um2,
+                    excel_mode=excel_mode,
                 )
             )
 
             cells_count_sheet.append(
-                subject.cell_count_summary_co_labeling(
+                subject.cell_count_summary(
                     slice_info_predicate=slice_info_predicate,
                     min_region_area_um2=min_region_area_um2,
+                    excel_mode=excel_mode,
                 )
             )
 
@@ -150,12 +153,14 @@ class BrainwaysProject:
         slice_info_predicate: Optional[Callable[[SliceInfo], bool]] = None,
         min_region_area_um2: Optional[int] = None,
         cells_per_area_um2: Optional[int] = None,
+        excel_mode: ExcelMode = ExcelMode.ROW_PER_SUBJECT,
     ) -> None:
         for _ in self.create_excel_iter(
             path=path,
             slice_info_predicate=slice_info_predicate,
             min_region_area_um2=min_region_area_um2,
             cells_per_area_um2=cells_per_area_um2,
+            excel_mode=excel_mode,
         ):
             pass
 

@@ -96,7 +96,7 @@ def get_struct_is_gray_matter(struct_id: int, atlas: BrainwaysAtlas) -> Optional
         return None
 
 
-def cell_count_summary_co_labelling(
+def cell_count_summary(
     animal_id: str,
     cells: pd.DataFrame,
     region_areas_um: Dict[int, int],

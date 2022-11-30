@@ -126,13 +126,11 @@ def create_excel_colabelling(
                 )
 
         cells_count_sheet.append(
-            subject.cell_count_summary_co_labeling(
-                min_region_area_um2=min_region_area_um2,
-            )
+            subject.cell_count_summary(min_region_area_um2=min_region_area_um2)
         )
 
         cells_per_area_sheet.append(
-            subject.cell_count_summary_co_labeling(
+            subject.cell_count_summary(
                 min_region_area_um2=min_region_area_um2,
                 cells_per_area_um2=cells_per_area_um2,
             )

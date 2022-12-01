@@ -53,7 +53,7 @@ def import_cell_detections_keren(
     drd2_threshold: int,
     oxtr_threshold: int,
 ):
-    paths = list(input.glob("*"))
+    paths = list(p for p in input.glob("*") if p.is_dir())
     cell_detection_importer = KerenCellDetectionsImporter(
         cfos_threshold=cfos_threshold,
         drd1_threshold=drd1_threshold,

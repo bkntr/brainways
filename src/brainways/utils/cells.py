@@ -29,7 +29,9 @@ def get_cell_struct_ids(cells: pd.DataFrame, bg_atlas: BrainGlobeAtlas) -> np.nd
     cells_xy = cells[["x", "y", "z"]].values
     for cell in cells_xy:
         try:
-            struct_id = bg_atlas.structure_from_coords(cell[::-1].astype(int).tolist())
+            struct_id = bg_atlas.structure_from_coords(
+                cell[::-1].round().astype(int).tolist()
+            )
         except IndexError:
             struct_id = 0
         struct_ids.append(struct_id)

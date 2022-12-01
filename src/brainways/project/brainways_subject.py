@@ -349,6 +349,9 @@ class BrainwaysSubject:
                 output_size=atlas_slice.shape,
             )
             cells_on_atlas = image_to_atlas_transform.transform_points(cells_on_image)
+            cells_on_registered_image = image_to_atlas_slice_transform.transform_points(
+                cells_on_image
+            )
 
             brain_mask = brain_mask_simple(registered_image)
             region_areas = get_region_areas(
@@ -359,6 +362,13 @@ class BrainwaysSubject:
             cells.loc[:, "x"] = cells_on_atlas[:, 0]
             cells.loc[:, "y"] = cells_on_atlas[:, 1]
             cells.loc[:, "z"] = cells_on_atlas[:, 2]
+
+            cells_on_registered_image_int = cells_on_registered_image.round().astype(
+                np.int32
+            )
+            cells.loc[:, "struct_id"] = annotation[
+                cells_on_registered_image_int[:, 1], cells_on_registered_image_int[:, 0]
+            ]
 
             if excel_mode == ExcelMode.ROW_PER_IMAGE:
                 image_dfs.append(

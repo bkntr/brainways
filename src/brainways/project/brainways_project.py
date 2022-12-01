@@ -78,6 +78,11 @@ class BrainwaysProject:
         ]
         return cls(subjects=subjects, settings=settings, path=path, lazy_init=lazy_init)
 
+    def add_subject(self, id: str) -> BrainwaysSubject:
+        subject = BrainwaysSubject(settings=self.settings, subject_path=self.path / id)
+        self.subjects.append(subject)
+        return subject
+
     def load_atlas(self, load_volumes: bool = True):
         self.atlas = BrainwaysAtlas.load(
             self.settings.atlas, exclude_regions=[76, 42, 41]

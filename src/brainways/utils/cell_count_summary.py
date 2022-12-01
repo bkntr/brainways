@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
-from brainways.utils.cells import get_cell_struct_ids, get_parent_struct_ids
+from brainways.utils.cells import get_parent_struct_ids
 
 
 def set_co_labelling_product(cells: pd.DataFrame):
@@ -105,9 +105,6 @@ def cell_count_summary(
     cells_per_area_um2: Optional[int] = None,
 ):
     cells = cells.copy()
-    cells.loc[:, "struct_id"] = get_cell_struct_ids(
-        cells=cells, bg_atlas=atlas.brainglobe_atlas
-    )
     cells = set_co_labelling_product(cells)
     cell_counts = get_cell_counts(cells)
     all_leaf_structures = list(

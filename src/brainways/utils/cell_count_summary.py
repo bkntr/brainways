@@ -10,17 +10,17 @@ from brainways.utils.cells import get_parent_struct_ids
 
 
 def set_co_labelling_product(cells: pd.DataFrame):
-    cells = cells.copy()
     label_columns = [c for c in cells.columns if c.startswith("LABEL-")]
-    if len(label_columns) == 0:
+    if len(label_columns) <= 1:
         return cells
-    colabel_title_suffixes = ["neg", "pos"]
+    cells = cells.copy()
+    colabel_title_suffixes = ["-", "+"]
     for mask in product((False, True), repeat=len(label_columns)):
         colabel_subtitles = [
-            f"{label_columns[i][len('LABEL-'):]}_{colabel_title_suffixes[mask[i]]}"
+            f"{label_columns[i][len('LABEL-'):]}{colabel_title_suffixes[mask[i]]}"
             for i in range(len(label_columns))
         ]
-        colabel_title = "COLABEL-" + "-".join(colabel_subtitles)
+        colabel_title = "COLABEL-" + "".join(colabel_subtitles)
         colabel_value = np.all(
             [cells[label_columns[i]] == mask[i] for i in range(len(label_columns))],
             axis=0,
@@ -71,14 +71,13 @@ def extend_region_areas_to_parent_regions(
 def get_cell_counts(cells: pd.DataFrame) -> pd.DataFrame:
     cells_grouped = cells.groupby("struct_id")
     cell_counts = cells_grouped.sum()
-    label_columns = [
+    cell_counts.loc[:, "cells"] = cells_grouped["x"].count()
+    label_columns = ["cells"] + [
         c
         for c in cell_counts.columns
         if c.startswith("LABEL-") or c.startswith("COLABEL-")
     ]
-    cell_counts_total = cells.groupby("struct_id")["x"].count()
     cell_counts = cell_counts[label_columns]
-    cell_counts.loc[:, "cells"] = cell_counts_total
     return cell_counts
 
 
@@ -128,6 +127,8 @@ def cell_count_summary(
         node.identifier for node in atlas.brainglobe_atlas.structures.tree.leaves()
     ]
 
+    cell_counts_output = format_cell_counts_to_output(cell_counts)
+
     for struct_id in region_areas_um:
         if struct_id not in atlas.brainglobe_atlas.structures:
             continue
@@ -148,8 +149,20 @@ def cell_count_summary(
                     struct_id=struct_id, atlas=atlas
                 ),
                 "total_area_um2": int(math.sqrt(region_areas_um[struct_id])),
-                **dict(cell_counts.loc[struct_id]),
+                **dict(cell_counts_output.loc[struct_id]),
             }
         )
     df = pd.DataFrame(df)
     return df
+
+
+def format_cell_counts_to_output(cells: pd.DataFrame) -> pd.DataFrame:
+    column_renames = {}
+    for column in cells.columns:
+        if column.startswith("LABEL-"):
+            column_renames[column] = column[len("LABEL-") :] + "+"
+        if column.startswith("COLABEL-"):
+            column_renames[column] = column[len("COLABEL-") :]
+
+    cells.rename(columns=column_renames, inplace=True)
+    return cells

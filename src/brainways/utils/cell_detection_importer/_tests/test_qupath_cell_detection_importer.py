@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from brainways.utils.cell_detection_importer.qupath_cell_detection_importer import (
+from brainways.utils.cell_detection_importer.keren_cell_detection_importer import (
     KerenCellDetectionsImporter,
 )
 

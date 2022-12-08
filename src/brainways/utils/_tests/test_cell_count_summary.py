@@ -27,10 +27,10 @@ def test_set_co_labelling_product():
             "y": [0.5, 0.5, 0.5, 0.5],
             "LABEL-a": [False, False, True, True],
             "LABEL-b": [False, True, False, True],
-            "COLABEL-a_neg-b_neg": [True, False, False, False],
-            "COLABEL-a_neg-b_pos": [False, True, False, False],
-            "COLABEL-a_pos-b_neg": [False, False, True, False],
-            "COLABEL-a_pos-b_pos": [False, False, False, True],
+            "COLABEL-a-b-": [True, False, False, False],
+            "COLABEL-a-b+": [False, True, False, False],
+            "COLABEL-a+b-": [False, False, True, False],
+            "COLABEL-a+b+": [False, False, False, True],
         }
     )
 
@@ -50,6 +50,27 @@ def test_set_co_labelling_product_no_labels():
         {
             "x": [0.5, 0.5, 0.5, 0.5],
             "y": [0.5, 0.5, 0.5, 0.5],
+        }
+    )
+
+    result = set_co_labelling_product(cells)
+    pd.testing.assert_frame_equal(result, expected)
+
+
+def test_set_co_labelling_product_one_label():
+    cells = pd.DataFrame(
+        {
+            "x": [0.5, 0.5, 0.5, 0.5],
+            "y": [0.5, 0.5, 0.5, 0.5],
+            "LABEL-a": [True, True, False, False],
+        }
+    )
+
+    expected = pd.DataFrame(
+        {
+            "x": [0.5, 0.5, 0.5, 0.5],
+            "y": [0.5, 0.5, 0.5, 0.5],
+            "LABEL-a": [True, True, False, False],
         }
     )
 
@@ -104,13 +125,13 @@ def test_get_cell_counts():
     expected = pd.DataFrame(
         {
             "struct_id": [0, 1],
+            "cells": [2, 2],
             "LABEL-a": [0, 2],
             "LABEL-b": [1, 1],
             "COLABEL-a_neg-b_neg": [1, 0],
             "COLABEL-a_neg-b_pos": [1, 0],
             "COLABEL-a_pos-b_neg": [0, 1],
             "COLABEL-a_pos-b_pos": [0, 1],
-            "cells": [2, 2],
         }
     ).set_index("struct_id")
     result = get_cell_counts(cells)
@@ -136,6 +157,7 @@ def test_get_cell_count_summary_co_labeling(mock_atlas: BrainwaysAtlas):
             "x": [0.5, 0.5, 0.5, 0.5],
             "y": [0.5, 0.5, 0.5, 0.5],
             "z": [0.5, 0.5, 0.5, 0.5],
+            "struct_id": [10, 10, 10, 10],
             "LABEL-a": [False, False, True, True],
             "LABEL-b": [False, True, False, True],
         }
@@ -150,13 +172,13 @@ def test_get_cell_count_summary_co_labeling(mock_atlas: BrainwaysAtlas):
                 "is_parent_structure": False,
                 "is_gray_matter": None,
                 "total_area_um2": 1,
-                "LABEL-a": 2,
-                "LABEL-b": 2,
-                "COLABEL-a_neg-b_neg": 1,
-                "COLABEL-a_neg-b_pos": 1,
-                "COLABEL-a_pos-b_neg": 1,
-                "COLABEL-a_pos-b_pos": 1,
                 "cells": 4,
+                "a+": 2,
+                "b+": 2,
+                "a-b-": 1,
+                "a-b+": 1,
+                "a+b-": 1,
+                "a+b+": 1,
             },
             {
                 "animal_id": "test",
@@ -165,13 +187,13 @@ def test_get_cell_count_summary_co_labeling(mock_atlas: BrainwaysAtlas):
                 "is_parent_structure": True,
                 "is_gray_matter": None,
                 "total_area_um2": 1,
-                "LABEL-a": 2,
-                "LABEL-b": 2,
-                "COLABEL-a_neg-b_neg": 1,
-                "COLABEL-a_neg-b_pos": 1,
-                "COLABEL-a_pos-b_neg": 1,
-                "COLABEL-a_pos-b_pos": 1,
                 "cells": 4,
+                "a+": 2,
+                "b+": 2,
+                "a-b-": 1,
+                "a-b+": 1,
+                "a+b-": 1,
+                "a+b+": 1,
             },
         ]
     )
@@ -184,6 +206,7 @@ def test_get_cell_count_summary_co_labeling(mock_atlas: BrainwaysAtlas):
 def test_get_cell_count_summary_co_labeling_cells_per_area(mock_atlas: BrainwaysAtlas):
     cells = pd.DataFrame(
         {
+            "struct_id": [10, 10, 10, 10],
             "x": [0.5, 0.5, 0.5, 0.5],
             "y": [0.5, 0.5, 0.5, 0.5],
             "z": [0.5, 0.5, 0.5, 0.5],
@@ -201,13 +224,13 @@ def test_get_cell_count_summary_co_labeling_cells_per_area(mock_atlas: Brainways
                 "is_parent_structure": False,
                 "is_gray_matter": None,
                 "total_area_um2": 4,
-                "LABEL-a": 2.0,
-                "LABEL-b": 2.0,
-                "COLABEL-a_neg-b_neg": 1.0,
-                "COLABEL-a_neg-b_pos": 1.0,
-                "COLABEL-a_pos-b_neg": 1.0,
-                "COLABEL-a_pos-b_pos": 1.0,
                 "cells": 4.0,
+                "a+": 2.0,
+                "b+": 2.0,
+                "a-b-": 1.0,
+                "a-b+": 1.0,
+                "a+b-": 1.0,
+                "a+b+": 1.0,
             },
             {
                 "animal_id": "test",
@@ -216,13 +239,13 @@ def test_get_cell_count_summary_co_labeling_cells_per_area(mock_atlas: Brainways
                 "is_parent_structure": True,
                 "is_gray_matter": None,
                 "total_area_um2": 4,
-                "LABEL-a": 2.0,
-                "LABEL-b": 2.0,
-                "COLABEL-a_neg-b_neg": 1.0,
-                "COLABEL-a_neg-b_pos": 1.0,
-                "COLABEL-a_pos-b_neg": 1.0,
-                "COLABEL-a_pos-b_pos": 1.0,
                 "cells": 4.0,
+                "a+": 2.0,
+                "b+": 2.0,
+                "a-b-": 1.0,
+                "a-b+": 1.0,
+                "a+b-": 1.0,
+                "a+b+": 1.0,
             },
         ]
     )

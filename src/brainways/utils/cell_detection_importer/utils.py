@@ -6,7 +6,7 @@ from brainways.utils.cell_detection_importer.brainways_cell_detection_importer i
 from brainways.utils.cell_detection_importer.cell_detection_importer import (
     CellDetectionImporter,
 )
-from brainways.utils.cell_detection_importer.qupath_cell_detection_importer import (
+from brainways.utils.cell_detection_importer.keren_cell_detection_importer import (
     KerenCellDetectionsImporter,
 )
 

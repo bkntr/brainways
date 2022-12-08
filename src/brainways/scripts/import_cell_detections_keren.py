@@ -4,7 +4,7 @@ import click
 from tqdm import tqdm
 
 from brainways.project.brainways_subject import BrainwaysSubject
-from brainways.utils.cell_detection_importer.qupath_cell_detection_importer import (
+from brainways.utils.cell_detection_importer.keren_cell_detection_importer import (
     KerenCellDetectionsImporter,
 )
 

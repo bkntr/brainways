@@ -25,6 +25,7 @@ class KerenCellDetectionsImporter(CellDetectionImporter):
         drd2_threshold: int,
         oxtr_threshold: int,
     ):
+        super().__init__()
         self.cfos_threshold = cfos_threshold
         self.drd1_threshold = drd1_threshold
         self.drd2_threshold = drd2_threshold
@@ -50,15 +51,12 @@ class KerenCellDetectionsImporter(CellDetectionImporter):
             reader.dims.X * reader.physical_pixel_sizes.X,
             reader.dims.Y * reader.physical_pixel_sizes.Y,
         ]
-        cfos_cells_mask = (
-            input_cells_df["Subcellular: Channel 5: Num single spots"]
-            > self.cfos_threshold
-        )
-        input_cells_df = input_cells_df[cfos_cells_mask]
         brainways_cells_df = pd.DataFrame(
             {
                 "x": input_cells_df["Centroid X µm"] / image_size_um[0],
                 "y": input_cells_df["Centroid Y µm"] / image_size_um[1],
+                "LABEL-cFos": input_cells_df["Subcellular: Channel 5: Num single spots"]
+                > self.cfos_threshold,
                 "LABEL-Drd1": input_cells_df["Subcellular: Channel 2: Num single spots"]
                 > self.drd1_threshold,
                 "LABEL-Drd2": input_cells_df["Subcellular: Channel 3: Num single spots"]

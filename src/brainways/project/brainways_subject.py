@@ -271,7 +271,7 @@ class BrainwaysSubject:
 
     def get_cells_on_atlas(
         self, documents: Optional[List[SliceInfo]] = None
-    ) -> pd.DataFrame:
+    ) -> Optional[pd.DataFrame]:
         all_cells_on_atlas = []
         if documents is None:
             documents = (document for i, document in self.valid_documents)
@@ -290,6 +290,9 @@ class BrainwaysSubject:
             cells_on_atlas = image_to_atlas_transform.transform_points(cells_on_image)
             cells.loc[:, ["x", "y", "z"]] = cells_on_atlas
             all_cells_on_atlas.append(cells)
+
+        if len(all_cells_on_atlas) == 0:
+            return None
 
         all_cells_on_atlas = pd.concat(all_cells_on_atlas, axis=0)
         return all_cells_on_atlas

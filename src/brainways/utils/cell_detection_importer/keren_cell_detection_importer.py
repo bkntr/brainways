@@ -64,6 +64,6 @@ class KerenCellDetectionsImporter(CellDetectionImporter):
                 "LABEL-Oxtr": input_cells_df["Subcellular: Channel 4: Num single spots"]
                 > self.oxtr_threshold,
             }
-        )
+        ).dropna()
         assert (brainways_cells_df[["x", "y"]].values < 1).all()
         return brainways_cells_df

@@ -5,6 +5,7 @@ from typing import Callable, Iterator, List, Optional, Union
 
 import dacite
 import pandas as pd
+from natsort import natsorted, ns
 from pandas import ExcelWriter
 
 from brainways.pipeline.brainways_pipeline import BrainwaysPipeline
@@ -73,6 +74,9 @@ class BrainwaysProject:
 
         settings = dacite.from_dict(ProjectSettings, serialized_settings)
         subject_directories = [d for d in path.parent.glob("*") if d.is_dir()]
+        subject_directories = natsorted(
+            subject_directories, alg=ns.IGNORECASE, key=lambda x: x.name
+        )
         subjects = [
             BrainwaysSubject.open(subject_path) for subject_path in subject_directories
         ]

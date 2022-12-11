@@ -97,9 +97,9 @@ class BrainwaysAtlas:
     def _calc_bounding_boxes(self):
         boxes = []
         kernel = torch.ones(5, 5)
-        for ann in self.annotation:
-            ann_open = kornia.morphology.opening(ann[None, None], kernel)[0, 0]
-            boxes.append(nonzero_bounding_box_tensor(ann_open))
+        ann_open = kornia.morphology.opening(self.annotation[:, None], kernel)[:, 0]
+        for ann_open_slice in ann_open:
+            boxes.append(nonzero_bounding_box_tensor(ann_open_slice))
         return boxes
 
     @property

@@ -29,7 +29,7 @@ from brainways.project.brainways_subject import BrainwaysSubject
 def move_images_root(
     input: Path, new_images_root: Path, old_images_root: Optional[Path]
 ):
-    paths = list(input.glob("*"))
+    paths = [p for p in input.glob("*") if p.is_dir()]
     for subject_path in tqdm(paths):
         print(subject_path)
         subject = BrainwaysSubject.open(subject_path)

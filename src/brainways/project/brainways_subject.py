@@ -213,7 +213,9 @@ class BrainwaysSubject:
             cur_relative_filename = cur_filename.relative_to(cur_old_images_root)
             new_filename = new_images_root / cur_relative_filename
             if not new_filename.exists():
-                logging.warning(f"{new_filename} not found, skipping!")
+                logging.warning(
+                    f"{new_filename} not found, skipping! (old filename {cur_filename})"
+                )
                 continue
             new_path = replace(document.path, filename=str(new_filename))
             self.documents[i] = replace(document, path=new_path)

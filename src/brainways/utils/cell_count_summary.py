@@ -103,7 +103,6 @@ def cell_count_summary(
     min_region_area_um2: Optional[int] = None,
     cells_per_area_um2: Optional[int] = None,
 ):
-    cells = cells.copy()
     cells = set_co_labelling_product(cells)
     cell_counts = get_cell_counts(cells)
     all_leaf_structures = list(

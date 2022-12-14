@@ -47,6 +47,7 @@ class BrainwaysProject:
         lazy_init: bool = False,
         force: bool = False,
     ):
+        path = Path(path)
         if path.suffix == ".bwp":
             project_dir = path.parent
         else:
@@ -56,6 +57,8 @@ class BrainwaysProject:
         if not force and project_dir.exists() and len(list(project_dir.glob("*"))) > 0:
             raise FileExistsError(f"Directory is not empty: {path}")
 
+        project_dir.mkdir(parents=True, exist_ok=True)
+
         serialized_settings = asdict(settings)
         with open(path, "w") as f:
             json.dump(serialized_settings, f)
@@ -64,6 +67,7 @@ class BrainwaysProject:
 
     @classmethod
     def open(cls, path: Union[Path, str], lazy_init: bool = False):
+        path = Path(path)
         if not path.exists():
             raise FileNotFoundError(f"BrainwaysProject file not found: {path}")
         if not path.suffix == ".bwp":
@@ -83,7 +87,9 @@ class BrainwaysProject:
         return cls(subjects=subjects, settings=settings, path=path, lazy_init=lazy_init)
 
     def add_subject(self, id: str) -> BrainwaysSubject:
-        subject = BrainwaysSubject(settings=self.settings, subject_path=self.path / id)
+        subject = BrainwaysSubject(
+            settings=self.settings, subject_path=self.path.parent / id
+        )
         self.subjects.append(subject)
         return subject
 
@@ -204,3 +210,6 @@ class BrainwaysProject:
     @property
     def n_valid_images(self):
         return sum(len(subject.valid_documents) for subject in self.subjects)
+
+    def __len__(self) -> int:
+        return len(self.subjects)

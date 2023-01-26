@@ -108,7 +108,7 @@ class BrainwaysSubject:
         reader.set_scene(document.path.scene)
         if level:
             reader.set_level(level)
-        image = reader.get_image_data("YX", C=self.settings.channel)
+        image = reader.get_image_dask_data("YX", C=self.settings.channel).compute()
         # image = slice_to_uint8(image)
         return image
 
@@ -256,7 +256,7 @@ class BrainwaysSubject:
     def run_cell_detector_iter(self, cell_detector: CellDetector) -> Iterator:
         for i, document in self.valid_documents:
             reader = document.image_reader()
-            image = reader.get_image_data("YX", C=self.settings.channel)
+            image = reader.get_image_dask_data("YX", C=self.settings.channel).compute()
             # min_val, max_val = np.percentile(image, CFOS_CONTRAST_LIMITS)
             # print(min_val, max_val)
             # normalizer = MinMaxNormalizer(min=min_val, max=max_val)

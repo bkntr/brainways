@@ -23,8 +23,6 @@ class CellDetectorParams:
     flow_threshold: float
     mask_threshold: float
     preview_bb: Optional[Tuple[float, float, float, float]] = None
-    highres_width: Optional[int] = None
-    highres_height: Optional[int] = None
 
 
 @dataclass

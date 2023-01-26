@@ -1,6 +1,7 @@
 from functools import cached_property
 
 import cv2
+import dask.array as da
 import numpy as np
 import pandas as pd
 from skimage.measure import regionprops_table
@@ -19,6 +20,8 @@ class ClaheNormalizer(Normalizer):
         self.clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(16, 16))
 
     def before(self, x, axes):
+        if isinstance(x, da.Array):
+            x = x.compute()
         x = self.clahe.apply(x.astype(np.uint16))
         x = x.astype(np.float32)
         x = normalize_contrast(x, 0.0, 99.8)
@@ -115,5 +118,10 @@ class CellDetector:
                 labels, image, properties=("centroid", "area", "mean_intensity")
             )
         ).astype(int)
+        df = pd.DataFrame()
+        df["x"] = regionprops_df["centroid-1"] / image.shape[1]
+        df["y"] = regionprops_df["centroid-0"] / image.shape[0]
+        df["area"] = regionprops_df["area"] / image.shape[0] * image.shape[1]
+        df["mean_intensity"] = regionprops_df["mean_intensity"]
 
-        return regionprops_df
+        return df

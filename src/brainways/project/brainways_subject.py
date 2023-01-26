@@ -13,6 +13,7 @@ import pandas as pd
 from PIL import Image
 
 from brainways.pipeline.brainways_pipeline import BrainwaysPipeline, PipelineStep
+from brainways.pipeline.cell_detector import CellDetector, ClaheNormalizer
 from brainways.project.info_classes import ExcelMode, ProjectSettings, SliceInfo
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 from brainways.utils.cell_count_summary import cell_count_summary
@@ -250,6 +251,24 @@ class BrainwaysSubject:
         for _ in self.import_cell_detections_iter(
             root=root, cell_detection_importer=cell_detection_importer
         ):
+            pass
+
+    def run_cell_detector_iter(self, cell_detector: CellDetector) -> Iterator:
+        for i, document in self.valid_documents:
+            reader = document.image_reader()
+            image = reader.get_image_data("YX", C=self.settings.channel)
+            # min_val, max_val = np.percentile(image, CFOS_CONTRAST_LIMITS)
+            # print(min_val, max_val)
+            # normalizer = MinMaxNormalizer(min=min_val, max=max_val)
+            normalizer = ClaheNormalizer()
+
+            labels = cell_detector.run_cell_detector(image, normalizer=normalizer)
+            cells = cell_detector.cells(labels, image)
+            cells.to_csv(self.cell_detections_path(document.path), index=False)
+            yield
+
+    def run_cell_detector(self, cell_detector: CellDetector) -> None:
+        for _ in self.run_cell_detector_iter(cell_detector):
             pass
 
     def get_valid_cells(

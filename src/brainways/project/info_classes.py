@@ -9,6 +9,7 @@ from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.utils.dataclasses import dataclass_eq
 from brainways.utils.image import ImageSizeHW
 from brainways.utils.io_utils import ImagePath
+from brainways.utils.io_utils.readers import QupathReader
 
 
 @dataclass(frozen=True)
@@ -31,6 +32,11 @@ class SliceInfo:
     params: Optional[BrainwaysParams] = BrainwaysParams()
     ignore: bool = False
     version: str = brainways._version.version
+
+    def image_reader(self) -> QupathReader:
+        reader = QupathReader(self.path.filename)
+        reader.set_scene(self.path.scene)
+        return reader
 
     def __eq__(self, other):
         return dataclass_eq(self, other)

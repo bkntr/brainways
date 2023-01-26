@@ -9,6 +9,7 @@ from natsort import natsorted, ns
 from pandas import ExcelWriter
 
 from brainways.pipeline.brainways_pipeline import BrainwaysPipeline
+from brainways.pipeline.cell_detector import CellDetector
 from brainways.project.brainways_subject import BrainwaysSubject
 from brainways.project.info_classes import ExcelMode, ProjectSettings, SliceInfo
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
@@ -206,6 +207,16 @@ class BrainwaysProject:
                 root=cell_detections_root,
                 cell_detection_importer=importer,
             )
+
+    def run_cell_detector_iter(self) -> Iterator:
+        cell_detector = CellDetector()
+        for subject in self.subjects:
+            yield from subject.run_cell_detector_iter(cell_detector)
+
+    def run_cell_detector(self) -> None:
+        cell_detector = CellDetector()
+        for subject in self.subjects:
+            subject.run_cell_detector(cell_detector)
 
     @property
     def n_valid_images(self):

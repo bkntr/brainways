@@ -418,7 +418,7 @@ class BrainwaysSubject:
 
             all_cells_on_atlas = pd.concat(all_cells_on_atlas, axis=0)
             df = cell_count_summary(
-                animal_id=self.subject_path.stem,
+                animal_id=self.subject_path.name,
                 cells=all_cells_on_atlas,
                 region_areas_um=all_region_areas,
                 atlas=self.atlas,

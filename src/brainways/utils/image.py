@@ -237,8 +237,10 @@ def slice_contrast_values(
     return min_display, max_display
 
 
-def slice_to_uint8(slice_image: Union[np.ndarray, torch.Tensor]):
-    min_val, max_val = slice_contrast_values(slice_image)
+def slice_to_uint8(
+    slice_image: Union[np.ndarray, torch.Tensor], saturation: float = 0.001
+):
+    min_val, max_val = slice_contrast_values(slice_image, saturation=saturation)
     if isinstance(slice_image, torch.Tensor):
         slice_image = torch.clip(slice_image, min_val, max_val)
     else:

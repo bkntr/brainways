@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 import brainways._version
 from brainways.pipeline.brainways_params import BrainwaysParams
@@ -29,6 +29,7 @@ class SliceInfo:
     path: ImagePath
     image_size: ImageSizeHW
     lowres_image_size: ImageSizeHW
+    physical_pixel_sizes: Tuple[float, float]
     params: Optional[BrainwaysParams] = BrainwaysParams()
     ignore: bool = False
     version: str = brainways._version.version

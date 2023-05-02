@@ -255,16 +255,28 @@ class BrainwaysSubject:
 
     def run_cell_detector_iter(self, cell_detector: CellDetector) -> Iterator:
         for i, document in self.valid_documents:
-            reader = document.image_reader()
-            image = reader.get_image_dask_data("YX", C=self.settings.channel).compute()
-            # min_val, max_val = np.percentile(image, CFOS_CONTRAST_LIMITS)
-            # print(min_val, max_val)
-            # normalizer = MinMaxNormalizer(min=min_val, max=max_val)
-            normalizer = ClaheNormalizer()
+            try:
+                cell_detections_path = self.cell_detections_path(document.path)
+                if cell_detections_path.exists():
+                    continue
+                reader = document.image_reader()
+                image = reader.get_image_dask_data(
+                    "YX", C=self.settings.channel
+                ).compute()
+                # min_val, max_val = np.percentile(image, CFOS_CONTRAST_LIMITS)
+                # print(min_val, max_val)
+                # normalizer = MinMaxNormalizer(min=min_val, max=max_val)
+                normalizer = ClaheNormalizer()
 
-            labels = cell_detector.run_cell_detector(image, normalizer=normalizer)
-            cells = cell_detector.cells(labels, image)
-            cells.to_csv(self.cell_detections_path(document.path), index=False)
+                labels = cell_detector.run_cell_detector(image, normalizer=normalizer)
+                cells = cell_detector.cells(
+                    labels=labels,
+                    image=image,
+                    physical_pixel_sizes=document.physical_pixel_sizes,
+                )
+                cells.to_csv(cell_detections_path, index=False)
+            except Exception:
+                logging.exception(f"Cell detector on {document.path}")
             yield
 
     def run_cell_detector(self, cell_detector: CellDetector) -> None:

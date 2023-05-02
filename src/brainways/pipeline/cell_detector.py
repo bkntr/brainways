@@ -1,4 +1,5 @@
 from functools import cached_property
+from typing import Tuple
 
 import cv2
 import dask.array as da
@@ -112,7 +113,12 @@ class CellDetector:
         #
         # return masks
 
-    def cells(self, labels: np.ndarray, image: np.ndarray):
+    def cells(
+        self,
+        labels: np.ndarray,
+        image: np.ndarray,
+        physical_pixel_sizes: Tuple[float, float],
+    ):
         regionprops_df = pd.DataFrame(
             regionprops_table(
                 labels, image, properties=("centroid", "area", "mean_intensity")
@@ -121,7 +127,10 @@ class CellDetector:
         df = pd.DataFrame()
         df["x"] = regionprops_df["centroid-1"] / image.shape[1]
         df["y"] = regionprops_df["centroid-0"] / image.shape[0]
-        df["area"] = regionprops_df["area"] / image.shape[0] * image.shape[1]
+        df["area_pixels"] = regionprops_df["area"]
+        df["area_um"] = (
+            regionprops_df["area"] * physical_pixel_sizes[0] * physical_pixel_sizes[1]
+        )
         df["mean_intensity"] = regionprops_df["mean_intensity"]
 
         return df

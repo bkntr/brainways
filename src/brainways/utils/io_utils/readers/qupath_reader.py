@@ -213,8 +213,8 @@ class QupathReader(Reader):
             pixel_calibration = self._current_server.getPixelCalibration()
             return PhysicalPixelSizes(
                 Z=None,
-                Y=pixel_calibration.getPixelHeightMicrons(),
-                X=pixel_calibration.getPixelWidthMicrons(),
+                Y=float(pixel_calibration.getPixelHeightMicrons()),
+                X=float(pixel_calibration.getPixelWidthMicrons()),
             )
 
     def _to_xarray(self, delayed: bool = True, level: int = 0) -> xr.DataArray:

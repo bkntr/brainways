@@ -4,6 +4,7 @@ import pytest
 
 from brainways.utils.cells import (
     cells_on_mask,
+    filter_cells_by_size,
     filter_cells_on_mask,
     get_parent_struct_ids,
     get_region_areas,
@@ -68,3 +69,17 @@ def test_cells_on_mask_ignore_outliers_empty_cells():
     cells = pd.DataFrame({"x": [0], "y": [2]})
     mask = np.ones((20, 5), dtype=bool)
     filter_cells_on_mask(cells=cells, mask=mask, ignore_outliers=True)
+
+
+def test_filter_cells_by_size():
+    cells = pd.DataFrame({"x": [1, 2, 3], "y": [1, 2, 3], "area_um": [1, 10, 15]})
+    filtered_cells = filter_cells_by_size(cells=cells, min_size_um=5, max_size_um=10)
+    expected = cells.loc[[1]]
+    pd.testing.assert_frame_equal(filtered_cells, expected)
+
+
+def test_filter_cells_by_size_no_params():
+    cells = pd.DataFrame({"x": [1, 2], "y": [1, 2], "area_um": [1, 10]})
+    filtered_cells = filter_cells_by_size(cells=cells)
+    expected = cells
+    pd.testing.assert_frame_equal(filtered_cells, expected)

@@ -21,6 +21,7 @@ from brainways.utils.cell_detection_importer.cell_detection_importer import (
     CellDetectionImporter,
 )
 from brainways.utils.cells import (
+    filter_cells_by_size,
     filter_cells_on_annotation,
     filter_cells_on_tissue,
     get_region_areas,
@@ -335,6 +336,8 @@ class BrainwaysSubject:
         slice_info_predicate: Optional[Callable[[SliceInfo], bool]] = None,
         min_region_area_um2: Optional[int] = None,
         cells_per_area_um2: Optional[int] = None,
+        min_cell_size_um: Optional[float] = None,
+        max_cell_size_um: Optional[float] = None,
         excel_mode: ExcelMode = ExcelMode.ROW_PER_SUBJECT,
     ):
         if self.pipeline is None:
@@ -379,6 +382,9 @@ class BrainwaysSubject:
             atlas_slice = self.pipeline.get_atlas_slice(document.params)
             annotation = atlas_slice.annotation.numpy()
             cells = self.get_valid_cells(document, annotation=annotation)
+            cells = filter_cells_by_size(
+                cells, min_size_um=min_cell_size_um, max_size_um=max_cell_size_um
+            )
             cells_on_image = cells[["x", "y"]].values * document.lowres_image_size[::-1]
             registered_image = image_to_atlas_slice_transform.transform_image(
                 image,

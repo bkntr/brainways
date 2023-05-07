@@ -7,7 +7,7 @@ from numpy.typing import ArrayLike
 
 def homog_indices(s0: int, s1: int, s2: int):
     idxs = np.mgrid[:s0, :s1, :s2, 1:2].reshape(-1, s0 * s1 * s2)
-    return idxs
+    return idxs.astype(np.int32)
 
 
 def translate(idxs: ArrayLike, t0: float, t1: float, t2: float):
@@ -77,6 +77,7 @@ def slice_atlas(
     idxs = homog_center_at_zero(idxs)
     idxs = rotate(idxs, rot_frontal, rot_horizontal, rot_sagittal)
     idxs = translate(idxs, t0=ap, t1=si, t2=lr)
+    idxs = idxs.astype(np.float32)
     slice = remap(volume, idxs[:3], interpolation)
     slice = slice.reshape(shape[0], shape[1])
     return slice

@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -146,3 +146,16 @@ def filter_cells_on_annotation(
     )
     result = cells.loc[cells_on_slice_mask]
     return result.copy()
+
+
+def filter_cells_by_size(
+    cells: pd.DataFrame,
+    min_size_um: Optional[float] = None,
+    max_size_um: Optional[float] = None,
+):
+    query = np.ones(len(cells), dtype=bool)
+    if min_size_um:
+        query &= cells["area_um"] >= min_size_um
+    if max_size_um:
+        query &= cells["area_um"] <= max_size_um
+    return cells[query]

@@ -130,44 +130,33 @@ class BrainwaysProject:
         slice_info_predicate: Optional[Callable[[SliceInfo], bool]] = None,
         min_region_area_um2: Optional[int] = None,
         cells_per_area_um2: Optional[int] = None,
+        min_cell_size_um: Optional[float] = None,
+        max_cell_size_um: Optional[float] = None,
         excel_mode: ExcelMode = ExcelMode.ROW_PER_SUBJECT,
     ) -> Iterator:
         if not path.suffix == ".xlsx":
             path = Path(str(path) + ".xlsx")
 
-        cells_per_area_sheet = []
-        cells_count_sheet = []
+        summaries = []
         for subject in self.subjects:
-            cells_per_area_sheet.append(
+            summaries.append(
                 subject.cell_count_summary(
                     slice_info_predicate=slice_info_predicate,
                     min_region_area_um2=min_region_area_um2,
                     cells_per_area_um2=cells_per_area_um2,
+                    min_cell_size_um=min_cell_size_um,
+                    max_cell_size_um=max_cell_size_um,
                     excel_mode=excel_mode,
                 )
             )
-
-            cells_count_sheet.append(
-                subject.cell_count_summary(
-                    slice_info_predicate=slice_info_predicate,
-                    min_region_area_um2=min_region_area_um2,
-                    excel_mode=excel_mode,
-                )
-            )
-
             yield
 
-        cells_count_sheet = pd.concat(
-            [sheet for sheet in cells_count_sheet if sheet is not None], axis=0
-        )
-        cells_per_area_sheet = pd.concat(
-            [sheet for sheet in cells_per_area_sheet if sheet is not None], axis=0
-        )
+        summaries = pd.concat([s for s in summaries if s is not None], axis=0)
         with ExcelWriter(path) as writer:
-            cells_per_area_sheet.to_excel(
+            summaries.to_excel(
                 writer, sheet_name=f"Cells per {cells_per_area_um2}um2", index=False
             )
-            cells_count_sheet.to_excel(writer, sheet_name="Cell count", index=False)
+            # cells_count_sheet.to_excel(writer, sheet_name="Cell count", index=False)
 
     def create_excel(
         self,
@@ -175,6 +164,8 @@ class BrainwaysProject:
         slice_info_predicate: Optional[Callable[[SliceInfo], bool]] = None,
         min_region_area_um2: Optional[int] = None,
         cells_per_area_um2: Optional[int] = None,
+        min_cell_size_um: Optional[float] = None,
+        max_cell_size_um: Optional[float] = None,
         excel_mode: ExcelMode = ExcelMode.ROW_PER_SUBJECT,
     ) -> None:
         for _ in self.create_excel_iter(
@@ -182,6 +173,8 @@ class BrainwaysProject:
             slice_info_predicate=slice_info_predicate,
             min_region_area_um2=min_region_area_um2,
             cells_per_area_um2=cells_per_area_um2,
+            min_cell_size_um=min_cell_size_um,
+            max_cell_size_um=max_cell_size_um,
             excel_mode=excel_mode,
         ):
             pass

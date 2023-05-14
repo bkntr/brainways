@@ -137,9 +137,10 @@ class BrainwaysProject:
         if not path.suffix == ".xlsx":
             path = Path(str(path) + ".xlsx")
 
-        summaries = []
+        cells_per_area_sheet = []
+        cells_count_sheet = []
         for subject in self.subjects:
-            summaries.append(
+            cells_per_area_sheet.append(
                 subject.cell_count_summary(
                     slice_info_predicate=slice_info_predicate,
                     min_region_area_um2=min_region_area_um2,
@@ -151,12 +152,17 @@ class BrainwaysProject:
             )
             yield
 
-        summaries = pd.concat([s for s in summaries if s is not None], axis=0)
+        cells_count_sheet = pd.concat(
+            [sheet for sheet in cells_count_sheet if sheet is not None], axis=0
+        )
+        cells_per_area_sheet = pd.concat(
+            [sheet for sheet in cells_per_area_sheet if sheet is not None], axis=0
+        )
         with ExcelWriter(path) as writer:
-            summaries.to_excel(
+            cells_per_area_sheet.to_excel(
                 writer, sheet_name=f"Cells per {cells_per_area_um2}um2", index=False
             )
-            # cells_count_sheet.to_excel(writer, sheet_name="Cell count", index=False)
+            cells_count_sheet.to_excel(writer, sheet_name="Cell count", index=False)
 
     def create_excel(
         self,

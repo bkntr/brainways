@@ -1,4 +1,3 @@
-import math
 from itertools import product
 from typing import Dict, List, Optional
 
@@ -147,7 +146,7 @@ def cell_count_summary(
                 "is_gray_matter": get_struct_is_gray_matter(
                     struct_id=struct_id, atlas=atlas
                 ),
-                "total_area_um2": int(math.sqrt(region_areas_um[struct_id])),
+                "total_area_um2": int(region_areas_um[struct_id]),
                 **dict(cell_counts_output.loc[struct_id]),
             }
         )

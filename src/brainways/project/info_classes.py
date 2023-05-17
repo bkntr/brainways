@@ -29,9 +29,9 @@ class SliceInfo:
     path: ImagePath
     image_size: ImageSizeHW
     lowres_image_size: ImageSizeHW
-    physical_pixel_sizes: Tuple[float, float]
     params: Optional[BrainwaysParams] = BrainwaysParams()
     ignore: bool = False
+    physical_pixel_sizes: Optional[Tuple[float, float]] = None
     version: str = brainways._version.version
 
     def image_reader(self) -> QupathReader:

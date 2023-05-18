@@ -150,13 +150,24 @@ class BrainwaysProject:
                     excel_mode=excel_mode,
                 )
             )
+
+            cells_count_sheet.append(
+                subject.cell_count_summary(
+                    slice_info_predicate=slice_info_predicate,
+                    min_region_area_um2=min_region_area_um2,
+                    min_cell_size_um=min_cell_size_um,
+                    max_cell_size_um=max_cell_size_um,
+                    excel_mode=excel_mode,
+                )
+            )
+
             yield
 
-        cells_count_sheet = pd.concat(
-            [sheet for sheet in cells_count_sheet if sheet is not None], axis=0
-        )
         cells_per_area_sheet = pd.concat(
             [sheet for sheet in cells_per_area_sheet if sheet is not None], axis=0
+        )
+        cells_count_sheet = pd.concat(
+            [sheet for sheet in cells_count_sheet if sheet is not None], axis=0
         )
         with ExcelWriter(path) as writer:
             cells_per_area_sheet.to_excel(

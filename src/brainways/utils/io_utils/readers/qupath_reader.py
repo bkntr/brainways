@@ -219,7 +219,7 @@ class QupathReader(Reader):
 
     def _to_xarray(self, delayed: bool = True, level: int = 0) -> xr.DataArray:
         if delayed:
-            tile_manager = TileManager(self._current_server, level=level)
+            tile_manager = TileManager(self._current_server, self._path, level=level)
             image_data = tile_manager.to_dask()
         else:
             with QupathReader.redirect(stderr=True, stdout=True):
@@ -313,8 +313,9 @@ def _hide_memoization_warning() -> None:
 
 
 class TileManager:
-    def __init__(self, image_server, level: int = 0):
+    def __init__(self, image_server, path, level: int = 0):
         self.image_server = image_server
+        self.path = path
         self.level = level
 
         with QupathReader.redirect(stderr=True, stdout=True):
@@ -341,7 +342,9 @@ class TileManager:
 
         tile_request = self._tile_requests[(y, x)]
         with QupathReader.redirect(stderr=True, stdout=True):
-            buffered_image = self.image_server.readTile(tile_request)
+            request = tile_request.getRegionRequest()
+            buffered_image = self.image_server.readBufferedImage(request)
+            # buffered_image = self.image_server.readTile(tile_request)
         im = buffered_image_to_numpy_array(buffered_image, channel=c)
 
         return im[np.newaxis, np.newaxis, np.newaxis]

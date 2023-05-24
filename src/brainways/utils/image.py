@@ -8,7 +8,6 @@ import kornia
 import numpy as np
 import torch
 from scipy import ndimage
-from scipy.ndimage import binary_opening
 from sklearn.cluster import MiniBatchKMeans
 
 Box = Tuple[float, float, float, float]
@@ -88,6 +87,8 @@ def brain_mask(image: np.ndarray):
     # quantize image to black and white
     h, w = image.shape[:2]
     image_flat = image.reshape((h * w, 1))
+    min_pixel_value, max_pixel_value = np.quantile(image, (0, 0.5))
+    image_flat = np.clip(image_flat, min_pixel_value, max_pixel_value)
     kmeans = MiniBatchKMeans(n_init="auto", n_clusters=2, batch_size=2048)
     labels = kmeans.fit_predict(image_flat)
     labels_order = kmeans.cluster_centers_.flatten().argsort()
@@ -96,40 +97,31 @@ def brain_mask(image: np.ndarray):
     if (quantized == 0).all():
         return np.zeros_like(image, dtype=bool)
 
-    mask = np.ones_like(image, dtype=bool)
-
+    # find connected components of quantized image
     connected_components, nr_objects = ndimage.label(quantized)
-    # don't attempt to compute mask when n_objects is very large
-    if nr_objects > 200:
-        return np.ones_like(image, dtype=bool)
-    cc_sizes = {
-        cc: (connected_components == cc).sum() for cc in range(1, nr_objects + 1)
-    }
-    largest_cc_size = max(cc_sizes.values())
+    cc_indices, cc_sizes = np.unique(connected_components, return_counts=True)
+
+    # remove speckle artifacts
+    cc_size_mask = cc_sizes[connected_components]
+    no_speckle_mask = cc_size_mask >= (image.shape[0] * image.shape[1]) * 0.01
+    quantized *= no_speckle_mask
+
+    # find CCs again after speckle removal
+    connected_components, nr_objects = ndimage.label(quantized)
+    cc_indices, cc_sizes = np.unique(connected_components, return_counts=True)
+
+    # find largest connected component
+    largest_cc_size = max(cc_sizes[1:])
 
     # remove small artifacts around the edges
-    edges = np.ones_like(image, dtype=bool)
-    edges[1:-1, 1:-1] = False
-    edge_ccs = set(connected_components[edges]) - {0}
+    edges_mask = np.ones_like(image, dtype=bool)
+    edges_mask[1:-1, 1:-1] = False
+    edge_ccs = set(connected_components[edges_mask]) - {0}
     for cc in edge_ccs:
         if cc_sizes[cc] < largest_cc_size * 0.5:
-            mask[connected_components == cc] = False
+            quantized[connected_components == cc] = False
 
-    # remove speckles artifacts
-    for cc, cc_size in cc_sizes.items():
-        if cc_size < (image.shape[0] * image.shape[1]) * 0.01:
-            mask[connected_components == cc] = False
-
-    # remove background around the edges
-    connected_components, nr_objects = ndimage.label(1 - quantized)
-    edge_ccs = set(connected_components[edges]) - {0}
-    for cc in edge_ccs:
-        mask[connected_components == cc] = False
-
-    # remove left artifacts with opening
-    mask = binary_opening(mask, np.ones((5, 5)))
-
-    return mask.astype(bool)
+    return quantized.astype(bool)
 
 
 def brain_mask_simple(image: np.ndarray):

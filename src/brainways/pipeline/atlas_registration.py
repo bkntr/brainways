@@ -9,6 +9,7 @@ from brainways.transforms.depth_registration import (
 )
 from brainways.utils._imports import BRAINWAYS_REG_MODEL_AVAILABLE
 from brainways.utils.atlas.brainways_atlas import AtlasSlice, BrainwaysAtlas
+from brainways.utils.image import brain_mask, nonzero_bounding_box
 from brainways.utils.paths import REG_MODEL
 
 if TYPE_CHECKING:
@@ -36,6 +37,9 @@ class AtlasRegistration:
                 REG_MODEL, atlas=self.atlas
             )
             self.brainways_reg_model.freeze()
+        mask = brain_mask(image)
+        x, y, w, h = nonzero_bounding_box(mask)
+        image = image[y : y + h, x : x + w]
         params = self.brainways_reg_model.predict(torch.as_tensor(image).float())
         return params
 

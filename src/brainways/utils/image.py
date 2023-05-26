@@ -87,7 +87,7 @@ def brain_mask(image: np.ndarray):
     # quantize image to black and white
     h, w = image.shape[:2]
     image_flat = image.reshape((h * w, 1))
-    min_pixel_value, max_pixel_value = np.quantile(image, (0, 0.5))
+    min_pixel_value, max_pixel_value = np.quantile(image, (0, 0.85))
     image_flat = np.clip(image_flat, min_pixel_value, max_pixel_value)
     kmeans = MiniBatchKMeans(n_init="auto", n_clusters=2, batch_size=2048)
     labels = kmeans.fit_predict(image_flat)

@@ -21,6 +21,7 @@ Brainways Algorithm and Pipeline
 
 * Free software: GNU General Public License v3
 * Documentation: https://brainways.readthedocs.io.
+* Biorxiv preprint: https://www.biorxiv.org/content/10.1101/2023.05.25.542252v1
 
 
 Features

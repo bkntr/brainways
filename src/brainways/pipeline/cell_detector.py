@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from skimage.measure import regionprops_table
 
+from brainways.pipeline.brainways_params import CellDetectorParams
 from brainways.utils._imports import STARDIST_AVAILABLE
 from brainways.utils.image import normalize_contrast
 
@@ -38,13 +39,34 @@ class ClaheNormalizer(Normalizer):
 
 
 class MinMaxNormalizer(Normalizer):
-    def __init__(self, min: int, max: int):
-        self.min = min
-        self.max = max
+    def __init__(self, min_value: float, max_value: float):
+        self.min_value = min_value
+        self.max_value = max_value
 
     def before(self, x, axes):
-        x = np.clip(x, self.min, self.max)
-        x = (x - self.min) / (self.max - self.min)
+        x = np.clip(x, self.min_value, self.max_value)
+        x = (x - self.min_value) / (self.max_value - self.min_value)
+        x = x.astype(np.float32)
+        x = x.squeeze()
+        return x[..., None]
+
+    def after(self, mean, scale, axes):
+        return mean, scale
+
+    @property
+    def do_after(self):
+        return False
+
+
+class QuantileNormalizer(Normalizer):
+    def __init__(self, min_quantile: float, max_quantile: float):
+        self.min_quantile = min_quantile
+        self.max_quantile = max_quantile
+
+    def before(self, x, axes):
+        min_value, max_value = np.quantile(x, [self.min_quantile, self.max_quantile])
+        x = (x - min_value) / (max_value - min_value)
+        x = np.clip(x, 0, 1)
         x = x.astype(np.float32)
         x = x.squeeze()
         return x[..., None]
@@ -87,31 +109,19 @@ class CellDetector:
         labels[bad_label_mask] = 0
         return labels
 
-    def run_cell_detector(self, image, normalizer: Normalizer, **kwargs) -> np.ndarray:
+    def run_cell_detector(
+        self, image, params: CellDetectorParams, **kwargs
+    ) -> np.ndarray:
+        normalizer = self.get_normalizer(params)
         labels, details = self.stardist.predict_instances_big(
             image,
             axes="YX",
             block_size=4096,
             min_overlap=128,
             normalizer=normalizer,
-            **kwargs
+            **kwargs,
         )
-        # labels = self._filter_detections_by_area(labels)
         return labels
-
-        # masks, flows, styles, diams = self.cellpose.eval(
-        #     image.squeeze(), channels=[0, 0], **kwargs
-        # )
-        #
-        # regionprops_df = pd.DataFrame(
-        #     regionprops_table(
-        #         masks, image, properties=("centroid", "area", "mean_intensity")
-        #     )
-        # )
-        #
-        # cells = regionprops_df[["centroid-0", "centroid-1"]].to_numpy()
-        #
-        # return masks
 
     def cells(
         self,
@@ -134,3 +144,23 @@ class CellDetector:
         df["mean_intensity"] = regionprops_df["mean_intensity"]
 
         return df
+
+    def get_normalizer(self, params: CellDetectorParams):
+        if params.normalizer == "quantile":
+            normalizer = QuantileNormalizer(
+                min_quantile=params.normalizer_range[0],
+                max_quantile=params.normalizer_range[1],
+            )
+        elif params.normalizer == "value":
+            normalizer = MinMaxNormalizer(
+                min_value=params.normalizer_range[0],
+                max_value=params.normalizer_range[1],
+            )
+        elif params.normalizer == "clahe":
+            normalizer = ClaheNormalizer()
+        elif params.normalizer == "none":
+            normalizer = None
+        else:
+            raise ValueError(f"Unknown normalizer {params.normalizer}.")
+
+        return normalizer

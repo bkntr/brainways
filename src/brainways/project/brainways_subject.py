@@ -12,8 +12,9 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 
+from brainways.pipeline.brainways_params import CellDetectorParams
 from brainways.pipeline.brainways_pipeline import BrainwaysPipeline, PipelineStep
-from brainways.pipeline.cell_detector import CellDetector, ClaheNormalizer
+from brainways.pipeline.cell_detector import CellDetector
 from brainways.project.info_classes import ExcelMode, ProjectSettings, SliceInfo
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 from brainways.utils.cell_count_summary import cell_count_summary
@@ -110,23 +111,7 @@ class BrainwaysSubject:
         if level:
             reader.set_level(level)
         image = reader.get_image_dask_data("YX", C=self.settings.channel).compute()
-        # image = slice_to_uint8(image)
         return image
-
-    def load_atlas(self, load_volumes: bool = True):
-        self.atlas = BrainwaysAtlas.load(
-            self.settings.atlas, exclude_regions=[76, 42, 41]
-        )  # TODO: from model
-        # load volumes to cache
-        if load_volumes:
-            _ = self.atlas.reference
-            _ = self.atlas.annotation
-            _ = self.atlas.hemispheres
-
-    def load_pipeline(self):
-        if self.atlas is None:
-            self.load_atlas()
-        self.pipeline = BrainwaysPipeline(self.atlas)
 
     def add_image(self, path: ImagePath, load_thumbnail: bool = True) -> SliceInfo:
         image_size = get_image_size(path)
@@ -156,7 +141,6 @@ class BrainwaysSubject:
         path: Union[Path, str],
         atlas: Optional[BrainwaysAtlas] = None,
         pipeline: Optional[BrainwaysPipeline] = None,
-        lazy_init: bool = True,
     ):
         subject_dir = BrainwaysSubject._get_subject_dir(path)
         if not subject_dir.exists():
@@ -164,6 +148,7 @@ class BrainwaysSubject:
 
         with open(subject_dir / "brainways.bin", "rb") as f:
             serialized_settings, serialized_documents = pickle.load(f)
+
         settings = dacite.from_dict(ProjectSettings, serialized_settings)
         documents = [dacite.from_dict(SliceInfo, d) for d in serialized_documents]
         subject = BrainwaysSubject(
@@ -173,10 +158,6 @@ class BrainwaysSubject:
             atlas=atlas,
             pipeline=pipeline,
         )
-
-        if not lazy_init:
-            subject.load_atlas()
-            subject.load_pipeline()
 
         return subject
 
@@ -254,7 +235,9 @@ class BrainwaysSubject:
         ):
             pass
 
-    def run_cell_detector_iter(self, cell_detector: CellDetector) -> Iterator:
+    def run_cell_detector_iter(
+        self, cell_detector: CellDetector, default_params: CellDetectorParams
+    ) -> Iterator:
         for i, document in self.valid_documents:
             try:
                 cell_detections_path = self.cell_detections_path(document.path)
@@ -264,12 +247,13 @@ class BrainwaysSubject:
                 image = reader.get_image_dask_data(
                     "YX", C=self.settings.channel
                 ).compute()
-                # min_val, max_val = np.percentile(image, CFOS_CONTRAST_LIMITS)
-                # print(min_val, max_val)
-                # normalizer = MinMaxNormalizer(min=min_val, max=max_val)
-                normalizer = ClaheNormalizer()
-
-                labels = cell_detector.run_cell_detector(image, normalizer=normalizer)
+                if document.params.cell is not None:
+                    cell_detector_params = document.params.cell
+                else:
+                    cell_detector_params = default_params
+                labels = cell_detector.run_cell_detector(
+                    image, params=cell_detector_params
+                )
                 cells = cell_detector.cells(
                     labels=labels,
                     image=image,
@@ -280,8 +264,12 @@ class BrainwaysSubject:
                 logging.exception(f"Cell detector on {document.path}")
             yield
 
-    def run_cell_detector(self, cell_detector: CellDetector) -> None:
-        for _ in self.run_cell_detector_iter(cell_detector):
+    def run_cell_detector(
+        self, cell_detector: CellDetector, default_params: CellDetectorParams
+    ) -> None:
+        for _ in self.run_cell_detector_iter(
+            cell_detector=cell_detector, default_params=default_params
+        ):
             pass
 
     def get_valid_cells(
@@ -341,7 +329,9 @@ class BrainwaysSubject:
         excel_mode: ExcelMode = ExcelMode.ROW_PER_SUBJECT,
     ):
         if self.pipeline is None:
-            self.load_pipeline()
+            raise RuntimeError(
+                "BrainwaysPipeline not loaded, run BrainwaysProject.load_pipeline()"
+            )
 
         all_region_areas = Counter()
         all_cells_on_atlas = []

@@ -17,6 +17,7 @@ from brainways.pipeline.brainways_params import (
     AffineTransform2DParams,
     AtlasRegistrationParams,
     BrainwaysParams,
+    CellDetectorParams,
     TPSTransformParams,
 )
 from brainways.project.brainways_subject import BrainwaysSubject
@@ -148,6 +149,9 @@ def mock_subject_documents(
         tps=TPSTransformParams(
             points_src=tps_points,
             points_dst=tps_points,
+        ),
+        cell=CellDetectorParams(
+            normalizer="clahe",
         ),
     )
     documents = []

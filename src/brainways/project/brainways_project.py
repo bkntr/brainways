@@ -10,6 +10,7 @@ from pandas import ExcelWriter
 
 from brainways.pipeline.brainways_pipeline import BrainwaysPipeline
 from brainways.pipeline.cell_detector import CellDetector
+from brainways.project._utils import update_project_from_previous_versions
 from brainways.project.brainways_subject import BrainwaysSubject
 from brainways.project.info_classes import ExcelMode, ProjectSettings, SliceInfo
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
@@ -56,7 +57,7 @@ class BrainwaysProject:
             path = path / "brainways.bwp"
 
         if not force and project_dir.exists() and len(list(project_dir.glob("*"))) > 0:
-            raise FileExistsError(f"Directory is not empty: {path}")
+            raise FileExistsError(f"Directory is not empty: {project_dir}")
 
         project_dir.mkdir(parents=True, exist_ok=True)
 
@@ -74,10 +75,14 @@ class BrainwaysProject:
         if not path.suffix == ".bwp":
             raise FileNotFoundError(f"File is not a Brainways project file: {path}")
 
+        update_project_from_previous_versions(path)
+
         with open(path) as f:
             serialized_settings = json.load(f)
 
-        settings = dacite.from_dict(ProjectSettings, serialized_settings)
+        settings = dacite.from_dict(
+            ProjectSettings, serialized_settings, config=dacite.Config(cast=[tuple])
+        )
         subject_directories = [d for d in path.parent.glob("*") if d.is_dir()]
         subject_directories = natsorted(
             subject_directories, alg=ns.IGNORECASE, key=lambda x: x.name
@@ -86,6 +91,11 @@ class BrainwaysProject:
             BrainwaysSubject.open(subject_path) for subject_path in subject_directories
         ]
         return cls(subjects=subjects, settings=settings, path=path, lazy_init=lazy_init)
+
+    def save(self):
+        serialized_settings = asdict(self.settings)
+        with open(self.path, "w") as f:
+            json.dump(serialized_settings, f)
 
     def add_subject(self, id: str) -> BrainwaysSubject:
         subject = BrainwaysSubject(
@@ -221,12 +231,16 @@ class BrainwaysProject:
     def run_cell_detector_iter(self) -> Iterator:
         cell_detector = CellDetector()
         for subject in self.subjects:
-            yield from subject.run_cell_detector_iter(cell_detector)
+            yield from subject.run_cell_detector_iter(
+                cell_detector, default_params=self.settings.default_cell_detector_params
+            )
 
     def run_cell_detector(self) -> None:
         cell_detector = CellDetector()
         for subject in self.subjects:
-            subject.run_cell_detector(cell_detector)
+            subject.run_cell_detector(
+                cell_detector, default_params=self.settings.default_cell_detector_params
+            )
 
     @property
     def n_valid_images(self):

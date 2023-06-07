@@ -18,7 +18,7 @@ def brainways_project(
     mock_atlas: BrainwaysAtlas,
 ) -> BrainwaysProject:
     brainways_project = BrainwaysProject(
-        subjects=[brainways_subject], settings=mock_project_settings, lazy_init=True
+        subjects=[brainways_subject], settings=mock_project_settings
     )
     brainways_project.atlas = mock_atlas
     return brainways_project
@@ -53,3 +53,21 @@ def test_open_brainways_project(
     assert project.settings == mock_project_settings
     assert len(project.subjects) == 1
     assert project.subjects[0].documents == mock_subject_documents
+
+
+def test_open_brainways_project_v0_1_1(
+    brainways_project_path_v0_1_1: Path,
+    mock_project_settings: ProjectSettings,
+    mock_subject_documents: List[SliceInfo],
+):
+    project = BrainwaysProject.open(brainways_project_path_v0_1_1, lazy_init=True)
+    assert project.settings.atlas == mock_project_settings.atlas
+    assert len(project.subjects) == 1
+    assert (
+        project.subjects[0].documents[0].params.atlas
+        == mock_subject_documents[0].params.atlas
+    )
+    assert (
+        project.subjects[0].documents[0].params.affine
+        == mock_subject_documents[0].params.affine
+    )

@@ -5,7 +5,7 @@ from enum import Enum, auto
 from typing import Optional, Tuple, Union
 
 import brainways._version
-from brainways.pipeline.brainways_params import BrainwaysParams
+from brainways.pipeline.brainways_params import BrainwaysParams, CellDetectorParams
 from brainways.utils.dataclasses import dataclass_eq
 from brainways.utils.image import ImageSizeHW
 from brainways.utils.io_utils import ImagePath
@@ -16,12 +16,15 @@ from brainways.utils.io_utils.readers import QupathReader
 class ProjectSettings:
     atlas: str
     channel: Union[int, str]
+    default_cell_detector_params: CellDetectorParams = CellDetectorParams()
+    version: str = brainways._version.version
 
 
 @dataclass(frozen=True)
 class SubjectSettings:
+    name: str
     condition: Optional[str] = None
-    ignore: bool = False
+    exclude: bool = False
 
 
 @dataclass(frozen=True, eq=False)
@@ -32,7 +35,6 @@ class SliceInfo:
     params: Optional[BrainwaysParams] = BrainwaysParams()
     ignore: bool = False
     physical_pixel_sizes: Optional[Tuple[float, float]] = None
-    version: str = brainways._version.version
 
     def image_reader(self) -> QupathReader:
         reader = QupathReader(self.path.filename)

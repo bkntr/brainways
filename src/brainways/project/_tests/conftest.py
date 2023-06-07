@@ -1,3 +1,6 @@
+import os
+import shutil
+from pathlib import Path
 from typing import List
 
 import pytest
@@ -18,3 +21,13 @@ def brainways_tmp_subject(
     )
     brainways_subject.add_image(path=mock_image_path)
     return brainways_subject
+
+
+@pytest.fixture
+def brainways_project_path_v0_1_1(tmpdir) -> Path:
+    v0_1_1_project_path = (
+        Path(os.path.realpath(__file__)).parent / "test_projects/v0.1.1/project.bwp"
+    )
+    tmp_v0_1_1_dir = Path(tmpdir / "v0.1.1")
+    shutil.copytree(v0_1_1_project_path.parent, tmp_v0_1_1_dir)
+    return tmp_v0_1_1_dir / "project.bwp"

@@ -18,11 +18,8 @@ class BrainwaysParams:
 
 @dataclass
 class CellDetectorParams:
-    diameter: float
-    net_avg: bool
-    flow_threshold: float
-    mask_threshold: float
-    preview_bb: Optional[Tuple[float, float, float, float]] = None
+    normalizer: str = "quantile"
+    normalizer_range: Tuple[float, float] = (0.98, 0.997)
 
 
 @dataclass

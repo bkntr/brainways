@@ -219,12 +219,6 @@ def test_init_brainways_with_wrong_atlas_raises_exception(
         BrainwaysSubject(settings=mock_project_settings, documents=[], atlas=mock_atlas)
 
 
-def test_load_pipeline(brainways_subject: BrainwaysSubject, mock_atlas: BrainwaysAtlas):
-    assert brainways_subject.pipeline is None
-    brainways_subject.load_pipeline()
-    assert brainways_subject.pipeline is not None
-
-
 def test_init_subject_with_nonempty_directory(
     mock_project_settings: ProjectSettings, tmpdir
 ):

@@ -1,8 +1,22 @@
 import json
 import pickle
 from pathlib import Path
+from typing import Optional
 
 from packaging import version
+
+import brainways
+
+
+def rewrite_project_version(path: Path, version: Optional[str] = None):
+    if version is None:
+        version = brainways._version.version
+
+    with open(path) as f:
+        serialized_project_settings = json.load(f)
+    serialized_project_settings["version"] = version
+    with open(path, "w") as f:
+        json.dump(serialized_project_settings, f)
 
 
 def update_project_from_previous_versions(path: Path):
@@ -11,6 +25,8 @@ def update_project_from_previous_versions(path: Path):
     project_version = serialized_settings.get("version", "0.1.1")
     if version.parse(project_version) <= version.parse("0.1.1"):
         update_project_from_0_1_1_to_0_1_4(path)
+
+    rewrite_project_version(path)
 
 
 def update_project_from_0_1_1_to_0_1_4(path: Path):
@@ -24,8 +40,4 @@ def update_project_from_0_1_1_to_0_1_4(path: Path):
         with open(brainways_subject_path, "wb") as f:
             pickle.dump((serialized_settings, serialized_slice_infos), f)
 
-    with open(path) as f:
-        serialized_project_settings = json.load(f)
-    serialized_project_settings["version"] = "0.1.4"
-    with open(path, "w") as f:
-        json.dump(serialized_project_settings, f)
+    rewrite_project_version(path=path, version="0.1.4")

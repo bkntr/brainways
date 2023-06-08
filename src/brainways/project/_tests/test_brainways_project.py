@@ -18,9 +18,10 @@ def brainways_project(
     mock_atlas: BrainwaysAtlas,
 ) -> BrainwaysProject:
     brainways_project = BrainwaysProject(
-        subjects=[brainways_subject], settings=mock_project_settings
+        subjects=[brainways_subject], settings=mock_project_settings, lazy_init=True
     )
     brainways_project.atlas = mock_atlas
+    brainways_project.load_pipeline()
     return brainways_project
 
 

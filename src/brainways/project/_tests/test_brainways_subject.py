@@ -115,6 +115,7 @@ def test_add_image_adds_document(
         path=mock_image_path,
         image_size=image.shape,
         lowres_image_size=(788, 1024),
+        physical_pixel_sizes=(10.0, 10.0),
     )
     assert brainways_subject.documents[-1] == expected_document
 

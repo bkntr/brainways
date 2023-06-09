@@ -1,4 +1,5 @@
 import os
+import pickle
 import shutil
 from pathlib import Path
 from typing import List
@@ -24,10 +25,33 @@ def brainways_tmp_subject(
 
 
 @pytest.fixture
-def brainways_project_path_v0_1_1(tmpdir) -> Path:
-    v0_1_1_project_path = (
+def brainways_project_path_v0_1_1(mock_image_path: ImagePath, tmpdir) -> Path:
+    project_path = (
         Path(os.path.realpath(__file__)).parent / "test_projects/v0.1.1/project.bwp"
     )
-    tmp_v0_1_1_dir = Path(tmpdir / "v0.1.1")
-    shutil.copytree(v0_1_1_project_path.parent, tmp_v0_1_1_dir)
-    return tmp_v0_1_1_dir / "project.bwp"
+    rewrite_image_path(project_path=project_path, image_path=mock_image_path)
+    tmp_project_dir = Path(tmpdir / "v0.1.1")
+    shutil.copytree(project_path.parent, tmp_project_dir)
+    return tmp_project_dir / "project.bwp"
+
+
+@pytest.fixture
+def brainways_project_path_v0_1_4(mock_image_path: ImagePath, tmpdir) -> Path:
+    project_path = (
+        Path(os.path.realpath(__file__)).parent / "test_projects/v0.1.4/project.bwp"
+    )
+    rewrite_image_path(project_path=project_path, image_path=mock_image_path)
+    tmp_project_dir = Path(tmpdir / "v0.1.4")
+    shutil.copytree(project_path.parent, tmp_project_dir)
+    return tmp_project_dir / "project.bwp"
+
+
+def rewrite_image_path(project_path: Path, image_path: ImagePath):
+    brainways_subject_paths = project_path.parent.rglob("brainways.bin")
+    for brainways_subject_path in brainways_subject_paths:
+        with open(brainways_subject_path, "rb") as f:
+            serialized_settings, serialized_slice_infos = pickle.load(f)
+        for serialized_slice_info in serialized_slice_infos:
+            serialized_slice_info["path"]["filename"] = image_path.filename
+        with open(brainways_subject_path, "wb") as f:
+            pickle.dump((serialized_settings, serialized_slice_infos), f)

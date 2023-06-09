@@ -118,10 +118,12 @@ class BrainwaysSubject:
         lowres_image_size = get_resize_size(
             input_size=image_size, output_size=(1024, 1024), keep_aspect=True
         )
+        pps = QupathReader(path.filename).physical_pixel_sizes
         document = SliceInfo(
             path=path,
             image_size=image_size,
             lowres_image_size=lowres_image_size,
+            physical_pixel_sizes=(pps.Y, pps.X),
         )
         if load_thumbnail:
             self.read_lowres_image(document)

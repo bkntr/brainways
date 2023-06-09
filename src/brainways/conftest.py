@@ -9,6 +9,7 @@ from unittest.mock import Mock, create_autospec, patch
 import numpy as np
 import pytest
 import torch
+from aicsimageio.types import PhysicalPixelSizes
 from bg_atlasapi.structure_class import StructuresDict
 from PIL import Image
 from pytest import fixture
@@ -26,6 +27,7 @@ from brainways.utils.atlas.brainways_atlas import AtlasSlice, BrainwaysAtlas
 from brainways.utils.image import ImageSizeHW
 from brainways.utils.io_utils import ImagePath
 from brainways.utils.io_utils.readers.base import ImageReader
+from brainways.utils.io_utils.readers.qupath_reader import QupathReader
 
 
 @fixture(autouse=True)
@@ -129,6 +131,7 @@ def mock_image_path(test_data: Tuple[np.ndarray, AtlasSlice], tmpdir) -> ImagePa
     image, _ = test_data
     image_path = ImagePath(str(tmpdir / "image.jpg"), scene=0)
     Image.fromarray(image).save(image_path.filename)
+    QupathReader.physical_pixel_sizes = PhysicalPixelSizes(Z=None, Y=10.0, X=10.0)
     return image_path
 
 
@@ -169,6 +172,7 @@ def mock_subject_documents(
                 lowres_image_size=(image_height, image_width),
                 params=params,
                 ignore=i == 0,
+                physical_pixel_sizes=(10.0, 10.0),
             )
         )
     return documents

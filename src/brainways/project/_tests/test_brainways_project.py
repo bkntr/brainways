@@ -72,3 +72,21 @@ def test_open_brainways_project_v0_1_1(
         project.subjects[0].documents[0].params.affine
         == mock_subject_documents[0].params.affine
     )
+
+
+def test_open_brainways_project_v0_1_4(
+    brainways_project_path_v0_1_4: Path,
+    mock_project_settings: ProjectSettings,
+    mock_subject_documents: List[SliceInfo],
+):
+    project = BrainwaysProject.open(brainways_project_path_v0_1_4, lazy_init=True)
+    assert project.settings.atlas == mock_project_settings.atlas
+    assert len(project.subjects) == 1
+    assert (
+        project.subjects[0].documents[0].params.atlas
+        == mock_subject_documents[0].params.atlas
+    )
+    assert (
+        project.subjects[0].documents[0].params.affine
+        == mock_subject_documents[0].params.affine
+    )

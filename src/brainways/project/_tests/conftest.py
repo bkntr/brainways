@@ -29,9 +29,9 @@ def brainways_project_path_v0_1_1(mock_image_path: ImagePath, tmpdir) -> Path:
     project_path = (
         Path(os.path.realpath(__file__)).parent / "test_projects/v0.1.1/project.bwp"
     )
-    rewrite_image_path(project_path=project_path, image_path=mock_image_path)
     tmp_project_dir = Path(tmpdir / "v0.1.1")
     shutil.copytree(project_path.parent, tmp_project_dir)
+    rewrite_image_path(project_path=tmp_project_dir, image_path=mock_image_path)
     return tmp_project_dir / "project.bwp"
 
 
@@ -40,9 +40,9 @@ def brainways_project_path_v0_1_4(mock_image_path: ImagePath, tmpdir) -> Path:
     project_path = (
         Path(os.path.realpath(__file__)).parent / "test_projects/v0.1.4/project.bwp"
     )
-    rewrite_image_path(project_path=project_path, image_path=mock_image_path)
     tmp_project_dir = Path(tmpdir / "v0.1.4")
     shutil.copytree(project_path.parent, tmp_project_dir)
+    rewrite_image_path(project_path=tmp_project_dir, image_path=mock_image_path)
     return tmp_project_dir / "project.bwp"
 
 

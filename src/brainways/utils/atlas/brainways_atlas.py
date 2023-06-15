@@ -20,7 +20,9 @@ class BrainwaysAtlas:
         exclude_regions: Optional[Sequence[int]],
     ):
         if isinstance(brainglobe_atlas, str):
-            self.brainglobe_atlas = BrainGlobeAtlas(brainglobe_atlas)
+            self.brainglobe_atlas = BrainGlobeAtlas(
+                brainglobe_atlas, check_latest=False
+            )
         else:
             self.brainglobe_atlas = brainglobe_atlas
 
@@ -95,8 +97,7 @@ class BrainwaysAtlas:
     @cached_property
     def annotation(self):
         ann = self.brainglobe_atlas.annotation
-        exclude_mask = (ann[..., None] != self.exclude_regions).all(axis=-1)
-        ann *= exclude_mask
+        ann *= np.isin(ann, self.exclude_regions, invert=True)
         return torch.as_tensor(ann.astype(np.float32))
 
     @cached_property

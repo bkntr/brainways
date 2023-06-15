@@ -105,7 +105,7 @@ class BrainwaysProject:
         return subject
 
     def load_atlas(self, load_volumes: bool = True):
-        self.atlas = BrainwaysAtlas(
+        self.atlas = BrainwaysAtlas.load(
             self.settings.atlas, exclude_regions=[76, 42, 41]
         )  # TODO: from model
 

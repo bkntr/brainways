@@ -28,6 +28,16 @@ class BrainwaysAtlas:
 
         self.exclude_regions = exclude_regions
 
+    @classmethod
+    def load(
+        cls,
+        brainglobe_atlas: Union[str, BrainGlobeAtlas],
+        exclude_regions: Optional[Sequence[int]],
+    ):
+        return BrainwaysAtlas(
+            brainglobe_atlas=brainglobe_atlas, exclude_regions=exclude_regions
+        )
+
     def slice(
         self,
         ap: float,

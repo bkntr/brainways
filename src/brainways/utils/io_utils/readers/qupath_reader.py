@@ -21,14 +21,11 @@ from resource_backed_dask_array import (
 )
 
 from brainways.utils.image import ImageSizeHW, resize_image
-from brainways.utils.qupath import (
-    add_brainways_qupath_dir_to_paquo_settings,
-    download_qupath,
-    is_qupath_downloaded,
-)
+from brainways.utils.qupath import download_qupath, is_qupath_downloaded
 
 
 class QupathReader(Reader):
+    _qupath_version = "0.4.3"
     _qupath_initialized = False
     ImageServerProvider = None
     BufferedImage = None
@@ -40,8 +37,7 @@ class QupathReader(Reader):
             return
 
         # TODO: move this code to some init function inside QupathReader
-        add_brainways_qupath_dir_to_paquo_settings()
-        if not is_qupath_downloaded():
+        if not is_qupath_downloaded(QupathReader._qupath_version):
             download_qupath()
         from paquo._logging import redirect
         from paquo.java import BufferedImage, ImageServerProvider, JClass, String
@@ -233,7 +229,7 @@ class QupathReader(Reader):
                     0,
                     0,
                 )
-                buffered_image = self._current_server.readBufferedImage(request)
+                buffered_image = self._current_server.readRegion(request)
             image_data = buffered_image_to_numpy_array(buffered_image)  # TCZYX
             image_data = image_data[np.newaxis, :, np.newaxis, :, :]
         return xr.DataArray(
@@ -343,7 +339,7 @@ class TileManager:
         tile_request = self._tile_requests[(y, x)]
         with QupathReader.redirect(stderr=True, stdout=True):
             request = tile_request.getRegionRequest()
-            buffered_image = self.image_server.readBufferedImage(request)
+            buffered_image = self.image_server.readRegion(request)
             # buffered_image = self.image_server.readTile(tile_request)
         im = buffered_image_to_numpy_array(buffered_image, channel=c)
 

@@ -1,4 +1,5 @@
 import platform
+import shutil
 from pathlib import Path
 
 from bg_atlasapi.utils import check_internet_connection
@@ -22,22 +23,20 @@ def add_brainways_qupath_dir_to_paquo_settings():
         paquo_settings.qupath_search_dirs = paquo_settings.qupath_search_dirs + [
             qupath_brainways_dir
         ]
-        # TODO: this is a workaround to enable BioFormats memoization.
-        # It stops working in Java 17, and will be fixed in QuPath 0.4.0.
-        # See https://github.com/ome/bioformats/issues/3659
-        paquo_settings.java_opts = paquo_settings.java_opts + [
-            "--add-opens=java.base/java.util.regex=ALL-UNNAMED",
-            "--illegal-access=permit",
-        ]
 
 
-def is_qupath_downloaded():
+def is_qupath_downloaded(version: str):
     """As we can't know the local version a priori, search candidate dirs
     using name and not version number. If none is found, return None.
     """
     add_brainways_qupath_dir_to_paquo_settings()
     try:
-        find_qupath(**{k.lower(): v for k, v in paquo_settings.to_dict().items()})
+        app_dir, runtime_dir, jvm_dir, jvm_options = find_qupath(
+            **{k.lower(): v for k, v in paquo_settings.to_dict().items()}
+        )
+        if f"QuPath-{version}" not in str(app_dir):
+            shutil.rmtree(get_brainways_qupath_dir())
+            return False
         return True
     except ValueError:
         return False
@@ -45,7 +44,7 @@ def is_qupath_downloaded():
 
 def download_qupath(
     install_path: Path = get_brainways_qupath_dir(),
-    version: str = "0.3.2",
+    version: str = "0.4.3",
     system: str = platform.system(),
     download_path: str = get_interim_download_dir(),
     ssl_verify: bool = False,

@@ -98,8 +98,14 @@ class BrainwaysProject:
             json.dump(serialized_settings, f)
 
     def add_subject(self, id: str) -> BrainwaysSubject:
+        subject_path = None
+        if self.path is not None:
+            subject_path = self.path.parent / id
         subject = BrainwaysSubject(
-            settings=self.settings, subject_path=self.path.parent / id
+            settings=self.settings,
+            subject_path=subject_path,
+            atlas=self.atlas,
+            pipeline=self.pipeline,
         )
         self.subjects.append(subject)
         return subject

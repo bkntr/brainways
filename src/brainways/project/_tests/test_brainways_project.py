@@ -90,3 +90,9 @@ def test_open_brainways_project_v0_1_4(
         project.subjects[0].documents[0].params.affine
         == mock_subject_documents[0].params.affine
     )
+
+
+def test_add_subject(brainways_project: BrainwaysProject):
+    brainways_project.add_subject("test")
+    assert brainways_project.subjects[-1].atlas == brainways_project.atlas
+    assert brainways_project.subjects[-1].pipeline == brainways_project.pipeline

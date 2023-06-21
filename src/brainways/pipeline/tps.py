@@ -26,13 +26,13 @@ class TPS:
         registered_src_points = elastix_registration(
             fixed=fixed,
             moving=moving,
-            fixed_points=params.tps.points_src,
+            fixed_points=np.array(params.tps.points_src, dtype=np.float32),
             fixed_mask=fixed_mask,
             moving_mask=moving_mask,
         )
         transform = TPSTransform(
             TPSTransformParams(
-                points_src=registered_src_points,
+                points_src=registered_src_points.tolist(),
                 points_dst=params.tps.points_src,
             )
         )

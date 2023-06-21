@@ -8,7 +8,7 @@ from brainways.transforms.tps_transform import TPSTransform
 def test_tps_transform_points():
     points_src = np.random.randint(0, 10, (5, 2))
     points_dst = points_src + np.random.randint(0, 2, (5, 2))
-    params = TPSTransformParams(points_src, points_dst)
+    params = TPSTransformParams(points_src.tolist(), points_dst.tolist())
     transform = TPSTransform(params)
     points_transformed = transform.transform_points(points_src)
     npt.assert_allclose(points_transformed, points_dst, rtol=1e-4, atol=1e-3)

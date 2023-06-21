@@ -3,26 +3,9 @@ from typing import List
 from unittest.mock import Mock
 
 import pandas as pd
-import pytest
 
 from brainways.project.brainways_project import BrainwaysProject
-from brainways.project.brainways_subject import BrainwaysSubject
-from brainways.project.info_classes import ProjectSettings, SliceInfo
-from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
-
-
-@pytest.fixture
-def brainways_project(
-    brainways_subject: BrainwaysSubject,
-    mock_project_settings: ProjectSettings,
-    mock_atlas: BrainwaysAtlas,
-) -> BrainwaysProject:
-    brainways_project = BrainwaysProject(
-        subjects=[brainways_subject], settings=mock_project_settings, lazy_init=True
-    )
-    brainways_project.atlas = mock_atlas
-    brainways_project.load_pipeline()
-    return brainways_project
+from brainways.project.info_classes import ProjectSettings, SliceInfo, SubjectInfo
 
 
 def test_brainways_project_create_excel(brainways_project: BrainwaysProject, tmpdir):
@@ -93,6 +76,6 @@ def test_open_brainways_project_v0_1_4(
 
 
 def test_add_subject(brainways_project: BrainwaysProject):
-    brainways_project.add_subject("test")
+    brainways_project.add_subject(SubjectInfo(name="subject2", condition="a"))
     assert brainways_project.subjects[-1].atlas == brainways_project.atlas
     assert brainways_project.subjects[-1].pipeline == brainways_project.pipeline

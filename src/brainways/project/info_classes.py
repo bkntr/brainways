@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import brainways._version
 from brainways.pipeline.brainways_params import BrainwaysParams, CellDetectorParams
@@ -21,10 +21,9 @@ class ProjectSettings:
 
 
 @dataclass(frozen=True)
-class SubjectSettings:
+class SubjectInfo:
     name: str
     condition: Optional[str] = None
-    exclude: bool = False
 
 
 @dataclass(frozen=True, eq=False)
@@ -43,6 +42,12 @@ class SliceInfo:
 
     def __eq__(self, other):
         return dataclass_eq(self, other)
+
+
+@dataclass(frozen=True)
+class SubjectFileFormat:
+    subject_info: SubjectInfo
+    slice_infos: List[SliceInfo]
 
 
 class ExcelMode(Enum):

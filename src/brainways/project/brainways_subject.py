@@ -1,11 +1,9 @@
+import json
 import logging
-import pickle
-import shutil
-import tempfile
 from collections import Counter
 from dataclasses import asdict, replace
 from pathlib import Path
-from typing import Callable, Iterator, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Callable, Iterator, List, Optional, Tuple, Union
 
 import dacite
 import numpy as np
@@ -15,7 +13,12 @@ from PIL import Image
 from brainways.pipeline.brainways_params import CellDetectorParams
 from brainways.pipeline.brainways_pipeline import BrainwaysPipeline, PipelineStep
 from brainways.pipeline.cell_detector import CellDetector
-from brainways.project.info_classes import ExcelMode, ProjectSettings, SliceInfo
+from brainways.project.info_classes import (
+    ExcelMode,
+    SliceInfo,
+    SubjectFileFormat,
+    SubjectInfo,
+)
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 from brainways.utils.cell_count_summary import cell_count_summary
 from brainways.utils.cell_detection_importer.cell_detection_importer import (
@@ -32,65 +35,63 @@ from brainways.utils.io_utils import ImagePath
 from brainways.utils.io_utils.readers import get_image_size
 from brainways.utils.io_utils.readers.qupath_reader import QupathReader
 
+if TYPE_CHECKING:
+    from brainways.project.brainways_project import BrainwaysProject
+
 
 class BrainwaysSubject:
     def __init__(
         self,
-        settings: ProjectSettings,
-        documents: List[SliceInfo] = None,
-        subject_path: Optional[Union[Path, str]] = None,
-        atlas: Optional[BrainwaysAtlas] = None,
-        pipeline: Optional[BrainwaysPipeline] = None,
+        subject_info: SubjectInfo,
+        slice_infos: List[SliceInfo],
+        project: "BrainwaysProject",
     ):
-        if atlas is not None:
-            if atlas.brainglobe_atlas.atlas_name != settings.atlas:
-                raise ValueError(
-                    "Input atlas doesn't match atlas in subject settings "
-                    f"({atlas.brainglobe_atlas.atlas_name} != {settings.atlas})"
-                )
-        self.documents: List[SliceInfo] = documents or []
-        self.settings = settings
-        self.atlas = atlas
-        self.pipeline = pipeline
-        self._tmpdir = None
+        self.subject_info = subject_info
+        self.documents = slice_infos
+        self.project = project
+        self._save_dir = project.path.parent / self.subject_info.name
 
-        # TODO: refactor, BrainwaysSubject.create() and BrainwaysSubject.open()
-        if subject_path is None:
-            self._tmpdir = tempfile.TemporaryDirectory()
-            self.subject_path = Path(self._tmpdir.name)
-        else:
-            self.subject_path = self._get_subject_dir(subject_path)
-            if not (self.subject_path / "brainways.bin").exists():
-                if self.subject_path.exists():
-                    if not self.subject_path.is_dir() or any(
-                        self.subject_path.iterdir()
-                    ):
-                        raise FileExistsError(
-                            f"New subject directory {self.subject_path} is not empty!"
-                        )
-                else:
-                    self.subject_path.mkdir()
+    @classmethod
+    def create(
+        cls, subject_info: SubjectInfo, project: "BrainwaysProject"
+    ) -> "BrainwaysSubject":
+        subject = cls(subject_info=subject_info, slice_infos=[], project=project)
 
-        if not self.thumbnails_root.exists():
-            self.thumbnails_root.mkdir()
+        if subject._save_dir.exists():
+            raise FileExistsError(
+                f"Subject directory {subject._save_dir} already exists"
+            )
 
-        if not self.cell_detections_root.exists():
-            self.cell_detections_root.mkdir()
+        subject._save_dir.mkdir()
+        subject.thumbnails_root.mkdir()
+        subject.cell_detections_root.mkdir()
+        subject.save()
+        return subject
 
-    def close(self):
-        self.documents = []
-        self.settings = None
-        self.atlas = None
-        self.pipeline = None
-        self.subject_path = None
-        if self._tmpdir is not None:
-            self._tmpdir.cleanup()
+    @classmethod
+    def open(cls, path: Union[Path, str], project: "BrainwaysProject"):
+        if not path.exists():
+            raise FileNotFoundError(f"Subject file not found: {path}")
+
+        with open(path) as f:
+            serialized_file = json.load(f)
+
+        subject_file = dacite.from_dict(
+            SubjectFileFormat, serialized_file, config=dacite.Config(cast=[tuple])
+        )
+        subject = BrainwaysSubject(
+            subject_info=subject_file.subject_info,
+            slice_infos=subject_file.slice_infos,
+            project=project,
+        )
+
+        return subject
 
     def read_lowres_image(
         self, document: SliceInfo, channel: Optional[int] = None
     ) -> np.ndarray:
         thumbnail_path = self.thumbnail_path(
-            document.path, channel=channel or self.settings.channel
+            document.path, channel=channel or self.project.settings.channel
         )
         if thumbnail_path.exists():
             image = np.array(Image.open(thumbnail_path))
@@ -99,7 +100,7 @@ class BrainwaysSubject:
             reader.set_scene(document.path.scene)
             image = reader.get_thumbnail(
                 target_size=document.lowres_image_size,
-                channel=channel or self.settings.channel,
+                channel=channel or self.project.settings.channel,
             )
             image = slice_to_uint8(image)
             Image.fromarray(image).save(thumbnail_path)
@@ -130,58 +131,13 @@ class BrainwaysSubject:
         self.documents.append(document)
         return document
 
-    @staticmethod
-    def _get_subject_dir(path: Union[Path, str]):
-        subject_dir = Path(path)
-        if subject_dir.name == "brainways.bin":
-            subject_dir = subject_dir.parent
-        return subject_dir
-
-    @classmethod
-    def open(
-        cls,
-        path: Union[Path, str],
-        atlas: Optional[BrainwaysAtlas] = None,
-        pipeline: Optional[BrainwaysPipeline] = None,
-    ):
-        subject_dir = BrainwaysSubject._get_subject_dir(path)
-        if not subject_dir.exists():
-            raise FileNotFoundError(f"subject path not found: {path}")
-
-        with open(subject_dir / "brainways.bin", "rb") as f:
-            serialized_settings, serialized_documents = pickle.load(f)
-
-        settings = dacite.from_dict(ProjectSettings, serialized_settings)
-        documents = [dacite.from_dict(SliceInfo, d) for d in serialized_documents]
-        subject = BrainwaysSubject(
-            settings=settings,
-            documents=documents,
-            subject_path=subject_dir,
-            atlas=atlas,
-            pipeline=pipeline,
+    def save(self):
+        subject_file = SubjectFileFormat(
+            subject_info=self.subject_info, slice_infos=self.documents
         )
-
-        return subject
-
-    def save(self, path: Optional[Union[Path, str]] = None):
-        if path is None:
-            path = self.subject_path
-        path = Path(path)
-        subject_dir = self._get_subject_dir(path)
-        if subject_dir != self.subject_path:
-            if subject_dir.exists():
-                if subject_dir.is_dir() and not any(subject_dir.iterdir()):
-                    shutil.rmtree(str(subject_dir))
-                else:
-                    raise FileExistsError(
-                        f"subject directory {subject_dir} is not empty!"
-                    )
-            shutil.move(str(self.subject_path), str(subject_dir))
-            self.subject_path = subject_dir
-        serialized_settings = asdict(self.settings)
-        serialized_documents = [asdict(d) for d in self.documents]
-        with open(subject_dir / "brainways.bin", "wb") as f:
-            pickle.dump((serialized_settings, serialized_documents), f)
+        serialized_file = asdict(subject_file)
+        with open(self._save_dir / "data.bws", "w") as f:
+            json.dump(serialized_file, f)
 
     def move_images_root(
         self,
@@ -428,7 +384,7 @@ class BrainwaysSubject:
 
             all_cells_on_atlas = pd.concat(all_cells_on_atlas, axis=0)
             df = cell_count_summary(
-                animal_id=self.subject_path.name,
+                animal_id=self.subject_info.name,
                 cells=all_cells_on_atlas,
                 region_areas_um=all_region_areas,
                 atlas=self.atlas,
@@ -439,7 +395,7 @@ class BrainwaysSubject:
 
     def thumbnail_path(self, image_path: ImagePath, channel: Optional[int] = None):
         if channel is None:
-            channel = self.settings.channel
+            channel = self.project.settings.channel
 
         suffixes = []
         if image_path.scene is not None:
@@ -454,11 +410,11 @@ class BrainwaysSubject:
 
     @property
     def thumbnails_root(self) -> Path:
-        return self.subject_path / "thumbnails"
+        return self._save_dir / "thumbnails"
 
     @property
     def cell_detections_root(self) -> Path:
-        return self.subject_path / "cell_detections"
+        return self._save_dir / "cell_detections"
 
     @property
     def valid_documents(self) -> List[Tuple[int, SliceInfo]]:
@@ -467,3 +423,11 @@ class BrainwaysSubject:
             for i, document in enumerate(self.documents)
             if not document.ignore
         ]
+
+    @property
+    def pipeline(self) -> BrainwaysPipeline:
+        return self.project.pipeline
+
+    @property
+    def atlas(self) -> BrainwaysAtlas:
+        return self.project.atlas

@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Tuple
-
-import numpy as np
+from typing import List, Optional, Tuple
 
 from brainways.utils.dataclasses import dataclass_eq
 
@@ -35,8 +33,8 @@ class AffineTransform2DParams:
 
 @dataclass(frozen=True)
 class TPSTransformParams:
-    points_src: np.ndarray
-    points_dst: np.ndarray
+    points_src: List[List[float]]
+    points_dst: List[List[float]]
 
     def __eq__(self, other):
         return dataclass_eq(self, other)

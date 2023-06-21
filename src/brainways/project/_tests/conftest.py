@@ -46,6 +46,17 @@ def brainways_project_path_v0_1_4(mock_image_path: ImagePath, tmpdir) -> Path:
     return tmp_project_dir / "project.bwp"
 
 
+@pytest.fixture
+def brainways_project_path_v0_1_5(mock_image_path: ImagePath, tmpdir) -> Path:
+    project_path = (
+        Path(os.path.realpath(__file__)).parent / "test_projects/v0.1.5/project.bwp"
+    )
+    tmp_project_dir = Path(tmpdir / "v0.1.5")
+    shutil.copytree(project_path.parent, tmp_project_dir)
+    rewrite_image_path(project_path=tmp_project_dir, image_path=mock_image_path)
+    return tmp_project_dir / "project.bwp"
+
+
 def rewrite_image_path(project_path: Path, image_path: ImagePath):
     brainways_subject_paths = project_path.parent.rglob("brainways.bin")
     for brainways_subject_path in brainways_subject_paths:

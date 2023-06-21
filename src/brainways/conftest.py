@@ -1,5 +1,4 @@
 import json
-import pickle
 import shutil
 from dataclasses import asdict, replace
 from pathlib import Path
@@ -21,8 +20,14 @@ from brainways.pipeline.brainways_params import (
     CellDetectorParams,
     TPSTransformParams,
 )
+from brainways.project.brainways_project import BrainwaysProject
 from brainways.project.brainways_subject import BrainwaysSubject
-from brainways.project.info_classes import ProjectSettings, SliceInfo
+from brainways.project.info_classes import (
+    ProjectSettings,
+    SliceInfo,
+    SubjectFileFormat,
+    SubjectInfo,
+)
 from brainways.utils.atlas.brainways_atlas import AtlasSlice, BrainwaysAtlas
 from brainways.utils.image import ImageSizeHW
 from brainways.utils.io_utils import ImagePath
@@ -154,8 +159,10 @@ def mock_subject_documents(
     test_image, test_atlas_slice = test_data
     image_height = test_image.shape[0]
     image_width = test_image.shape[1]
-    tps_points = (np.random.rand(10, 2) * (image_width, image_height)).astype(
-        np.float32
+    tps_points = (
+        (np.random.rand(10, 2) * (image_width, image_height))
+        .astype(np.float32)
+        .tolist()
     )
 
     params = BrainwaysParams(
@@ -198,16 +205,28 @@ def mock_project_settings() -> ProjectSettings:
 @pytest.fixture
 def subject_path(
     tmpdir,
-    mock_project_settings: ProjectSettings,
-    mock_subject_documents: List[SliceInfo],
+    mock_subject_file_format: SubjectFileFormat,
 ) -> Path:
-    subject_path = Path(tmpdir) / "project/subject1/brainways.bin"
+    subject_path = Path(tmpdir) / "test_subject/data.bws"
     subject_path.parent.mkdir(parents=True)
-    serialized_subject_settings = asdict(mock_project_settings)
-    serialized_subject_documents = [asdict(doc) for doc in mock_subject_documents]
-    with open(subject_path, "wb") as f:
-        pickle.dump((serialized_subject_settings, serialized_subject_documents), f)
+    serialized_subject_file_format = asdict(mock_subject_file_format)
+    with open(subject_path, "w") as f:
+        json.dump(serialized_subject_file_format, f)
     yield subject_path
+
+
+@pytest.fixture
+def mock_subject_info() -> SubjectInfo:
+    return SubjectInfo(name="subject1", condition="a")
+
+
+@pytest.fixture
+def mock_subject_file_format(
+    mock_subject_info: SubjectInfo, mock_subject_documents: List[SliceInfo]
+) -> SubjectFileFormat:
+    return SubjectFileFormat(
+        subject_info=mock_subject_info, slice_infos=mock_subject_documents
+    )
 
 
 @pytest.fixture
@@ -223,13 +242,34 @@ def project_path(
 
 
 @pytest.fixture
-def brainways_subject(
-    subject_path: Path,
-    test_data: Tuple[np.ndarray, AtlasSlice],
+def brainways_project(
+    mock_subject_info: SubjectInfo,
+    mock_subject_documents: List[SliceInfo],
+    mock_project_settings: ProjectSettings,
     mock_atlas: BrainwaysAtlas,
-) -> BrainwaysSubject:
-    brainways_subject = BrainwaysSubject.open(subject_path)
-    brainways_subject.atlas = mock_atlas
+    test_data: Tuple[np.ndarray, AtlasSlice],
+    tmpdir,
+) -> BrainwaysProject:
+    project_path = Path(tmpdir / "project/project.bwp")
+    project_path.parent.mkdir()
+    brainways_project = BrainwaysProject(
+        subjects=[],
+        settings=mock_project_settings,
+        path=project_path,
+        lazy_init=True,
+    )
+    brainways_project.atlas = mock_atlas
+    brainways_project.load_pipeline()
+
+    # add mock subject to project
+    brainways_project.add_subject(mock_subject_info)
+    brainways_subject = brainways_project.subjects[0]
+    brainways_subject.documents = mock_subject_documents
     for document in brainways_subject.documents:
         brainways_subject.read_lowres_image(document)
-    return brainways_subject
+    return brainways_project
+
+
+@pytest.fixture
+def brainways_subject(brainways_project: BrainwaysProject) -> BrainwaysSubject:
+    return brainways_project.subjects[0]

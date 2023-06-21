@@ -18,16 +18,16 @@ class TPSTransform(BrainwaysTransform):
         self.params = params
         matches = [cv2.DMatch(i, i, 0) for i in range(len(self.params.points_src))]
         self.tps_image = cv2.createThinPlateSplineShapeTransformer()
+
+        points_src_np = np.array(self.params.points_src, dtype=np.float32)[None]
+        points_dst_np = np.array(self.params.points_dst, dtype=np.float32)[None]
+
         self.tps_image.estimateTransformation(
-            self.params.points_dst[None] * scale,
-            self.params.points_src[None] * scale,
-            matches,
+            points_dst_np * scale, points_src_np * scale, matches
         )
         self.tps_points = cv2.createThinPlateSplineShapeTransformer()
         self.tps_points.estimateTransformation(
-            self.params.points_src[None] * scale,
-            self.params.points_dst[None] * scale,
-            matches,
+            points_src_np * scale, points_dst_np * scale, matches
         )
 
     def inv(self):

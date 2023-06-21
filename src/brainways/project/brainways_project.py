@@ -12,7 +12,12 @@ from brainways.pipeline.brainways_pipeline import BrainwaysPipeline
 from brainways.pipeline.cell_detector import CellDetector
 from brainways.project._utils import update_project_from_previous_versions
 from brainways.project.brainways_subject import BrainwaysSubject
-from brainways.project.info_classes import ExcelMode, ProjectSettings, SliceInfo
+from brainways.project.info_classes import (
+    ExcelMode,
+    ProjectSettings,
+    SliceInfo,
+    SubjectInfo,
+)
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 from brainways.utils.cell_detection_importer.cell_detection_importer import (
     CellDetectionImporter,
@@ -24,7 +29,7 @@ class BrainwaysProject:
         self,
         subjects: List[BrainwaysSubject],
         settings: ProjectSettings,
-        path: Optional[Path] = None,
+        path: Path,
         lazy_init: bool = False,
     ):
         if path is not None and path.suffix != ".bwp":
@@ -60,12 +65,10 @@ class BrainwaysProject:
             raise FileExistsError(f"Directory is not empty: {project_dir}")
 
         project_dir.mkdir(parents=True, exist_ok=True)
+        project = cls(subjects=[], settings=settings, path=path, lazy_init=lazy_init)
+        project.save()
 
-        serialized_settings = asdict(settings)
-        with open(path, "w") as f:
-            json.dump(serialized_settings, f)
-
-        return cls.open(path, lazy_init=lazy_init)
+        return project
 
     @classmethod
     def open(cls, path: Union[Path, str], lazy_init: bool = False):
@@ -83,30 +86,26 @@ class BrainwaysProject:
         settings = dacite.from_dict(
             ProjectSettings, serialized_settings, config=dacite.Config(cast=[tuple])
         )
+
+        project = cls(subjects=[], settings=settings, path=path, lazy_init=lazy_init)
         subject_directories = [d for d in path.parent.glob("*") if d.is_dir()]
         subject_directories = natsorted(
             subject_directories, alg=ns.IGNORECASE, key=lambda x: x.name
         )
         subjects = [
-            BrainwaysSubject.open(subject_path) for subject_path in subject_directories
+            BrainwaysSubject.open(path=subject_path / "data.bws", project=project)
+            for subject_path in subject_directories
         ]
-        return cls(subjects=subjects, settings=settings, path=path, lazy_init=lazy_init)
+        project.subjects = subjects
+        return project
 
     def save(self):
         serialized_settings = asdict(self.settings)
         with open(self.path, "w") as f:
             json.dump(serialized_settings, f)
 
-    def add_subject(self, id: str) -> BrainwaysSubject:
-        subject_path = None
-        if self.path is not None:
-            subject_path = self.path.parent / id
-        subject = BrainwaysSubject(
-            settings=self.settings,
-            subject_path=subject_path,
-            atlas=self.atlas,
-            pipeline=self.pipeline,
-        )
+    def add_subject(self, subject_info: SubjectInfo) -> BrainwaysSubject:
+        subject = BrainwaysSubject.create(subject_info=subject_info, project=self)
         self.subjects.append(subject)
         return subject
 

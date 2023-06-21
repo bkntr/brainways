@@ -28,7 +28,9 @@ def image_to_atlas_transform() -> ImageToAtlasTransform:
             AffineTransform2DParams(tx=10, ty=10), input_size=(64, 64)
         ),
         tps_transform=TPSTransform(
-            TPSTransformParams(points_src=tps_points_src, points_dst=tps_points_dst)
+            TPSTransformParams(
+                points_src=tps_points_src.tolist(), points_dst=tps_points_dst.tolist()
+            )
         ),
     )
 

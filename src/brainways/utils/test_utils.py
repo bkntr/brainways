@@ -22,8 +22,8 @@ def randomly_modified_params(params: BrainwaysParams):
         )
     if params.tps is not None:
         modified_tps = TPSTransformParams(
-            np.random.randint(10, size=(10, 2)),
-            np.random.randint(10, size=(10, 2)),
+            np.random.randint(10, size=(10, 2)).tolist(),
+            np.random.randint(10, size=(10, 2)).tolist(),
         )
     if params.cell is not None:
         modified_cell = replace(params.cell, diameter=random.randint(0, 100))

@@ -31,7 +31,7 @@ class SliceInfo:
     path: ImagePath
     image_size: ImageSizeHW
     lowres_image_size: ImageSizeHW
-    params: Optional[BrainwaysParams] = BrainwaysParams()
+    params: BrainwaysParams = BrainwaysParams()
     ignore: bool = False
     physical_pixel_sizes: Optional[Tuple[float, float]] = None
 

@@ -1,7 +1,7 @@
 import json
-from dataclasses import asdict
+from dataclasses import asdict, fields
 from pathlib import Path
-from typing import Callable, Iterator, List, Optional, Union
+from typing import Callable, Iterator, List, Optional, Tuple, Union
 
 import dacite
 import pandas as pd
@@ -32,10 +32,11 @@ class BrainwaysProject:
         path: Path,
         lazy_init: bool = False,
     ):
-        if path is not None and path.suffix != ".bwp":
+        if path.suffix != ".bwp":
             raise ValueError(f"Brainways project must be of .bwp file type, got {path}")
 
         self.path = path
+        self._results_path = self.path.parent / "results.xlsx"
         self.subjects = subjects
         self.settings = settings
 
@@ -139,9 +140,9 @@ class BrainwaysProject:
             )
             subject.save()
 
-    def create_excel_iter(
+    def calculate_results_iter(
         self,
-        path: Union[Path, str],
+        path: Optional[Union[Path, str]] = None,
         slice_info_predicate: Optional[Callable[[SliceInfo], bool]] = None,
         min_region_area_um2: Optional[int] = None,
         cells_per_area_um2: Optional[int] = None,
@@ -149,6 +150,8 @@ class BrainwaysProject:
         max_cell_size_um: Optional[float] = None,
         excel_mode: ExcelMode = ExcelMode.ROW_PER_SUBJECT,
     ) -> Iterator:
+        if path is None:
+            path = self._results_path
         if not path.suffix == ".xlsx":
             path = Path(str(path) + ".xlsx")
 
@@ -190,9 +193,9 @@ class BrainwaysProject:
             )
             cells_count_sheet.to_excel(writer, sheet_name="Cell count", index=False)
 
-    def create_excel(
+    def calculate_results(
         self,
-        path: Union[Path, str],
+        path: Optional[Union[Path, str]] = None,
         slice_info_predicate: Optional[Callable[[SliceInfo], bool]] = None,
         min_region_area_um2: Optional[int] = None,
         cells_per_area_um2: Optional[int] = None,
@@ -200,7 +203,7 @@ class BrainwaysProject:
         max_cell_size_um: Optional[float] = None,
         excel_mode: ExcelMode = ExcelMode.ROW_PER_SUBJECT,
     ) -> None:
-        for _ in self.create_excel_iter(
+        for _ in self.calculate_results_iter(
             path=path,
             slice_info_predicate=slice_info_predicate,
             min_region_area_um2=min_region_area_um2,
@@ -246,6 +249,25 @@ class BrainwaysProject:
             subject.run_cell_detector(
                 cell_detector, default_params=self.settings.default_cell_detector_params
             )
+
+    def next_slice_missing_params(self) -> Optional[Tuple[int, int]]:
+        for subject_idx, subject in enumerate(self.subjects):
+            for slice_idx, slice_info in subject.valid_documents:
+                for field in fields(slice_info.params):
+                    if getattr(slice_info.params, field.name) is None:
+                        return subject_idx, slice_idx
+        return None
+
+    def can_calculate_results(self) -> bool:
+        return self.next_slice_missing_params() is None
+
+    def can_calculate_contrast(self) -> bool:
+        conditions = {subject.subject_info.condition for subject in self.subjects}
+        return (
+            self.can_calculate_results()
+            and None not in conditions
+            and len(conditions) > 1
+        )
 
     @property
     def n_valid_images(self):

@@ -1,5 +1,6 @@
 import json
 import shutil
+from copy import deepcopy
 from dataclasses import asdict, replace
 from pathlib import Path
 from typing import List, Tuple
@@ -263,10 +264,11 @@ def brainways_project(
 
     # add mock subject to project
     brainways_project.add_subject(mock_subject_info)
-    brainways_subject = brainways_project.subjects[0]
-    brainways_subject.documents = mock_subject_documents
-    for document in brainways_subject.documents:
-        brainways_subject.read_lowres_image(document)
+    brainways_project.add_subject(SubjectInfo(name="subject2", condition="b"))
+    for brainways_subject in brainways_project.subjects:
+        brainways_subject.documents = deepcopy(mock_subject_documents)
+        for document in brainways_subject.documents:
+            brainways_subject.read_lowres_image(document)
     return brainways_project
 
 

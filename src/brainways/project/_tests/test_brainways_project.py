@@ -1,3 +1,4 @@
+from dataclasses import replace
 from pathlib import Path
 from typing import List
 from unittest.mock import Mock
@@ -8,14 +9,14 @@ from brainways.project.brainways_project import BrainwaysProject
 from brainways.project.info_classes import ProjectSettings, SliceInfo, SubjectInfo
 
 
-def test_brainways_project_create_excel(brainways_project: BrainwaysProject, tmpdir):
-    excel_path = Path(tmpdir / "excel.xlsx")
+def test_brainways_project_create_excel(brainways_project: BrainwaysProject):
     cells_df = pd.DataFrame({"x": [0.5], "y": [0.5]})
     subject = brainways_project.subjects[0]
     _, slice_info = subject.valid_documents[0]
     cells_df.to_csv(subject.cell_detections_path(slice_info.path), index=False)
-    brainways_project.create_excel(excel_path)
-    assert excel_path.exists()
+    assert not brainways_project._results_path.exists()
+    brainways_project.calculate_results()
+    assert brainways_project._results_path.exists()
 
 
 def test_brainways_project_move_images(brainways_project: BrainwaysProject):
@@ -76,6 +77,74 @@ def test_open_brainways_project_v0_1_4(
 
 
 def test_add_subject(brainways_project: BrainwaysProject):
-    brainways_project.add_subject(SubjectInfo(name="subject2", condition="a"))
+    brainways_project.add_subject(SubjectInfo(name="subject3", condition="a"))
     assert brainways_project.subjects[-1].atlas == brainways_project.atlas
     assert brainways_project.subjects[-1].pipeline == brainways_project.pipeline
+
+
+def test_next_slice_missing_params_none_missing(brainways_project: BrainwaysProject):
+    assert brainways_project.next_slice_missing_params() is None
+
+
+def test_next_slice_missing_params_ignored_missing(brainways_project: BrainwaysProject):
+    params_missing = replace(
+        brainways_project.subjects[1].documents[2].params, tps=None
+    )
+    brainways_project.subjects[1].documents[1] = replace(
+        brainways_project.subjects[1].documents[1], params=params_missing, ignore=True
+    )
+    assert brainways_project.next_slice_missing_params() is None
+
+
+def test_next_slice_missing_params_has_missing(brainways_project: BrainwaysProject):
+    params_missing = replace(
+        brainways_project.subjects[1].documents[2].params, tps=None
+    )
+    brainways_project.subjects[1].documents[1] = replace(
+        brainways_project.subjects[1].documents[1], params=params_missing, ignore=True
+    )
+    brainways_project.subjects[1].documents[2] = replace(
+        brainways_project.subjects[1].documents[2], params=params_missing
+    )
+    assert brainways_project.next_slice_missing_params() == (1, 2)
+
+
+def test_can_calculate_results(brainways_project: BrainwaysProject):
+    assert brainways_project.can_calculate_results()
+
+
+def test_cant_calculate_results(brainways_project: BrainwaysProject):
+    params_missing = replace(
+        brainways_project.subjects[1].documents[2].params, tps=None
+    )
+    brainways_project.subjects[1].documents[2] = replace(
+        brainways_project.subjects[1].documents[2], params=params_missing
+    )
+    assert not brainways_project.can_calculate_results()
+
+
+def test_can_calculate_contrast(brainways_project: BrainwaysProject):
+    assert brainways_project.can_calculate_contrast()
+
+
+def test_cant_calculate_contrast_only_one_condition(
+    brainways_project: BrainwaysProject,
+):
+    for subject_idx, subject in enumerate(brainways_project.subjects):
+        subject.subject_info = replace(subject.subject_info, condition="a")
+    assert not brainways_project.can_calculate_contrast()
+
+
+def test_cant_calculate_contrast_missing_conditions(
+    brainways_project: BrainwaysProject,
+):
+    brainways_project.subjects[0].subject_info = replace(
+        brainways_project.subjects[0].subject_info, condition=None
+    )
+    assert not brainways_project.can_calculate_contrast()
+
+
+def test_calculate_contrast(
+    brainways_project: BrainwaysProject,
+):
+    brainways_project.calculate_contrast(value="cells")

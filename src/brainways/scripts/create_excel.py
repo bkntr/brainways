@@ -59,7 +59,7 @@ def create_excel(
 ):
     project = BrainwaysProject.open(project_path)
     for _ in tqdm(
-        project.create_excel_iter(
+        project.calculate_results_iter(
             path=output,
             min_region_area_um2=min_region_area_um2,
             cells_per_area_um2=cells_per_area_um2,

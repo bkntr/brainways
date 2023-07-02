@@ -114,18 +114,23 @@ def cell_count_summary(
         region_areas=region_areas_um, atlas=atlas, structure_ids=all_leaf_structures
     )
 
+    cell_counts = format_cell_counts_to_output(cell_counts)
+
     if cells_per_area_um2:
         region_areas_um_list = [region_areas_um[i] for i in cell_counts.index]
-        cell_counts = (
+        cell_counts_normalized = (
             cell_counts.div(region_areas_um_list, axis=0) * cells_per_area_um2**2
+        )
+
+        cell_counts = pd.concat(
+            [cell_counts_normalized, cell_counts.add_suffix(" (not normalized)")],
+            axis="columns",
         )
 
     df = []
     atlas_structure_leave_ids = [
         node.identifier for node in atlas.brainglobe_atlas.structures.tree.leaves()
     ]
-
-    cell_counts_output = format_cell_counts_to_output(cell_counts)
 
     for struct_id in region_areas_um:
         if struct_id not in atlas.brainglobe_atlas.structures:
@@ -147,7 +152,7 @@ def cell_count_summary(
                     struct_id=struct_id, atlas=atlas
                 ),
                 "total_area_um2": int(region_areas_um[struct_id]),
-                **dict(cell_counts_output.loc[struct_id]),
+                **dict(cell_counts.loc[struct_id]),
             }
         )
     df = pd.DataFrame(df)

@@ -231,6 +231,13 @@ def test_get_cell_count_summary_co_labeling_cells_per_area(mock_atlas: Brainways
                 "a-b+": 1.0,
                 "a+b-": 1.0,
                 "a+b+": 1.0,
+                "cells (not normalized)": 4.0,
+                "a+ (not normalized)": 2.0,
+                "b+ (not normalized)": 2.0,
+                "a-b- (not normalized)": 1.0,
+                "a-b+ (not normalized)": 1.0,
+                "a+b- (not normalized)": 1.0,
+                "a+b+ (not normalized)": 1.0,
             },
             {
                 "animal_id": "test",
@@ -246,6 +253,13 @@ def test_get_cell_count_summary_co_labeling_cells_per_area(mock_atlas: Brainways
                 "a-b+": 1.0,
                 "a+b-": 1.0,
                 "a+b+": 1.0,
+                "cells (not normalized)": 4.0,
+                "a+ (not normalized)": 2.0,
+                "b+ (not normalized)": 2.0,
+                "a-b- (not normalized)": 1.0,
+                "a-b+ (not normalized)": 1.0,
+                "a+b- (not normalized)": 1.0,
+                "a+b+ (not normalized)": 1.0,
             },
         ]
     )

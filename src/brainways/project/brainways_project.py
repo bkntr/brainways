@@ -22,6 +22,7 @@ from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 from brainways.utils.cell_detection_importer.cell_detection_importer import (
     CellDetectionImporter,
 )
+from brainways.utils.contrast import calculate_contrast
 
 
 class BrainwaysProject:
@@ -155,10 +156,9 @@ class BrainwaysProject:
         if not path.suffix == ".xlsx":
             path = Path(str(path) + ".xlsx")
 
-        cells_per_area_sheet = []
-        cells_count_sheet = []
+        results = []
         for subject in self.subjects:
-            cells_per_area_sheet.append(
+            results.append(
                 subject.cell_count_summary(
                     slice_info_predicate=slice_info_predicate,
                     min_region_area_um2=min_region_area_um2,
@@ -169,29 +169,11 @@ class BrainwaysProject:
                 )
             )
 
-            cells_count_sheet.append(
-                subject.cell_count_summary(
-                    slice_info_predicate=slice_info_predicate,
-                    min_region_area_um2=min_region_area_um2,
-                    min_cell_size_um=min_cell_size_um,
-                    max_cell_size_um=max_cell_size_um,
-                    excel_mode=excel_mode,
-                )
-            )
-
             yield
 
-        cells_per_area_sheet = pd.concat(
-            [sheet for sheet in cells_per_area_sheet if sheet is not None], axis=0
-        )
-        cells_count_sheet = pd.concat(
-            [sheet for sheet in cells_count_sheet if sheet is not None], axis=0
-        )
+        results = pd.concat([sheet for sheet in results if sheet is not None], axis=0)
         with ExcelWriter(path) as writer:
-            cells_per_area_sheet.to_excel(
-                writer, sheet_name=f"Cells per {cells_per_area_um2}um2", index=False
-            )
-            cells_count_sheet.to_excel(writer, sheet_name="Cell count", index=False)
+            results.to_excel(writer, index=False)
 
     def calculate_results(
         self,
@@ -249,6 +231,32 @@ class BrainwaysProject:
             subject.run_cell_detector(
                 cell_detector, default_params=self.settings.default_cell_detector_params
             )
+
+    def calculate_contrast(
+        self,
+        condition_col: str,
+        values_col: str,
+        min_group_size: int,
+        pvalue: float,
+        multiple_comparisons_method: str = "fdr_bh",
+    ):
+        if not self.can_calculate_contrast():
+            raise RuntimeError(
+                "Can't calculate contrast, some slice has missing parameters"
+            )
+
+        if not self._results_path.exists():
+            raise RuntimeError("Calculate results before calculating contrast")
+
+        results_df = pd.read_excel(self._results_path)
+        return calculate_contrast(
+            results_df=results_df,
+            condition_col=condition_col,
+            values_col=values_col,
+            min_group_size=min_group_size,
+            pvalue=pvalue,
+            multiple_comparisons_method=multiple_comparisons_method,
+        )
 
     def next_slice_missing_params(self) -> Optional[Tuple[int, int]]:
         for subject_idx, subject in enumerate(self.subjects):

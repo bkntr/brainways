@@ -1,3 +1,5 @@
+import math
+
 import pandas as pd
 
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
@@ -224,13 +226,13 @@ def test_get_cell_count_summary_co_labeling_cells_per_area(mock_atlas: Brainways
                 "is_parent_structure": False,
                 "is_gray_matter": None,
                 "total_area_um2": 16,
-                "cells": 4.0,
-                "a+": 2.0,
-                "b+": 2.0,
-                "a-b-": 1.0,
-                "a-b+": 1.0,
-                "a+b-": 1.0,
-                "a+b+": 1.0,
+                "cells": 8.0,
+                "a+": 4.0,
+                "b+": 4.0,
+                "a-b-": 2.0,
+                "a-b+": 2.0,
+                "a+b-": 2.0,
+                "a+b+": 2.0,
                 "cells (not normalized)": 4.0,
                 "a+ (not normalized)": 2.0,
                 "b+ (not normalized)": 2.0,
@@ -246,13 +248,13 @@ def test_get_cell_count_summary_co_labeling_cells_per_area(mock_atlas: Brainways
                 "is_parent_structure": True,
                 "is_gray_matter": None,
                 "total_area_um2": 16,
-                "cells": 4.0,
-                "a+": 2.0,
-                "b+": 2.0,
-                "a-b-": 1.0,
-                "a-b+": 1.0,
-                "a+b-": 1.0,
-                "a+b+": 1.0,
+                "cells": 8.0,
+                "a+": 4.0,
+                "b+": 4.0,
+                "a-b-": 2.0,
+                "a-b+": 2.0,
+                "a+b-": 2.0,
+                "a+b+": 2.0,
                 "cells (not normalized)": 4.0,
                 "a+ (not normalized)": 2.0,
                 "b+ (not normalized)": 2.0,
@@ -268,6 +270,52 @@ def test_get_cell_count_summary_co_labeling_cells_per_area(mock_atlas: Brainways
         cells=cells,
         region_areas_um=region_areas_um,
         atlas=mock_atlas,
-        cells_per_area_um2=4,
+        cells_per_area_um2=math.sqrt(32),
+    )
+    pd.testing.assert_frame_equal(result, expected)
+
+
+def test_get_cell_count_summary_conditions(mock_atlas: BrainwaysAtlas):
+    cells = pd.DataFrame(
+        {
+            "x": [0.5],
+            "y": [0.5],
+            "z": [0.5],
+            "struct_id": [10],
+        }
+    )
+    region_areas = {10: 1}
+    expected = pd.DataFrame(
+        [
+            {
+                "condition1": "c1",
+                "condition2": "c2",
+                "animal_id": "test",
+                "acronym": "TEST",
+                "name": "test_region",
+                "is_parent_structure": False,
+                "is_gray_matter": None,
+                "total_area_um2": 1,
+                "cells": 1,
+            },
+            {
+                "condition1": "c1",
+                "condition2": "c2",
+                "animal_id": "test",
+                "acronym": "root",
+                "name": "root",
+                "is_parent_structure": True,
+                "is_gray_matter": None,
+                "total_area_um2": 1,
+                "cells": 1,
+            },
+        ]
+    )
+    result = cell_count_summary(
+        animal_id="test",
+        cells=cells,
+        region_areas_um=region_areas,
+        atlas=mock_atlas,
+        conditions={"condition1": "c1", "condition2": "c2"},
     )
     pd.testing.assert_frame_equal(result, expected)

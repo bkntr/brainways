@@ -7,9 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add conditions to BrainwaysSubject
+- Add BrainwaysProject.calculate_contrast
+
 ### Changed
 
 - Update QuPath version to 0.4.3
+- Refactor BrainwaysSubject save file
+- Faster and more compact cell counts excel
+
+### Fixed
+
+- Bug where BrainwaysProject.add_subject would not forward atlas and pipeline to subject
 
 ## [0.1.6] - 2023-06-15
 

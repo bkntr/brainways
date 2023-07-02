@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import brainways._version
 from brainways.pipeline.brainways_params import BrainwaysParams, CellDetectorParams
@@ -23,7 +23,7 @@ class ProjectSettings:
 @dataclass(frozen=True)
 class SubjectInfo:
     name: str
-    condition: Optional[str] = None
+    conditions: Optional[Dict[str, str]] = None
 
 
 @dataclass(frozen=True, eq=False)

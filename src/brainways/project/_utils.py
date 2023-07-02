@@ -34,7 +34,8 @@ def update_project_from_previous_versions(path: Path):
     if version.parse(project_version) <= version.parse("0.1.7"):
         update_project_to_0_1_7(path)
 
-    rewrite_project_version(path)
+    if project_version != brainways._version.version:
+        rewrite_project_version(path)
 
 
 def update_project_to_0_1_4(path: Path):

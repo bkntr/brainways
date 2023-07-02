@@ -240,9 +240,10 @@ class BrainwaysProject:
         pvalue: float,
         multiple_comparisons_method: str = "fdr_bh",
     ):
-        if not self.can_calculate_contrast():
+        if not self.can_calculate_contrast(condition_col):
             raise RuntimeError(
-                "Can't calculate contrast, some slice has missing parameters"
+                "Can't calculate contrast, some slice has missing parameters or missing"
+                " conditions"
             )
 
         if not self._results_path.exists():
@@ -269,8 +270,13 @@ class BrainwaysProject:
     def can_calculate_results(self) -> bool:
         return self.next_slice_missing_params() is None
 
-    def can_calculate_contrast(self) -> bool:
-        conditions = {subject.subject_info.condition for subject in self.subjects}
+    def can_calculate_contrast(self, condition: str) -> bool:
+        conditions = set()
+        for subject in self.subjects:
+            if subject.subject_info.conditions is not None:
+                conditions.add(subject.subject_info.conditions.get(condition))
+            else:
+                conditions.add(None)
         return (
             self.can_calculate_results()
             and None not in conditions

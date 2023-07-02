@@ -101,6 +101,7 @@ def cell_count_summary(
     atlas: BrainwaysAtlas,
     min_region_area_um2: Optional[int] = None,
     cells_per_area_um2: Optional[int] = None,
+    conditions: Optional[Dict[str, str]] = None,
 ):
     cells = set_co_labelling_product(cells)
     cell_counts = get_cell_counts(cells)
@@ -144,6 +145,7 @@ def cell_count_summary(
 
         df.append(
             {
+                **(conditions or {}),
                 "animal_id": animal_id,
                 "acronym": struct["acronym"],
                 "name": struct["name"],

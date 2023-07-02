@@ -19,7 +19,7 @@ from brainways.utils.io_utils import ImagePath
 
 def test_create_subject(brainways_project: BrainwaysProject):
     subject = BrainwaysSubject.create(
-        subject_info=SubjectInfo(name="test_subject", condition="a"),
+        subject_info=SubjectInfo(name="test_subject", conditions={"condition": "a"}),
         project=brainways_project,
     )
     assert (subject._save_dir / "data.bws").exists()

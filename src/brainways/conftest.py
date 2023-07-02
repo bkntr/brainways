@@ -218,7 +218,7 @@ def subject_path(
 
 @pytest.fixture
 def mock_subject_info() -> SubjectInfo:
-    return SubjectInfo(name="subject1", condition="a")
+    return SubjectInfo(name="subject1", conditions={"condition": "a"})
 
 
 @pytest.fixture
@@ -264,7 +264,9 @@ def brainways_project(
 
     # add mock subject to project
     brainways_project.add_subject(mock_subject_info)
-    brainways_project.add_subject(SubjectInfo(name="subject2", condition="b"))
+    brainways_project.add_subject(
+        SubjectInfo(name="subject2", conditions={"condition": "b"})
+    )
     for brainways_subject in brainways_project.subjects:
         brainways_subject.documents = deepcopy(mock_subject_documents)
         for document in brainways_subject.documents:

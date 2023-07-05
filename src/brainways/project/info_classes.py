@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -17,6 +17,7 @@ class ProjectSettings:
     atlas: str
     channel: Union[int, str]
     default_cell_detector_params: CellDetectorParams = CellDetectorParams()
+    condition_names: List[str] = field(default_factory=list)
     version: str = brainways._version.version
 
 

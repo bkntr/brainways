@@ -200,6 +200,7 @@ class BrainwaysSubject:
             try:
                 cell_detections_path = self.cell_detections_path(document.path)
                 if cell_detections_path.exists():
+                    yield
                     continue
                 reader = document.image_reader()
                 image = reader.get_image_dask_data(

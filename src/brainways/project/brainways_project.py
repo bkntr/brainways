@@ -116,9 +116,6 @@ class BrainwaysProject:
             self.settings.atlas, exclude_regions=[76, 42, 41]
         )  # TODO: from model
 
-        for subject in self.subjects:
-            subject.atlas = self.atlas
-
         # load volumes to cache
         if load_volumes:
             _ = self.atlas.reference
@@ -129,8 +126,6 @@ class BrainwaysProject:
         if self.atlas is None:
             self.load_atlas()
         self.pipeline = BrainwaysPipeline(self.atlas)
-        for subject in self.subjects:
-            subject.pipeline = self.pipeline
 
     def move_images_directory(
         self, new_images_root: Path, old_images_root: Optional[Path] = None

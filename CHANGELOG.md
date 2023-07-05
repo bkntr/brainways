@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Bug where BrainwaysProject.add_subject would not forward atlas and pipeline to subject
+- Resuming cell detection now shows correct progress bar percentage
 
 ## [0.1.6] - 2023-06-15
 

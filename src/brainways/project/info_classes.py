@@ -24,7 +24,7 @@ class ProjectSettings:
 @dataclass(frozen=True)
 class SubjectInfo:
     name: str
-    conditions: Optional[Dict[str, str]] = None
+    conditions: Dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, eq=False)

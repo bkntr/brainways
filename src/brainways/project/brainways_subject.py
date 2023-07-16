@@ -370,6 +370,7 @@ class BrainwaysSubject:
                         atlas=self.atlas,
                         min_region_area_um2=min_region_area_um2,
                         cells_per_area_um2=cells_per_area_um2,
+                        conditions=self.subject_info.conditions,
                     )
                 )
             else:
@@ -391,6 +392,7 @@ class BrainwaysSubject:
                 atlas=self.atlas,
                 min_region_area_um2=min_region_area_um2,
                 cells_per_area_um2=cells_per_area_um2,
+                conditions=self.subject_info.conditions,
             )
         return df
 

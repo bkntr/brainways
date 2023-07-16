@@ -245,7 +245,7 @@ class BrainwaysProject:
             raise RuntimeError("Calculate results before calculating contrast")
 
         results_df = pd.read_excel(self._results_path)
-        return calculate_contrast(
+        anova_df, posthoc_df = calculate_contrast(
             results_df=results_df,
             condition_col=condition_col,
             values_col=values_col,
@@ -254,11 +254,21 @@ class BrainwaysProject:
             multiple_comparisons_method=multiple_comparisons_method,
         )
 
+        contrast_path = self.path.parent / f"contrast-{condition_col}-{values_col}.xlsx"
+        with ExcelWriter(contrast_path) as writer:
+            anova_df.to_excel(writer, sheet_name="ANOVA")
+            posthoc_df.to_excel(writer, sheet_name="Posthoc")
+
+        return anova_df, posthoc_df
+
     def next_slice_missing_params(self) -> Optional[Tuple[int, int]]:
         for subject_idx, subject in enumerate(self.subjects):
             for slice_idx, slice_info in subject.valid_documents:
                 for field in fields(slice_info.params):
-                    if getattr(slice_info.params, field.name) is None:
+                    if (
+                        getattr(slice_info.params, field.name) is None
+                        and field.name != "cell"
+                    ):
                         return subject_idx, slice_idx
         return None
 

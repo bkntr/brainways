@@ -1,4 +1,4 @@
-from itertools import combinations
+from typing import List, Tuple
 
 import pandas as pd
 import scikit_posthocs as sp
@@ -11,6 +11,7 @@ def calculate_contrast(
     results_df: pd.DataFrame,
     condition_col: str,
     values_col: str,
+    posthoc_comparisons: List[Tuple[str, str]],
     min_group_size: int,
     pvalue: float,
     multiple_comparisons_method: str = "fdr_bh",
@@ -29,6 +30,7 @@ def calculate_contrast(
         anova_df=anova_df,
         condition_col=condition_col,
         values_col=values_col,
+        posthoc_comparisons=posthoc_comparisons,
         multiple_comparisons_method=multiple_comparisons_method,
     )
     return anova_df, posthoc_df
@@ -78,10 +80,10 @@ def calculate_posthoc(
     anova_df: pd.DataFrame,
     condition_col: str,
     values_col: str,
+    posthoc_comparisons: List[Tuple[str, str]],
     multiple_comparisons_method: str = "fdr_bh",
 ):
-    comparisons = list(combinations(df[condition_col].unique(), 2))
-    columns = ["-".join(c) for c in comparisons]
+    columns = ["-".join(comparison) for comparison in posthoc_comparisons]
     posthoc_p_df = pd.DataFrame(columns=columns)
     for struct in anova_df[anova_df["reject"]].index:
         struct_df = df[df["acronym"] == struct]
@@ -93,7 +95,7 @@ def calculate_posthoc(
         )
         posthoc_p_df.loc[struct] = {
             col: posthoc_pvalues.loc[comp[0], comp[1]]
-            for col, comp in zip(columns, comparisons)
+            for col, comp in zip(columns, posthoc_comparisons)
         }
 
     reject, pvals_corrected, _, _ = multipletests(

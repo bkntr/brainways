@@ -1,5 +1,6 @@
 import json
 from dataclasses import asdict, fields
+from itertools import combinations
 from pathlib import Path
 from typing import Callable, Iterator, List, Optional, Tuple, Union
 
@@ -249,6 +250,7 @@ class BrainwaysProject:
             results_df=results_df,
             condition_col=condition_col,
             values_col=values_col,
+            posthoc_comparisons=self.possible_contrasts(condition_col),
             min_group_size=min_group_size,
             pvalue=pvalue,
             multiple_comparisons_method=multiple_comparisons_method,
@@ -291,6 +293,14 @@ class BrainwaysProject:
     @property
     def n_valid_images(self):
         return sum(len(subject.valid_documents) for subject in self.subjects)
+
+    def possible_contrasts(self, condition: str) -> List[Tuple[str, str]]:
+        condition_values = {
+            subject.subject_info.conditions.get(condition) for subject in self.subjects
+        }
+        condition_values -= {None}
+        possible_contrasts = list(combinations(sorted(condition_values), 2))
+        return possible_contrasts
 
     def __len__(self) -> int:
         return len(self.subjects)

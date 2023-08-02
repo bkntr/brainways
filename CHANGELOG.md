@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add conditions to BrainwaysSubject
-- Add BrainwaysProject.calculate_contrast
+- Add BrainwaysProject.calculate_contrast()
+- Add BrainwaysProject.possible_contrasts()
 
 ### Changed
 

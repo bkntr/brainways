@@ -25,6 +25,7 @@ def test_contrast():
         results_df=results_df,
         condition_col="cond",
         values_col="val",
+        posthoc_comparisons=[("a", "b")],
         min_group_size=3,
         pvalue=1.0,
     )

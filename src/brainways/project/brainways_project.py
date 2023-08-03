@@ -24,6 +24,16 @@ from brainways.utils.cell_detection_importer.cell_detection_importer import (
     CellDetectionImporter,
 )
 from brainways.utils.contrast import calculate_contrast
+from brainways.utils.pls_analysis import (
+    get_estimated_lv_plot,
+    get_lv_p_values_plot,
+    get_results_df_for_pls,
+    get_salience_plot,
+    pls_analysis,
+    save_estimated_lv_plot,
+    save_lv_p_values_plot,
+    save_salience_plot,
+)
 
 
 class BrainwaysProject:
@@ -91,7 +101,9 @@ class BrainwaysProject:
         )
 
         project = cls(subjects=[], settings=settings, path=path, lazy_init=lazy_init)
-        subject_directories = [d for d in path.parent.glob("*") if d.is_dir()]
+        subject_directories = [
+            d.parent for d in path.parent.rglob("*.bws") if d.is_file()
+        ]
         subject_directories = natsorted(
             subject_directories, alg=ns.IGNORECASE, key=lambda x: x.name
         )
@@ -262,6 +274,66 @@ class BrainwaysProject:
             posthoc_df.to_excel(writer, sheet_name="Posthoc")
 
         return anova_df, posthoc_df
+
+    def calculate_pls_analysis(
+        self,
+        condition_col: str,
+        values_col: str,
+        min_group_size: int,
+        alpha: float,
+    ):
+        if not self.can_calculate_contrast(condition_col):
+            raise RuntimeError(
+                "Can't calculate contrast, some slice has missing parameters or missing"
+                " conditions"
+            )
+
+        if not self._results_path.exists():
+            raise RuntimeError("Calculate results before calculating contrast")
+
+        results_df = pd.read_excel(self._results_path)
+
+        results_df_pls = get_results_df_for_pls(
+            results_df,
+            values=values_col,
+            condition=condition_col,
+            min_per_group=min_group_size,
+        )
+
+        pls_results = pls_analysis(
+            results_df_pls=results_df_pls, condition=condition_col
+        )
+
+        estimated_lv_plot = get_estimated_lv_plot(
+            pls_results=pls_results, results_df_pls=results_df_pls
+        )
+        lv_p_values_plot = get_lv_p_values_plot(pls_results=pls_results)
+        salience_plot = get_salience_plot(
+            pls_results=pls_results, results_df_pls=results_df_pls
+        )
+
+        pls_file_prefix = f"Condition={condition_col},Values={values_col}"
+        pls_root_path = self.path.parent / "__outputs__" / "PLS" / pls_file_prefix
+        pls_root_path.mkdir(parents=True, exist_ok=True)
+        pls_excel_path = pls_root_path / f"pls-{pls_file_prefix}.xlsx"
+        with ExcelWriter(pls_excel_path) as writer:
+            lv_p_values_plot.to_excel(writer, sheet_name="LV P Value", index=False)
+            estimated_lv_plot.to_excel(writer, sheet_name="Estimated LV1", index=False)
+            salience_plot.to_excel(writer, sheet_name="PLS Salience", index=False)
+
+        save_estimated_lv_plot(
+            pls_root_path / f"estimated_lv-{pls_file_prefix}.png", estimated_lv_plot
+        )
+        save_lv_p_values_plot(
+            pls_root_path / f"lv_p_values-{pls_file_prefix}.png",
+            lv_p_values_plot,
+            alpha=alpha,
+        )
+        save_salience_plot(
+            pls_root_path / f"salience-{pls_file_prefix}.png",
+            salience_plot,
+            alpha=alpha,
+        )
 
     def next_slice_missing_params(self) -> Optional[Tuple[int, int]]:
         for subject_idx, subject in enumerate(self.subjects):

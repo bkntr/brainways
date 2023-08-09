@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import List
 from unittest.mock import Mock
 
+import numpy as np
 import pandas as pd
 
 from brainways.project.brainways_project import BrainwaysProject
@@ -160,14 +161,14 @@ def test_calculate_contrast(
         subject.cell_count_summary = Mock(
             return_value=pd.DataFrame(
                 {
-                    "condition": ["a", "a", "a", "b", "b", "b"],
-                    "animal_id": ["a", "b", "c", "d", "e", "f"],
+                    "condition": [subject.subject_info.conditions["condition"]] * n,
+                    "animal_id": [subject.subject_info.name] * n,
                     "acronym": ["a"] * n,
                     "name": ["a"] * n,
                     "is_parent_structure": [False] * n,
                     "is_gray_matter": [True] * n,
                     "total_area_um2": [10.0] * n,
-                    "cells": [10.0] * n,
+                    "cells": np.random.randint(0, 100, n),
                 }
             )
         )

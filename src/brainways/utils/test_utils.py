@@ -26,7 +26,7 @@ def randomly_modified_params(params: BrainwaysParams):
             np.random.randint(10, size=(10, 2)).tolist(),
         )
     if params.cell is not None:
-        modified_cell = replace(params.cell, diameter=random.randint(0, 100))
+        modified_cell = replace(params.cell, normalizer="none")
     modified_params = BrainwaysParams(
         atlas=modified_atlas,
         affine=modified_affine,

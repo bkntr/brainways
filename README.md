@@ -5,7 +5,7 @@
 [![Python Version](https://img.shields.io/pypi/pyversions/brainways.svg?color=green)](https://python.org)
 [![tests](https://github.com/bkntr/brainways/workflows/tests/badge.svg)](https://github.com/bkntr/brainways/actions)
 [![codecov](https://codecov.io/gh/bkntr/brainways/branch/main/graph/badge.svg)](https://codecov.io/gh/bkntr/brainways)
-[![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/brainways)](https://napari-hub.org/plugins/brainways)
+[![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/napari-brainways)](https://napari-hub.org/plugins/napari-brainways)
 
 
 * Free software: GNU General Public License v3

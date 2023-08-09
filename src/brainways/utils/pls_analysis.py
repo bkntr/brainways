@@ -58,10 +58,10 @@ def remove_columns_lacking_data(df, condition: str, min_per_group: int):
 
 
 def get_estimated_lv_plot(
-    pls_results: PLSResults, results_df_pls: pd.DataFrame, lv: int = 0
+    pls_results: PLSResults, results_df_pls: pd.DataFrame, condition: str, lv: int = 0
 ) -> pd.DataFrame:
     lv = 0
-    group_labels = results_df_pls.index.unique("group").values
+    group_labels = results_df_pls.index.unique(condition).values
 
     estimate = pls_results.bootres.contrast[:, lv]
     ul = pls_results.bootres.contrast_ci[:, lv, 0]

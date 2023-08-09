@@ -4,7 +4,6 @@ from typing import List
 from unittest.mock import Mock
 
 import pandas as pd
-import pytest
 
 from brainways.project.brainways_project import BrainwaysProject
 from brainways.project.info_classes import ProjectSettings, SliceInfo, SubjectInfo
@@ -149,7 +148,6 @@ def test_cant_calculate_contrast_missing_conditions(
     assert not brainways_project.can_calculate_contrast("condition")
 
 
-@pytest.mark.skip
 def test_calculate_contrast(
     brainways_project: BrainwaysProject,
 ):
@@ -157,7 +155,59 @@ def test_calculate_contrast(
     need to add mock cells for this test to work
     """
 
+    for subject in brainways_project.subjects:
+        n = 6
+        subject.cell_count_summary = Mock(
+            return_value=pd.DataFrame(
+                {
+                    "condition": ["a", "a", "a", "b", "b", "b"],
+                    "animal_id": ["a", "b", "c", "d", "e", "f"],
+                    "acronym": ["a"] * n,
+                    "name": ["a"] * n,
+                    "is_parent_structure": [False] * n,
+                    "is_gray_matter": [True] * n,
+                    "total_area_um2": [10.0] * n,
+                    "cells": [10.0] * n,
+                }
+            )
+        )
+
     brainways_project.calculate_results()
     brainways_project.calculate_contrast(
         condition_col="condition", values_col="cells", min_group_size=1, pvalue=1.0
+    )
+
+
+def test_pls_analysis(
+    brainways_project: BrainwaysProject,
+):
+    """
+    need to add mock cells for this test to work
+    """
+
+    for subject in brainways_project.subjects:
+        n = 6
+        subject.cell_count_summary = Mock(
+            return_value=pd.DataFrame(
+                {
+                    "condition": [subject.subject_info.conditions["condition"]] * n,
+                    "animal_id": [subject.subject_info.name] * n,
+                    "acronym": [str(i) for i in range(n)],
+                    "name": ["a"] * n,
+                    "is_parent_structure": [False] * n,
+                    "is_gray_matter": [True] * n,
+                    "total_area_um2": [10.0] * n,
+                    "cells": [10.0] * n,
+                }
+            )
+        )
+
+    brainways_project.calculate_results()
+    brainways_project.calculate_pls_analysis(
+        condition_col="condition",
+        values_col="cells",
+        min_group_size=1,
+        alpha=1.0,
+        n_perm=1,
+        n_boot=1,
     )

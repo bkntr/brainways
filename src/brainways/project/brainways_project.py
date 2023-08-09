@@ -281,6 +281,8 @@ class BrainwaysProject:
         values_col: str,
         min_group_size: int,
         alpha: float,
+        n_perm: int = 1000,
+        n_boot: int = 1000,
     ):
         if not self.can_calculate_contrast(condition_col):
             raise RuntimeError(
@@ -301,11 +303,16 @@ class BrainwaysProject:
         )
 
         pls_results = pls_analysis(
-            results_df_pls=results_df_pls, condition=condition_col
+            results_df_pls=results_df_pls,
+            condition=condition_col,
+            n_perm=n_perm,
+            n_boot=n_boot,
         )
 
         estimated_lv_plot = get_estimated_lv_plot(
-            pls_results=pls_results, results_df_pls=results_df_pls
+            pls_results=pls_results,
+            results_df_pls=results_df_pls,
+            condition=condition_col,
         )
         lv_p_values_plot = get_lv_p_values_plot(pls_results=pls_results)
         salience_plot = get_salience_plot(

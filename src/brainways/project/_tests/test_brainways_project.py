@@ -182,10 +182,6 @@ def test_calculate_contrast(
 def test_pls_analysis(
     brainways_project: BrainwaysProject,
 ):
-    """
-    need to add mock cells for this test to work
-    """
-
     for subject in brainways_project.subjects:
         n = 6
         subject.cell_count_summary = Mock(
@@ -212,3 +208,42 @@ def test_pls_analysis(
         n_perm=1,
         n_boot=1,
     )
+
+
+def test_network_analysis(
+    brainways_project: BrainwaysProject,
+):
+    """
+    need to add mock cells for this test to work
+    """
+
+    for subject in brainways_project.subjects:
+        n = 6
+        subject.cell_count_summary = Mock(
+            return_value=pd.DataFrame(
+                {
+                    "condition": [subject.subject_info.conditions["condition"]] * n,
+                    "animal_id": [subject.subject_info.name] * n,
+                    "acronym": [str(i) for i in range(n)],
+                    "name": ["a"] * n,
+                    "is_parent_structure": [False] * n,
+                    "is_gray_matter": [True] * n,
+                    "total_area_um2": [10.0] * n,
+                    "cells": [10.0] * n,
+                }
+            )
+        )
+
+    brainways_project.calculate_results()
+    brainways_project.calculate_network_graph(
+        condition_col="condition", values_col="cells", min_group_size=1, alpha=1.0
+    )
+
+    graph_path = (
+        brainways_project.path.parent
+        / "__outputs__"
+        / "network_graph"
+        / "Condition=condition,Values=cells.png"
+    )
+
+    assert graph_path.exists()

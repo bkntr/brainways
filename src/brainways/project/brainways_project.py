@@ -24,6 +24,7 @@ from brainways.utils.cell_detection_importer.cell_detection_importer import (
     CellDetectionImporter,
 )
 from brainways.utils.contrast import calculate_contrast
+from brainways.utils.network_analysis import calculate_network_graph
 from brainways.utils.pls_analysis import (
     get_estimated_lv_plot,
     get_lv_p_values_plot,
@@ -340,6 +341,41 @@ class BrainwaysProject:
             pls_root_path / f"salience-{pls_file_prefix}.png",
             salience_plot,
             alpha=alpha,
+        )
+
+    def calculate_network_graph(
+        self,
+        condition_col: str,
+        values_col: str,
+        min_group_size: int,
+        alpha: float,
+    ):
+        if not self.can_calculate_contrast(condition_col):
+            raise RuntimeError(
+                "Can't calculate contrast, some slice has missing parameters or missing"
+                " conditions"
+            )
+
+        if not self._results_path.exists():
+            raise RuntimeError("Calculate results before calculating contrast")
+
+        results_df = pd.read_excel(self._results_path)
+
+        cell_counts = get_results_df_for_pls(
+            results_df,
+            values=values_col,
+            condition=condition_col,
+            min_per_group=min_group_size,
+        )
+
+        file_prefix = f"Condition={condition_col},Values={values_col}"
+        graph_root_path = (
+            self.path.parent / "__outputs__" / "network_graph" / file_prefix
+        )
+        calculate_network_graph(
+            cell_counts=cell_counts,
+            alpha=alpha,
+            output_path=graph_root_path.with_suffix(".graphml"),
         )
 
     def next_slice_missing_params(self) -> Optional[Tuple[int, int]]:

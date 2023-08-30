@@ -204,7 +204,7 @@ class BrainwaysSubject:
                     continue
                 reader = document.image_reader()
                 image = reader.get_image_dask_data(
-                    "YX", C=self.settings.channel
+                    "YX", C=self.project.settings.channel
                 ).compute()
                 if document.params.cell is not None:
                     cell_detector_params = document.params.cell

@@ -1,12 +1,15 @@
 from dataclasses import replace
 from pathlib import Path
 from typing import List, Tuple
+from unittest.mock import create_autospec
 
 import numpy as np
 import pandas as pd
 import pytest
 from PIL import Image
 
+from brainways.pipeline.brainways_params import CellDetectorParams
+from brainways.pipeline.cell_detector import CellDetector
 from brainways.project.brainways_project import BrainwaysProject
 from brainways.project.brainways_subject import BrainwaysSubject
 from brainways.project.info_classes import SliceInfo, SubjectInfo
@@ -173,3 +176,18 @@ def test_move_images_root_with_base(brainways_subject: BrainwaysSubject, tmpdir)
     new_image_path.touch()
     brainways_subject.move_images_root(new_images_root, old_images_root=old_images_root)
     assert brainways_subject.documents[0].path.filename == str(new_image_path)
+
+
+def test_run_cell_detector(
+    brainways_subject: BrainwaysSubject,
+    test_data: Tuple[np.ndarray, AtlasSlice],
+    mock_image_path: ImagePath,
+):
+    cell_detector = create_autospec(CellDetector)
+    cell_detector.cells.return_value = pd.DataFrame({"test": ["test"]})
+    default_params = CellDetectorParams()
+    brainways_subject.run_cell_detector(
+        cell_detector=cell_detector, default_params=default_params
+    )
+    for i, document in brainways_subject.valid_documents:
+        assert brainways_subject.cell_detections_path(document.path).exists()

@@ -372,6 +372,7 @@ class BrainwaysProject:
         graph_root_path = (
             self.path.parent / "__outputs__" / "network_graph" / file_prefix
         )
+        graph_root_path.mkdir(parents=True, exist_ok=True)
         calculate_network_graph(
             cell_counts=cell_counts,
             alpha=alpha,

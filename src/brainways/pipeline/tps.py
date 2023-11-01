@@ -41,7 +41,7 @@ class TPS:
             params,
             tps=TPSTransformParams(
                 points_src=params.tps.points_src,
-                points_dst=registered_dst_points,
+                points_dst=registered_dst_points.tolist(),
             ),
         )
 

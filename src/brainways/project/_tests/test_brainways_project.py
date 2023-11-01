@@ -243,7 +243,7 @@ def test_network_analysis(
         brainways_project.path.parent
         / "__outputs__"
         / "network_graph"
-        / "Condition=condition,Values=cells.png"
+        / "Condition=condition,Values=cells.graphml"
     )
 
     assert graph_path.exists()

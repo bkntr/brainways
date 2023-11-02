@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Tuple
 
 import numpy as np
@@ -10,8 +9,8 @@ from brainways.utils.atlas.brainways_atlas import AtlasSlice, BrainwaysAtlas
 
 
 @pytest.fixture(autouse=True)
-def mock_brainways_dir(tmpdir, monkeypatch):
-    mock_dir = Path(tmpdir) / "brainways"
+def mock_brainways_dir(tmp_path, monkeypatch):
+    mock_dir = tmp_path / "brainways"
     mock_dir.mkdir()
     monkeypatch.setattr(paths, "_BRAINWAYS_PATH", mock_dir)
 

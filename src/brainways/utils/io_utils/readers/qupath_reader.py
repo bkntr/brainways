@@ -50,6 +50,8 @@ class QupathReader(Reader):
         QupathReader._image_provider = DEFAULT_IMAGE_PROVIDER
         QupathReader.JString = String
 
+        QupathReader._qupath_initialized = True
+
     @staticmethod
     def _is_supported_image(fs: AbstractFileSystem, path: str, **kwargs: Any) -> bool:
         QupathReader._initialize_qupath()

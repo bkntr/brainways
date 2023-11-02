@@ -6,7 +6,7 @@ from bg_atlasapi.utils import check_internet_connection
 from paquo import settings as paquo_settings
 from paquo.jpype_backend import find_qupath
 
-from brainways.utils.config import get_brainways_dir, get_interim_download_dir
+from brainways.utils.paths import get_brainways_dir
 
 
 def get_brainways_qupath_dir() -> Path:
@@ -46,7 +46,7 @@ def download_qupath(
     install_path: Path = get_brainways_qupath_dir(),
     version: str = "0.4.3",
     system: str = platform.system(),
-    download_path: str = get_interim_download_dir(),
+    download_path: Path = get_brainways_dir(),
     ssl_verify: bool = False,
 ):
     """

@@ -11,7 +11,9 @@ from brainways.utils.atlas.brainways_atlas import AtlasSlice, BrainwaysAtlas
 
 @pytest.fixture(autouse=True)
 def mock_brainways_dir(tmpdir, monkeypatch):
-    monkeypatch.setattr(paths, "_BRAINWAYS_PATH", Path(tmpdir))
+    mock_dir = Path(tmpdir) / "brainways"
+    mock_dir.mkdir()
+    monkeypatch.setattr(paths, "_BRAINWAYS_PATH", mock_dir)
 
 
 @pytest.fixture

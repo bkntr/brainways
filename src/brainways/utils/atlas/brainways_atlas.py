@@ -114,6 +114,10 @@ class BrainwaysAtlas:
     def hemispheres(self):
         return torch.as_tensor(self.brainglobe_atlas.hemispheres.astype(np.float32))
 
+    @property
+    def atlas_name(self) -> str:
+        return self.brainglobe_atlas.atlas_name
+
 
 @dataclass
 class AtlasSlice:

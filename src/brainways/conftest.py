@@ -4,7 +4,7 @@ from copy import deepcopy
 from dataclasses import asdict, replace
 from pathlib import Path
 from typing import List, Tuple
-from unittest.mock import Mock, create_autospec, patch
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
@@ -32,7 +32,6 @@ from brainways.project.info_classes import (
 from brainways.utils.atlas.brainways_atlas import AtlasSlice, BrainwaysAtlas
 from brainways.utils.image import ImageSizeHW
 from brainways.utils.io_utils import ImagePath
-from brainways.utils.io_utils.readers.base import ImageReader
 from brainways.utils.io_utils.readers.qupath_reader import QupathReader
 
 
@@ -99,6 +98,12 @@ def mock_atlas(test_data: Tuple[np.ndarray, AtlasSlice]) -> BrainwaysAtlas:
     return mock_atlas
 
 
+@pytest.fixture
+def mock_rat_atlas(mock_atlas) -> BrainwaysAtlas:
+    mock_atlas.brainglobe_atlas.atlas_name = "whs_sd_rat_39um"
+    return mock_atlas
+
+
 @fixture(scope="session")
 def test_data() -> Tuple[np.ndarray, AtlasSlice]:
     npz = np.load(str(Path(__file__).parent.parent.parent / "data/test_data.npz"))
@@ -123,25 +128,6 @@ def test_image_path() -> Path:
 def test_image_size(test_data: Tuple[np.ndarray, AtlasSlice]) -> ImageSizeHW:
     input, atlas_size = test_data
     return input.shape
-
-
-@fixture(autouse=True, scope="session")
-def image_reader_mock(test_data: Tuple[np.ndarray, AtlasSlice]):
-    mock_image_reader = create_autospec(ImageReader)
-    test_image, test_atlas_slice = test_data
-    HEIGHT = test_image.shape[0]
-    WIDTH = test_image.shape[1]
-    mock_image_reader.read_image.return_value = test_image
-    mock_image_reader.scene_bb = (0, 0, WIDTH, HEIGHT)
-
-    mock_get_scenes = Mock(return_value=[0])
-
-    with patch(
-        "brainways.utils.io_utils.readers.get_reader", return_value=mock_image_reader
-    ), patch(
-        "brainways.utils.io_utils.readers.get_scenes", return_value=mock_get_scenes
-    ):
-        yield
 
 
 @pytest.fixture

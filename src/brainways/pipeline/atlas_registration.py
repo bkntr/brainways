@@ -45,7 +45,7 @@ class AtlasRegistration:
 
         if self.brainways_reg_model is None:
             self.brainways_reg_model = BrainwaysRegModel.load_from_checkpoint(
-                self._local_checkpoint_path, atlas=self.atlas
+                self.local_checkpoint_path, atlas=self.atlas
             )
             self.brainways_reg_model.freeze()
         mask = brain_mask(image)
@@ -77,19 +77,19 @@ class AtlasRegistration:
     def download_model(self):
         if self.checkpoint_downloaded():
             return
-        self._local_checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+        self.local_checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
         hf_hub_download(
             repo_id=f"brainways/{self.atlas.atlas_name}",
             filename="model.ckpt",
-            local_dir=self._local_checkpoint_path.parent,
+            local_dir=self.local_checkpoint_path.parent,
             local_dir_use_symlinks=False,
         )
 
     def checkpoint_downloaded(self) -> bool:
-        return self._local_checkpoint_path.exists()
+        return self.local_checkpoint_path.exists()
 
     def trained_model_available(self):
-        if self._local_checkpoint_path.exists():
+        if self.local_checkpoint_path.exists():
             return True
         api = HfApi()
         try:
@@ -99,5 +99,5 @@ class AtlasRegistration:
             return False
 
     @property
-    def _local_checkpoint_path(self) -> Path:
+    def local_checkpoint_path(self) -> Path:
         return get_brainways_dir() / "reg_models" / self.atlas.atlas_name / "model.ckpt"

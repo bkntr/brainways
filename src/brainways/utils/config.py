@@ -7,7 +7,7 @@ from brainways.utils.paths import get_brainways_config_path
 
 @dataclass
 class BrainwaysConfig:
-    initialized = False
+    initialized: bool = False
 
 
 def write_config(config: BrainwaysConfig) -> None:
@@ -21,4 +21,4 @@ def load_config() -> BrainwaysConfig:
     if not config_path.exists():
         write_config(BrainwaysConfig())
     config = toml.load(config_path)
-    return config
+    return BrainwaysConfig(**config)

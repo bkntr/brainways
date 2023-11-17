@@ -24,14 +24,21 @@ class BrainwaysSetup:
             Path(importlib_resources.files("brainways")) / "resources/sample_image.jpg"
         )
 
-    def is_first_launch(self) -> bool:
+    @staticmethod
+    def is_first_launch() -> bool:
         return not load_config().initialized
+
+    @staticmethod
+    def set_initialized() -> None:
+        config = load_config()
+        config.initialized = True
+        write_config(config)
 
     def run(self) -> None:
         self._progress_callback("Downloading QuPath...")
         self._download_qupath()
         for atlas_name in self._atlas_names:
-            self._progress_callback(f"Downloading atlas for '{atlas_name}'...")
+            self._progress_callback(f"Downloading atlas '{atlas_name}'...")
             self._download_atlas(atlas_name)
 
             atlas_registration = AtlasRegistration(self._downloaded_atlases[atlas_name])
@@ -41,10 +48,7 @@ class BrainwaysSetup:
                 )
                 self._download_model(atlas_name)
 
-        # mark installation as initialized
-        config = load_config()
-        config.initialized = True
-        write_config(config)
+        self.set_initialized()
 
     def _download_qupath(self) -> None:
         try:

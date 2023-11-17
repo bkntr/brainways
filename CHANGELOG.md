@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
  - Download trained model from huggingface
+ - First use setup
 
 ## [0.1.9]
 

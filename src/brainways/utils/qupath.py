@@ -1,6 +1,7 @@
 import platform
 import shutil
 from pathlib import Path
+from typing import Optional
 
 from bg_atlasapi.utils import check_internet_connection
 from paquo import settings as paquo_settings
@@ -43,10 +44,10 @@ def is_qupath_downloaded(version: str):
 
 
 def download_qupath(
-    install_path: Path = get_brainways_qupath_dir(),
+    install_path: Optional[Path] = None,
     version: str = "0.4.3",
     system: str = platform.system(),
-    download_path: Path = get_brainways_dir(),
+    download_path: Optional[Path] = None,
     ssl_verify: bool = False,
 ):
     """
@@ -55,6 +56,11 @@ def download_qupath(
     download a specific QuPath version
     """
     from paquo._utils import download_qupath, extract_qupath
+
+    if install_path is None:
+        install_path = get_brainways_qupath_dir()
+    if download_path is None:
+        download_path = get_brainways_qupath_dir()
 
     check_internet_connection()
 

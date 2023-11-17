@@ -15,12 +15,6 @@ def mock_brainways_dir(tmp_path, monkeypatch):
     monkeypatch.setattr(paths, "_BRAINWAYS_PATH", mock_dir)
 
 
-@pytest.fixture
-def mock_rat_atlas(mock_atlas) -> BrainwaysAtlas:
-    mock_atlas.brainglobe_atlas.atlas_name = "whs_sd_rat_39um"
-    return mock_atlas
-
-
 def test_trained_model_not_available(mock_atlas: BrainwaysAtlas):
     reg = AtlasRegistration(mock_atlas)
     assert not reg.trained_model_available()

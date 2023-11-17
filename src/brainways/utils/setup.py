@@ -61,6 +61,9 @@ class BrainwaysSetup:
             raise
 
     def _download_atlas(self, atlas_name: str) -> None:
+        if atlas_name in self._downloaded_atlases:
+            return
+
         self._downloaded_atlases[atlas_name] = BrainwaysAtlas(
             atlas_name, exclude_regions=[]
         )

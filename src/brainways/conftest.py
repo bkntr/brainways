@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 import torch
 from aicsimageio.types import PhysicalPixelSizes
+from bg_atlasapi import BrainGlobeAtlas
 from bg_atlasapi.structure_class import StructuresDict
 from PIL import Image
 from pytest import fixture
@@ -38,6 +39,16 @@ from brainways.utils.io_utils.readers.qupath_reader import QupathReader
 @fixture(autouse=True)
 def seed():
     np.random.seed(0)
+
+
+@fixture(autouse=True)
+def safeguards(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(
+        BrainGlobeAtlas,
+        "download_extract_file",
+        value=Mock(side_effect=Exception("don't download atlas in test")),
+    )
+    yield
 
 
 @fixture
@@ -99,7 +110,7 @@ def mock_atlas(test_data: Tuple[np.ndarray, AtlasSlice]) -> BrainwaysAtlas:
 
 
 @pytest.fixture
-def mock_rat_atlas(mock_atlas) -> BrainwaysAtlas:
+def mock_rat_atlas(mock_atlas: BrainwaysAtlas) -> BrainwaysAtlas:
     mock_atlas.brainglobe_atlas.atlas_name = "whs_sd_rat_39um"
     return mock_atlas
 
@@ -131,9 +142,11 @@ def test_image_size(test_data: Tuple[np.ndarray, AtlasSlice]) -> ImageSizeHW:
 
 
 @pytest.fixture
-def mock_image_path(test_data: Tuple[np.ndarray, AtlasSlice], tmpdir) -> ImagePath:
+def mock_image_path(
+    test_data: Tuple[np.ndarray, AtlasSlice], tmp_path: Path
+) -> ImagePath:
     image, _ = test_data
-    image_path = ImagePath(str(tmpdir / "image.jpg"), scene=0)
+    image_path = ImagePath(str(tmp_path / "image.jpg"), scene=0)
     Image.fromarray(image).save(image_path.filename)
     QupathReader.physical_pixel_sizes = PhysicalPixelSizes(Z=None, Y=10.0, X=10.0)
     return image_path
@@ -191,10 +204,10 @@ def mock_project_settings() -> ProjectSettings:
 
 @pytest.fixture
 def subject_path(
-    tmpdir,
+    tmp_path: Path,
     mock_subject_file_format: SubjectFileFormat,
 ) -> Path:
-    subject_path = Path(tmpdir) / "test_subject/data.bws"
+    subject_path = tmp_path / "test_subject/data.bws"
     subject_path.parent.mkdir(parents=True)
     serialized_subject_file_format = asdict(mock_subject_file_format)
     with open(subject_path, "w") as f:
@@ -235,9 +248,9 @@ def brainways_project(
     mock_project_settings: ProjectSettings,
     mock_atlas: BrainwaysAtlas,
     test_data: Tuple[np.ndarray, AtlasSlice],
-    tmpdir,
+    tmp_path: Path,
 ) -> BrainwaysProject:
-    project_path = Path(tmpdir / "project/project.bwp")
+    project_path = tmp_path / "project/project.bwp"
     project_path.parent.mkdir()
     brainways_project = BrainwaysProject(
         subjects=[],

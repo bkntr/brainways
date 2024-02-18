@@ -4,18 +4,15 @@ from typing import Optional
 import click
 from tqdm import tqdm
 
-from brainways.project.brainways_subject import BrainwaysSubject
+from brainways.project.brainways_project import BrainwaysProject
 
 
 @click.command()
 @click.option(
-    "--input",
+    "--project",
     type=Path,
     required=True,
-    help=(
-        "Input directory of subject files to create registration model training data"
-        " for."
-    ),
+    help="Brainways project path.",
 )
 @click.option(
     "--new-images-root",
@@ -27,13 +24,11 @@ from brainways.project.brainways_subject import BrainwaysSubject
     type=Path,
 )
 def move_images_root(
-    input: Path, new_images_root: Path, old_images_root: Optional[Path]
+    project: Path, new_images_root: Path, old_images_root: Optional[Path]
 ):
-    paths = [p for p in input.glob("*") if p.is_dir()]
-    for subject_path in tqdm(paths):
-        print(subject_path)
-        subject = BrainwaysSubject.open(subject_path)
+    project = BrainwaysProject.open(project)
+    for subject in tqdm(project.subjects):
         subject.move_images_root(
             new_images_root=new_images_root, old_images_root=old_images_root
         )
-        subject.save(subject_path)
+        subject.save()

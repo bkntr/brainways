@@ -213,7 +213,9 @@ class BrainwaysSubject:
                 else:
                     cell_detector_params = default_params
                 labels = cell_detector.run_cell_detector(
-                    image, params=cell_detector_params
+                    image,
+                    params=cell_detector_params,
+                    physical_pixel_sizes=document.physical_pixel_sizes,
                 )
                 cells = cell_detector.cells(
                     labels=labels,

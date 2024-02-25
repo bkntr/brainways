@@ -13,7 +13,6 @@ from tqdm import tqdm
 
 from brainways.pipeline.brainways_pipeline import PipelineStep
 from brainways.project.brainways_project import BrainwaysProject
-from brainways.utils.cells import filter_cells_by_size
 from brainways.utils.io_utils.image_path import ImagePath
 
 
@@ -266,7 +265,7 @@ def load_data_from_project(input, struct, num_subjects, condition, output):
             )
 
             cells = subject.get_valid_cells(document)
-            cells = filter_cells_by_size(cells, min_size_um=25, max_size_um=125)
+            # cells = filter_cells_by_size(cells, min_size_um=25, max_size_um=125)
             cells_on_highres_image = cells[["x", "y"]].values * (
                 document.image_size[1],
                 document.image_size[0],

@@ -2,7 +2,6 @@ import pickle
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
-import napari
 import numpy as np
 import pandas as pd
 import scipy.ndimage
@@ -73,6 +72,8 @@ def view_brain_structure(
     condition_value: Optional[str] = None,
     num_subjects: Optional[int] = None,
 ):
+    import napari
+
     condition_display_str = None
     if condition_type:
         assert condition_value

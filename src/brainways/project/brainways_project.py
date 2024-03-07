@@ -35,6 +35,7 @@ from brainways.utils.pls_analysis import (
     save_lv_p_values_plot,
     save_salience_plot,
 )
+from brainways.utils.view_brain_structure import view_brain_structure
 
 
 class BrainwaysProject:
@@ -241,6 +242,21 @@ class BrainwaysProject:
                 cell_detector, default_params=self.settings.default_cell_detector_params
             )
 
+    def view_brain_structure(
+        self,
+        structure_names: List[str],
+        condition_type: Optional[str] = None,
+        condition_value: Optional[str] = None,
+        num_subjects: Optional[int] = None,
+    ) -> None:
+        view_brain_structure(
+            project=self,
+            structure_names=structure_names,
+            condition_type=condition_type,
+            condition_value=condition_value,
+            num_subjects=num_subjects,
+        )
+
     def calculate_contrast(
         self,
         condition_col: str,
@@ -282,7 +298,6 @@ class BrainwaysProject:
         values_col: str,
         min_group_size: int,
         alpha: float,
-        conditions: Optional[List[str]] = None,
         n_perm: int = 1000,
         n_boot: int = 1000,
     ):
@@ -300,14 +315,13 @@ class BrainwaysProject:
         results_df_pls = get_results_df_for_pls(
             results_df,
             values=values_col,
-            condition_col=condition_col,
-            conditions=conditions,
+            condition=condition_col,
             min_per_group=min_group_size,
         )
 
         pls_results = pls_analysis(
             results_df_pls=results_df_pls,
-            condition_col=condition_col,
+            condition=condition_col,
             n_perm=n_perm,
             n_boot=n_boot,
         )
@@ -322,18 +336,11 @@ class BrainwaysProject:
             pls_results=pls_results, results_df_pls=results_df_pls
         )
 
-        if conditions is None:
-            conditions = results_df[condition_col].unique().tolist()
-        conditions_str = ",".join(conditions)
-        pls_file_prefix = (
-            "Condition"
-            f" Type={condition_col},Conditions={conditions_str},Values={values_col}"
-        )
+        pls_file_prefix = f"Condition={condition_col},Values={values_col}"
         pls_root_path = self.path.parent / "__outputs__" / "PLS" / pls_file_prefix
         pls_root_path.mkdir(parents=True, exist_ok=True)
         pls_excel_path = pls_root_path / f"pls-{pls_file_prefix}.xlsx"
         with ExcelWriter(pls_excel_path) as writer:
-            results_df_pls.to_excel(writer, sheet_name="Values")
             lv_p_values_plot.to_excel(writer, sheet_name="LV P Value", index=False)
             estimated_lv_plot.to_excel(writer, sheet_name="Estimated LV1", index=False)
             salience_plot.to_excel(writer, sheet_name="PLS Salience", index=False)
@@ -373,7 +380,7 @@ class BrainwaysProject:
         cell_counts = get_results_df_for_pls(
             results_df,
             values=values_col,
-            condition_col=condition_col,
+            condition=condition_col,
             min_per_group=min_group_size,
         )
 

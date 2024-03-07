@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,15 +12,12 @@ from pyls import PLSResults
 
 def pls_analysis(
     results_df_pls: pd.DataFrame,
-    condition_col: str,
+    condition: str,
     n_perm: int = 1000,
     n_boot: int = 1000,
 ) -> PLSResults:
-
     num_groups = (
-        results_df_pls.index.get_level_values(condition_col)
-        .value_counts(sort=False)
-        .values
+        results_df_pls.index.get_level_values(condition).value_counts(sort=False).values
     )
     pls_results = pyls.meancentered_pls(
         X=results_df_pls.values, groups=num_groups, n_perm=n_perm, n_boot=n_boot
@@ -31,25 +27,19 @@ def pls_analysis(
 
 
 def get_results_df_for_pls(
-    results_df: pd.DataFrame,
-    values: str,
-    condition_col: str,
-    min_per_group: int,
-    conditions: Optional[List[str]] = None,
+    results_df: pd.DataFrame, values: str, condition: str, min_per_group: int
 ) -> pd.DataFrame:
-    if conditions:
-        results_df = results_df[results_df[condition_col].isin(conditions)]
     results_df = results_df[
         results_df["is_gray_matter"] & ~results_df["is_parent_structure"]
     ]
     results_df_pls = results_df.pivot(
-        index=["animal_id", condition_col], columns="acronym", values=values
+        index=["animal_id", condition], columns="acronym", values=values
     )
-    results_df_pls = results_df_pls.sort_index(level=condition_col)
+    results_df_pls = results_df_pls.sort_index(level=condition)
     results_df_pls = remove_columns_lacking_data(
-        df=results_df_pls, condition=condition_col, min_per_group=min_per_group
+        df=results_df_pls, condition=condition, min_per_group=min_per_group
     )
-    results_df_pls = interpolate_by_cond(df=results_df_pls, condition=condition_col)
+    results_df_pls = interpolate_by_cond(df=results_df_pls, condition=condition)
     return results_df_pls
 
 
@@ -169,7 +159,7 @@ def save_salience_plot(path: Path, plot_df: pd.DataFrame, alpha: float = 0.05):
         errorbar=None,
     )
     ax.tick_params(axis="x", rotation=90)
-    alpha_z = scipy.stats.norm.ppf(1 - alpha / 2)
+    alpha_z = scipy.stats.norm.ppf(1 - alpha)
     if (plot_df["Salience"] > alpha_z).any():
         ax.axhline(alpha_z, color="k", alpha=0.5)
     if (plot_df["Salience"] < -alpha_z).any():

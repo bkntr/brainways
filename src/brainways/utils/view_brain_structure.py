@@ -1,19 +1,19 @@
 import pickle
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
-import click
 import napari
 import numpy as np
 import pandas as pd
-import rpack
 import scipy.ndimage
 import tifffile
 from tqdm import tqdm
 
 from brainways.pipeline.brainways_pipeline import PipelineStep
-from brainways.project.brainways_project import BrainwaysProject
 from brainways.utils.io_utils.image_path import ImagePath
+
+if TYPE_CHECKING:
+    from brainways.project.brainways_project import BrainwaysProject
 
 
 def update_layer_contrast_limits(
@@ -31,64 +31,6 @@ def update_layer_contrast_limits(
     )
     layer.contrast_limits = (limit_0, limit_1 + 1e-8)
     layer.contrast_limits_range = (limit_range_0, limit_range_1 + 1e-8)
-
-
-def get_grid_positions(
-    image_sizes: List[Tuple[int, int]],
-    grid_size_limits: Optional[Tuple[int, int]] = None,
-    _recursion_depth: int = 0,
-    _max_grid_size: Optional[int] = None,
-):
-    if _max_grid_size is None:
-        max_grid_width = sum(width for width, _ in image_sizes)
-        max_grid_height = sum(height for _, height in image_sizes)
-        _max_grid_size = max(max_grid_width, max_grid_height)
-
-    if grid_size_limits is None:
-        grid_size_limits = (0, _max_grid_size)
-    attempt_grid_size = (grid_size_limits[0] + grid_size_limits[1]) // 2
-    try:
-        positions = rpack.pack(
-            image_sizes, max_width=attempt_grid_size, max_height=attempt_grid_size
-        )
-        if grid_size_limits[1] - grid_size_limits[0] < _max_grid_size * 0.05:
-            return positions
-    except Exception:
-        assert attempt_grid_size != grid_size_limits[0]
-        # failed creating grid, try bigger
-        grid_size_limits = (
-            attempt_grid_size,
-            grid_size_limits[1],
-        )
-        return get_grid_positions(
-            image_sizes=image_sizes, grid_size_limits=grid_size_limits
-        )
-    assert attempt_grid_size != grid_size_limits[1]
-    # successfully created grid, try smaller
-    grid_size_limits = (
-        grid_size_limits[0],
-        attempt_grid_size,
-    )
-    return get_grid_positions(
-        image_sizes=image_sizes,
-        grid_size_limits=grid_size_limits,
-        _max_grid_size=_max_grid_size,
-    )
-
-
-# def create_image_grid(
-#     images: List[np.ndarray], positions: Optional[List[Tuple[int, int]]] = None
-# ):
-#     sizes = [(image.shape[1], image.shape[0]) for image in images]
-#     if positions is None:
-#         positions = get_grid_positions(sizes)
-#     grid_width, grid_height = rpack.bbox_size(sizes, positions)
-#     grid = np.zeros((grid_height, grid_width), dtype=images[0].dtype)
-#     for image, position in zip(images, positions):
-#         x, y = position
-#         image_h, image_w = image.shape[0], image.shape[1]
-#         grid[y : y + image_h, x : x + image_w] = image
-#     return grid, positions
 
 
 def create_image_grid(df: pd.DataFrame):
@@ -124,46 +66,53 @@ def create_cells_grid(cells_list: List[np.ndarray], positions: List[Tuple[int, i
     return grid
 
 
-@click.command()
-@click.option(
-    "--input",
-    type=Path,
-    help="Input directory of subjects to display area for.",
-)
-@click.option("--struct", help="Structure acronym to display")
-@click.option("--num-subjects", type=int, help="Number of random subjects to run on")
-@click.option("--condition")
-@click.option("--output", type=Path)
-def display_area(
-    input: Path,
-    struct: str,
-    num_subjects: Optional[int],
-    condition: Optional[str],
-    output: Path,
+def view_brain_structure(
+    project: "BrainwaysProject",
+    structure_names: List[str],
+    condition_type: Optional[str] = None,
+    condition_value: Optional[str] = None,
+    num_subjects: Optional[int] = None,
 ):
-    assert output is not None
-    output = output / condition.replace(":", "_") / struct
-    output.mkdir(parents=True, exist_ok=True)
-    metadata_path = output / "metadata.pkl"
+    condition_display_str = None
+    if condition_type:
+        assert condition_value
+        condition_display_str = f"{condition_type}:{condition_value}"
+    output_path = (
+        project.path.parent
+        / "structure_images"
+        / f"{condition_type}_{condition_value}"
+        / ",".join(structure_names)
+    )
+    output_path.mkdir(parents=True, exist_ok=True)
+    metadata_path = output_path / "metadata.pkl"
 
     if metadata_path.exists():
         with open(metadata_path, "rb") as f:
             metadata = pickle.load(f)
         data = metadata["images_metadata"]
-        for index, image_path in enumerate(sorted(output.glob("*.tiff"))):
+        for index, image_path in enumerate(sorted(output_path.glob("*.tiff"))):
             data[index]["image"] = tifffile.imread(image_path)
     else:
-        data = load_data_from_project(input, struct, num_subjects, condition, output)
+        data = load_data_from_project(
+            project=project,
+            structure_names=structure_names,
+            output_path=output_path,
+            condition_type=condition_type,
+            condition_value=condition_value,
+            num_subjects=num_subjects,
+        )
         images_metadata = [
             {key: value for key, value in row.items() if key != "image"} for row in data
         ]
-        metadata = {"images_metadata": images_metadata, "struct": struct}
-        if condition is not None:
-            metadata["condition"] = condition
+        metadata = {
+            "images_metadata": images_metadata,
+            "struct": ",".join(structure_names),
+        }
+        if condition_type is not None:
+            metadata["condition"] = condition_display_str
         with open(metadata_path, "wb") as f:
             pickle.dump(metadata, f)
 
-    # grid, positions = create_image_grid([row["image"] for row in data])
     data = pd.DataFrame(data).sort_values(by=["subject", "ap"])
     grid, positions = create_image_grid(data)
     cells_grid = create_cells_grid(data["cells"], positions=positions)
@@ -171,7 +120,7 @@ def display_area(
     viewer = napari.Viewer()
     layer = viewer.add_image(grid, colormap="green")
     update_layer_contrast_limits(layer)
-    viewer.add_points(cells_grid[:, ::-1], face_color="red", edge_color="red", size=50)
+    viewer.add_points(cells_grid[:, ::-1], face_color="red", edge_color="red", size=5)
 
     image_shapes = [
         (row["image"].shape[0], row["image"].shape[1]) for _, row in data.iterrows()
@@ -197,23 +146,26 @@ def display_area(
         name="text",
         opacity=1.0,
     )
-    if condition:
-        viewer.title = condition
-
-    napari.run()
+    if condition_type:
+        viewer.title = condition_display_str
 
 
-def load_data_from_project(input, struct, num_subjects, condition, output):
-    project = BrainwaysProject.open(input)
-    structure_names = struct.split(",")
+def load_data_from_project(
+    project: "BrainwaysProject",
+    structure_names: List[str],
+    output_path: Path,
+    condition_type: Optional[str] = None,
+    condition_value: Optional[str] = None,
+    num_subjects: Optional[int] = None,
+):
     struct_ids = [
         project.atlas.brainglobe_atlas.structures[structure_name]["id"]
         for structure_name in structure_names
     ]
     data = []
     subjects = project.subjects
-    if condition is not None:
-        condition_type, condition_value = condition.split(":")
+    if condition_type:
+        assert condition_value
         subjects = [
             subject
             for subject in subjects
@@ -265,7 +217,6 @@ def load_data_from_project(input, struct, num_subjects, condition, output):
             )
 
             cells = subject.get_valid_cells(document)
-            # cells = filter_cells_by_size(cells, min_size_um=25, max_size_um=125)
             cells_on_highres_image = cells[["x", "y"]].values * (
                 document.image_size[1],
                 document.image_size[0],
@@ -291,7 +242,7 @@ def load_data_from_project(input, struct, num_subjects, condition, output):
                     scene=document.path.scene,
                 )
                 highres_image_cc_cache_path = (
-                    output / f"{len(data):04}_{output_image_path}.tiff"
+                    output_path / f"{len(data):04}_{output_image_path}.tiff"
                 )
                 if highres_image_cc_cache_path.exists():
                     highres_image_cc = tifffile.imread(highres_image_cc_cache_path)
@@ -336,4 +287,4 @@ def load_data_from_project(input, struct, num_subjects, condition, output):
 
 
 if __name__ == "__main__":
-    display_area()
+    view_brain_structure()

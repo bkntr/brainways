@@ -110,11 +110,7 @@ class CellDetector:
         return labels
 
     def run_cell_detector(
-        self,
-        image,
-        params: CellDetectorParams,
-        physical_pixel_sizes: Tuple[float, float],
-        **kwargs,
+        self, image, params: CellDetectorParams, **kwargs
     ) -> np.ndarray:
         normalizer = self.get_normalizer(params)
         labels, details = self.stardist.predict_instances_big(
@@ -125,25 +121,6 @@ class CellDetector:
             normalizer=normalizer,
             **kwargs,
         )
-        if params.cell_size_range != (0, 0):
-            regionprops = pd.DataFrame(
-                regionprops_table(
-                    labels,
-                    image,
-                    properties=("label", "area"),
-                )
-            )
-            regionprops["area"] = (
-                regionprops["area"] * physical_pixel_sizes[0] * physical_pixel_sizes[1]
-            )
-            regionprops["include"] = (
-                regionprops["area"] >= params.cell_size_range[0]
-            ) & (regionprops["area"] <= params.cell_size_range[1])
-            labels_include = np.in1d(
-                labels.flat, regionprops[regionprops["include"]]["label"]
-            ).reshape(labels.shape)
-            labels *= labels_include.astype(labels.dtype)
-
         return labels
 
     def cells(

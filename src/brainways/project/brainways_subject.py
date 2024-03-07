@@ -111,7 +111,9 @@ class BrainwaysSubject:
         reader.set_scene(document.path.scene)
         if level:
             reader.set_level(level)
-        image = reader.get_image_dask_data("YX", C=self.settings.channel).compute()
+        image = reader.get_image_dask_data(
+            "YX", C=self.project.settings.channel
+        ).compute()
         return image
 
     def add_image(self, path: ImagePath, load_thumbnail: bool = True) -> SliceInfo:

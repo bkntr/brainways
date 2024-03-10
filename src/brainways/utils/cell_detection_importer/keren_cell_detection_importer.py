@@ -7,7 +7,6 @@ from brainways.project.info_classes import SliceInfo
 from brainways.utils.cell_detection_importer.cell_detection_importer import (
     CellDetectionImporter,
 )
-from brainways.utils.io_utils.readers import QupathReader
 
 
 class KerenCellDetectionsImporter(CellDetectionImporter):
@@ -44,15 +43,13 @@ class KerenCellDetectionsImporter(CellDetectionImporter):
             return None
 
     def read_cells_file(self, path: Path, document: SliceInfo) -> pd.DataFrame:
-        reader = QupathReader(document.path.filename)
-        reader.set_scene(document.path.scene)
         input_cells_df = pd.read_csv(path, sep="\t")
         input_cells_df = input_cells_df[
             input_cells_df["Class"].isin(("Positive", "Negative"))
         ]
         image_size_um = [
-            reader.dims.X * reader.physical_pixel_sizes.X,
-            reader.dims.Y * reader.physical_pixel_sizes.Y,
+            document.image_size[1] * document.physical_pixel_sizes[1],
+            document.image_size[0] * document.physical_pixel_sizes[0],
         ]
         brainways_cells_df = pd.DataFrame(
             {

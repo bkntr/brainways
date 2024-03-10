@@ -248,6 +248,8 @@ class BrainwaysProject:
         condition_type: Optional[str] = None,
         condition_value: Optional[str] = None,
         num_subjects: Optional[int] = None,
+        display_channel: Optional[int] = None,
+        filter_cell_type: Optional[str] = None,
     ) -> None:
         view_brain_structure(
             project=self,
@@ -255,6 +257,8 @@ class BrainwaysProject:
             condition_type=condition_type,
             condition_value=condition_value,
             num_subjects=num_subjects,
+            display_channel=display_channel,
+            filter_cell_type=filter_cell_type,
         )
 
     def calculate_contrast(

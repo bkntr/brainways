@@ -71,6 +71,8 @@ def view_brain_structure(
     condition_type: Optional[str] = None,
     condition_value: Optional[str] = None,
     num_subjects: Optional[int] = None,
+    display_channel: Optional[int] = None,
+    filter_cell_type: Optional[str] = None,
 ):
     import napari
 
@@ -101,6 +103,8 @@ def view_brain_structure(
             condition_type=condition_type,
             condition_value=condition_value,
             num_subjects=num_subjects,
+            display_channel=display_channel,
+            filter_cell_type=filter_cell_type,
         )
         images_metadata = [
             {key: value for key, value in row.items() if key != "image"} for row in data
@@ -121,7 +125,7 @@ def view_brain_structure(
     viewer = napari.Viewer()
     layer = viewer.add_image(grid, colormap="green")
     update_layer_contrast_limits(layer)
-    viewer.add_points(cells_grid[:, ::-1], face_color="red", edge_color="red", size=5)
+    viewer.add_points(cells_grid[:, ::-1], face_color="red", edge_color="red", size=50)
 
     image_shapes = [
         (row["image"].shape[0], row["image"].shape[1]) for _, row in data.iterrows()
@@ -158,6 +162,8 @@ def load_data_from_project(
     condition_type: Optional[str] = None,
     condition_value: Optional[str] = None,
     num_subjects: Optional[int] = None,
+    display_channel: Optional[int] = None,
+    filter_cell_type: Optional[str] = None,
 ):
     struct_ids = [
         project.atlas.brainglobe_atlas.structures[structure_name]["id"]
@@ -218,6 +224,8 @@ def load_data_from_project(
             )
 
             cells = subject.get_valid_cells(document)
+            if filter_cell_type:
+                cells = cells[cells[f"LABEL-{filter_cell_type}"]]
             cells_on_highres_image = cells[["x", "y"]].values * (
                 document.image_size[1],
                 document.image_size[0],
@@ -248,13 +256,15 @@ def load_data_from_project(
                 if highres_image_cc_cache_path.exists():
                     highres_image_cc = tifffile.imread(highres_image_cc_cache_path)
                 else:
+                    if display_channel is None:
+                        display_channel = project.settings.channel
                     highres_image_cc = (
                         document.image_reader()
                         .get_image_dask_data(
                             "YX",
                             X=slice(x0, x1),
                             Y=slice(y0, y1),
-                            C=project.settings.channel,
+                            C=display_channel,
                         )
                         .compute()
                     )
@@ -285,7 +295,3 @@ def load_data_from_project(
         if len(data) == 0:
             continue
     return data
-
-
-if __name__ == "__main__":
-    view_brain_structure()

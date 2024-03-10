@@ -47,6 +47,9 @@ class KerenCellDetectionsImporter(CellDetectionImporter):
         reader = QupathReader(document.path.filename)
         reader.set_scene(document.path.scene)
         input_cells_df = pd.read_csv(path, sep="\t")
+        input_cells_df = input_cells_df[
+            input_cells_df["Class"].isin(("Positive", "Negative"))
+        ]
         image_size_um = [
             reader.dims.X * reader.physical_pixel_sizes.X,
             reader.dims.Y * reader.physical_pixel_sizes.Y,

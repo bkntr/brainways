@@ -1,0 +1,31 @@
+site_name: Brainways
+repo_url: https://github.com/bkntr/napari-brainways
+repo_name: bkntr/napari-brainways
+edit_uri: edit/main/docs/
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - content.action.edit
+    - content.action.view
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+markdown_extensions:
+  - markdown_include.include
+  - admonition         # Adds boxes for Notes, Warnings, etc.
+  - attr_list          # Adds attribute lists to generated HTML
+  - toc:               # Builds a table of contents
+      permalink: "#"   # Puts a "#" at the end of each header, which

@@ -1,0 +1,607 @@
+from __future__ import annotations
+
+import inspect
+from dataclasses import replace
+from pathlib import Path
+from typing import Callable, List, Optional, Tuple
+
+import napari
+import numpy as np
+from napari.qt.threading import FunctionWorker, GeneratorWorker, create_worker
+from qtpy.QtCore import Qt, Signal
+from qtpy.QtWidgets import QProgressDialog, QVBoxLayout, QWidget
+
+from brainways.pipeline.brainways_params import BrainwaysParams
+from brainways.project.brainways_project import BrainwaysProject
+from brainways.project.brainways_subject import BrainwaysSubject
+from brainways.project.info_classes import SliceInfo
+from brainways.utils.cell_detection_importer.cell_detection_importer import (
+    CellDetectionImporter,
+)
+from brainways.utils.paths import get_brainways_dir
+from brainways.utils.setup import BrainwaysSetup
+from napari_brainways.controllers.affine_2d_controller import Affine2DController
+from napari_brainways.controllers.analysis_controller import AnalysisController
+from napari_brainways.controllers.annotation_viewer_controller import (
+    AnnotationViewerController,
+)
+from napari_brainways.controllers.cell_3d_viewer_controller import (
+    Cell3DViewerController,
+)
+from napari_brainways.controllers.cell_detector_controller import CellDetectorController
+from napari_brainways.controllers.registration_controller import RegistrationController
+from napari_brainways.controllers.tps_controller import TpsController
+from napari_brainways.widgets.workflow_widget import WorkflowView
+
+
+class BrainwaysUI(QWidget):
+    progress = Signal(object)
+
+    def __init__(self, napari_viewer: napari.Viewer, async_disabled: bool = False):
+        super().__init__()
+
+        self.viewer = napari_viewer
+        self.async_disabled = async_disabled
+
+        self.registration_controller = RegistrationController(self)
+        self.affine_2d_controller = Affine2DController(self)
+        self.tps_controller = TpsController(self)
+        self.annotation_viewer_controller = AnnotationViewerController(self)
+        self.cell_detector_controller = CellDetectorController(self)
+        self.cell_viewer_controller = Cell3DViewerController(self)
+        self.analysis_controller = AnalysisController(self)
+
+        self.steps = [
+            self.registration_controller,
+            self.affine_2d_controller,
+            self.tps_controller,
+            self.annotation_viewer_controller,
+            self.cell_detector_controller,
+            self.cell_viewer_controller,
+            self.analysis_controller,
+        ]
+
+        self.project: Optional[BrainwaysProject] = None
+        self._current_valid_subject_index: Optional[int] = None
+        self._current_valid_document_index: Optional[int] = None
+        self._current_step_index: int = 0
+
+        self.widget = WorkflowView(self, steps=self.steps)
+
+        self._set_layout()
+        get_brainways_dir()  # TODO: remove after brainways 0.10.1
+        self._setup_async()
+
+        self.viewer.layers.events.inserted.connect(
+            self._on_layer_inserted, position="last"
+        )
+
+    def _setup_async(self):
+        if not BrainwaysSetup.is_first_launch():
+            return
+
+        progress_dialog = QProgressDialog("First time setup...", "Cancel", 0, 0, self)
+        progress_dialog.setModal(True)
+        progress_dialog.setWindowTitle("First time setup...")
+        progress_dialog.setCancelButton(None)
+        progress_dialog.setWindowFlag(Qt.WindowType.CustomizeWindowHint)
+        progress_dialog.setWindowFlag(~Qt.WindowType.WindowCloseButtonHint)
+        progress_dialog.show()
+
+        def _progress_callback(desc: str):
+            progress_dialog.setLabelText(desc)
+
+        self.progress.connect(_progress_callback)
+
+        def _return_callback():
+            progress_dialog.close()
+            self.progress.disconnect(_progress_callback)
+
+        setup = BrainwaysSetup(
+            atlas_names=["whs_sd_rat_39um", "allen_mouse_25um"],
+            progress_callback=lambda desc: self.progress.emit(desc),
+        )
+        self.do_work_async(setup.run, return_callback=_return_callback)
+
+    def _on_layer_inserted(self, event):
+        layer = event.value
+        if layer is None or "__brainways__" not in layer.metadata:
+            return
+        sample_project_path = Path(layer.metadata["sample_project_path"])
+        self.open_project_async(sample_project_path)
+
+    def _set_layout(self):
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+        layout.addWidget(self.widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setMinimumWidth(500)
+
+    def _register_keybinds(self):
+        self.viewer.bind_key("PageDown", self.next_step, overwrite=True)
+        self.viewer.bind_key("PageUp", self.prev_step, overwrite=True)
+        self.viewer.bind_key("n", self.next_image, overwrite=True)
+        self.viewer.bind_key("b", self.prev_image, overwrite=True)
+        self.viewer.bind_key("Shift-N", self.next_subject, overwrite=True)
+        self.viewer.bind_key("Shift-B", self.prev_subject, overwrite=True)
+        self.viewer.bind_key(
+            "Home",
+            lambda _: self.set_document_index_async(image_index=0),
+            overwrite=True,
+        )
+        self.viewer.bind_key(
+            "End",
+            lambda _: self.set_document_index_async(
+                image_index=len(self.current_subject.valid_documents) - 1
+            ),
+            overwrite=True,
+        )
+
+    def reset(self, save_current_subject: bool = True):
+        if self._current_valid_subject_index is not None:
+            if save_current_subject:
+                self.save_subject()
+            self.current_step.close()
+            self.widget.set_step(0)
+            self.widget.set_image_index(1)
+        self.widget.set_subject_index(1)
+        self._current_valid_subject_index = None
+        self._current_valid_document_index = 0
+        self._current_step_index = 0
+
+    def _run_workflow_single_doc(self, doc_i: int) -> None:
+        raise NotImplementedError()
+        # reader = brainways.utils.io_utils.readers.get_reader(self.documents[doc_i].path)
+        # transform = self.current_subject.pipeline.get_image_to_atlas_transform(doc_i, reader)
+        # cell_detector_result = None
+        # document = self.documents[doc_i]
+        #
+        # for step in self.steps:
+        #     cell_detector_result = step.cells(
+        #         reader=reader,
+        #         params=document.params,
+        #         prev_cell_detector_result=cell_detector_result,
+        #     )
+        #
+        # cells_on_atlas = transform.transform_points(cell_detector_result.cells)
+        # self.set_document(replace(document, cells=cells_on_atlas), doc_i)
+
+    def run_workflow_async(self) -> FunctionWorker:
+        raise NotImplementedError()
+        # self.set_step_index_async(len(self.steps) - 1)
+        # view_images = ViewImages(atlas=self._atlas)
+        # self.cell_viewer_controller.open(self._atlas)
+        # self.widget.show_progress_bar(len(self.documents))
+        # worker = create_worker(self._run_workflow)
+        # worker.yielded.connect(self._on_run_workflow_yielded)
+        # worker.returned.connect(self._on_run_workflow_returned)
+        # worker.errored.connect(self._on_work_error)
+        # worker.start()
+        # return worker
+
+    def _run_workflow(self):
+        raise NotImplementedError()
+        # for step in self.steps:
+        #     step.load_model()
+        #
+        # for doc_i, doc in enumerate(self.documents):
+        #     self._run_workflow_single_doc(doc_i)
+        #     yield doc_i
+
+    def _on_run_workflow_yielded(self, doc_index: int):
+        raise NotImplementedError()
+        # cells = np.concatenate(
+        #     [doc.cells for doc in self.documents if doc.cells is not None]
+        # )
+        # self.cell_viewer_controller.show_cells(cells)
+        # self.widget.update_progress_bar(doc_index)
+
+    def _on_run_workflow_returned(self):
+        raise NotImplementedError()
+        # self.widget.hide_progress_bar()
+
+    def open_project_async(self, path: Path) -> FunctionWorker:
+        self.reset()
+        return self.do_work_async(
+            self._open_project,
+            return_callback=self._on_project_opened,
+            progress_label="Opening project...",
+            path=path,
+        )
+
+    def _open_project(self, path: Path):
+        yield "Opening project..."
+        self.project = BrainwaysProject.open(path, lazy_init=True)
+        yield f"Loading '{self.project.settings.atlas}' atlas..."
+        self.project.load_atlas()
+        yield "Loading Brainways Pipeline models..."
+        self.project.load_pipeline()
+        if len(self.project.subjects) > 0:
+            self._current_valid_subject_index = 0
+            yield "Opening image..."
+            self._open_image()
+
+    def _open_image(self):
+        self._image = self.current_subject.read_lowres_image(self.current_document)
+        self._load_step_default_params()
+
+    def _load_step_default_params(self):
+        if not self.current_step.has_current_step_params(self.current_params):
+            self.current_params = self.current_step.default_params(
+                image=self._image, params=self.current_params
+            )
+
+    def _open_step(self):
+        self.current_step.open()
+        self.current_step.show(self.current_params, self._image)
+        self.widget.update_enabled_steps()
+        self._set_title()
+
+    def _set_title(self, valid_document_index: Optional[int] = None):
+        if valid_document_index is None:
+            valid_document_index = self._current_valid_document_index
+        _, document = self.current_subject.valid_documents[valid_document_index]
+        self.viewer.title = (
+            f"{self.current_subject.subject_info.name} - {document.path}"
+        )
+
+    def _on_project_opened(self):
+        self.widget.on_project_changed(len(self.project.subjects))
+        if len(self.project.subjects) > 0:
+            self._on_subject_opened()
+
+    def _on_subject_opened(self):
+        self._set_title()
+        self._register_keybinds()
+        self.widget.on_subject_changed()
+        for step in self.steps:
+            step.pipeline_loaded()
+        self.current_step.open()
+        self.current_step.show(self.current_params, self._image)
+        self.widget.update_enabled_steps()
+
+    def _on_progress_returned(self):
+        self.widget.hide_progress_bar()
+
+    def persist_current_params(self):
+        assert self.current_step.params is not None
+        self.current_document = replace(
+            self.current_document, params=self.current_step.params
+        )
+
+    def save_subject(self, persist: bool = True) -> None:
+        if persist:
+            self.persist_current_params()
+        self.current_subject.save()
+        self.project.save()
+
+    def set_subject_index_async(
+        self,
+        subject_index: int,
+        force: bool = False,
+        save_current_subject: bool = True,
+    ) -> FunctionWorker | None:
+        if not force and self._current_valid_subject_index == subject_index:
+            return None
+        self.reset(save_current_subject=save_current_subject)
+        subject_index = min(max(subject_index, 0), len(self.project.subjects) - 1)
+
+        self._current_valid_subject_index = subject_index
+        self.widget.set_subject_index(subject_index + 1)
+        return self.do_work_async(
+            self._open_image, return_callback=self._on_subject_opened
+        )
+
+    def set_document_index_async(
+        self,
+        image_index: int,
+        force: bool = False,
+        persist_current_params: bool = True,
+    ) -> FunctionWorker | None:
+        if persist_current_params:
+            self.save_subject()
+
+        image_index = min(
+            max(image_index, 0), len(self.current_subject.valid_documents) - 1
+        )
+        if not force and self._current_valid_document_index == image_index:
+            return None
+
+        self._current_valid_document_index = image_index
+
+        if not self.current_step.enabled(self.current_params):
+            self.current_step.close()
+            for step_index in reversed(range(self._current_step_index)):
+                if self.current_step.enabled(self.current_params):
+                    break
+                self._current_step_index = step_index
+            self.widget.set_step(self._current_step_index)
+
+        self.widget.set_image_index(image_index + 1)
+        return self.do_work_async(self._open_image, return_callback=self._open_step)
+
+    def prev_subject(self, _=None) -> FunctionWorker | None:
+        return self.set_subject_index_async(
+            max(self._current_valid_subject_index - 1, 0)
+        )
+
+    def next_subject(self, _=None) -> FunctionWorker | None:
+        return self.set_subject_index_async(
+            min(
+                self._current_valid_subject_index + 1,
+                len(self.project.subjects) - 1,
+            )
+        )
+
+    def prev_image(self, _=None) -> FunctionWorker | None:
+        return self.set_document_index_async(
+            max(self._current_valid_document_index - 1, 0)
+        )
+
+    def next_image(self, _=None) -> FunctionWorker | None:
+        return self.set_document_index_async(
+            min(
+                self._current_valid_document_index + 1,
+                len(self.current_subject.valid_documents) - 1,
+            )
+        )
+
+    def set_step_index_async(
+        self,
+        step_index: int,
+        force: bool = False,
+        save_subject: bool = True,
+    ) -> FunctionWorker | None:
+        if not force and self._current_step_index == step_index:
+            return
+        if save_subject:
+            self.save_subject()
+        self.current_step.close()
+        self.widget.set_step(step_index)
+        self._current_step_index = step_index
+        return self.do_work_async(
+            self._load_step_default_params, return_callback=self._open_step
+        )
+
+    def prev_step(self, _=None) -> FunctionWorker | None:
+        return self.set_step_index_async(max(self._current_step_index - 1, 0))
+
+    def next_step(self, _=None) -> FunctionWorker | None:
+        return self.set_step_index_async(
+            min(self._current_step_index + 1, len(self.steps) - 1)
+        )
+
+    def _batch_run_model(self):
+        self.widget.show_progress_bar()
+        for valid_index in range(len(self.current_subject.valid_documents)):
+            self._current_valid_document_index = valid_index
+            self._open_image()
+            self.current_params = self.current_step.run_model(
+                self._image, self.current_params
+            )
+            self.save_subject(persist=False)
+            yield valid_index, self.current_params, self._image
+
+    def _batch_run_model_yielded(
+        self, args: Tuple[int, BrainwaysParams, np.ndarray]
+    ) -> None:
+        valid_index, params, image = args
+        self.current_step.show(params, image)
+        self.widget.set_image_index(valid_index + 1)
+        self.widget.update_progress_bar(valid_index + 1)
+        self._set_title(valid_document_index=valid_index)
+
+    def batch_run_model_async(self) -> FunctionWorker:
+        self.widget.show_progress_bar(
+            max_value=len(self.current_subject.valid_documents)
+        )
+        worker = create_worker(self._batch_run_model)
+        worker.yielded.connect(self._batch_run_model_yielded)
+        worker.returned.connect(self._progress_returned)
+        worker.start()
+        return worker
+
+    def import_cell_detections_async(
+        self, path: Path, importer: CellDetectionImporter
+    ) -> FunctionWorker:
+        return self.do_work_async(
+            self.project.import_cell_detections_iter,
+            importer=importer,
+            cell_detections_root=path,
+            progress_label="Importing Cell Detections...",
+            progress_max_value=self.project.n_valid_images,
+        )
+
+    def run_cell_detector_async(self) -> FunctionWorker:
+        return self.do_work_async(
+            self.project.run_cell_detector_iter,
+            progress_label="Running Cell Detector...",
+            progress_max_value=self.project.n_valid_images,
+        )
+
+    def view_brain_structure_async(
+        self,
+        structure_names: List[str],
+        condition_type: Optional[str] = None,
+        condition_value: Optional[str] = None,
+        num_subjects: Optional[int] = None,
+        display_channel: Optional[int] = None,
+        filter_cell_type: Optional[str] = None,
+    ) -> FunctionWorker:
+        # return self.do_work_async(
+        #     self.project.view_brain_structure,
+        #     progress_label="Viewing Brain Structure...",
+        #     structure_names=structure_names,
+        #     condition_type=condition_type,
+        #     condition_value=condition_value,
+        #     num_subjects=num_subjects,
+        # )
+        self.project.view_brain_structure(
+            structure_names=structure_names,
+            condition_type=condition_type,
+            condition_value=condition_value,
+            num_subjects=num_subjects,
+            display_channel=display_channel,
+            filter_cell_type=filter_cell_type,
+        )
+
+    def show_cells_view(self):
+        self.save_subject()
+        self.current_step.close()
+        self.cell_viewer_controller.open(self.current_subject.atlas)
+        cells = np.concatenate(
+            [
+                doc.cells
+                for i, doc in self.current_subject.valid_documents
+                if doc.cells is not None
+            ]
+        )
+        self.cell_viewer_controller.show_cells(cells)
+
+    def _progress_returned(self) -> None:
+        self.widget.hide_progress_bar()
+
+    def do_work_async(
+        self,
+        function: Callable,
+        return_callback: Optional[Callable] = None,
+        yield_callback: Optional[Callable] = None,
+        error_callback: Optional[Callable] = None,
+        progress_label: Optional[str] = None,
+        progress_max_value: int = 0,
+        **kwargs,
+    ) -> FunctionWorker:
+        self.widget.show_progress_bar(
+            label=progress_label, max_value=progress_max_value
+        )
+        if self.async_disabled:
+            return self._do_work_sync(
+                function=function,
+                return_callback=return_callback,
+                yield_callback=yield_callback,
+                error_callback=error_callback,
+                **kwargs,
+            )
+
+        worker = create_worker(function, **kwargs)
+
+        worker.returned.connect(self._on_work_returned)
+        if return_callback is not None:
+            worker.returned.connect(return_callback)
+        if isinstance(worker, GeneratorWorker):
+            worker.yielded.connect(self._on_work_yielded)
+            if yield_callback is not None:
+                worker.returned.connect(yield_callback)
+        worker.errored.connect(self._on_work_error)
+        if error_callback is not None:
+            worker.returned.connect(error_callback)
+        worker.start()
+        return worker
+
+    def _do_work_sync(
+        self,
+        function: Callable,
+        return_callback: Optional[Callable] = None,
+        yield_callback: Optional[Callable] = None,
+        error_callback: Optional[Callable] = None,
+        **kwargs,
+    ):
+        try:
+            if inspect.isgeneratorfunction(function):
+                gen = function(**kwargs)
+                try:
+                    while True:
+                        item = next(gen)
+                        if item is None:
+                            self._on_work_yielded()
+                            if yield_callback is not None:
+                                yield_callback()
+                        elif isinstance(item, (list, tuple)):
+                            self._on_work_yielded(*item)
+                            if yield_callback is not None:
+                                yield_callback(*item)
+                        else:
+                            self._on_work_yielded(item)
+                            if yield_callback is not None:
+                                yield_callback(item)
+                except StopIteration as e:
+                    result = e.value
+            else:
+                result = function(**kwargs)
+
+            if result is None:
+                self._on_work_returned()
+                if return_callback is not None:
+                    return_callback()
+            elif isinstance(result, (list, tuple)):
+                self._on_work_returned(*result)
+                if return_callback is not None:
+                    return_callback(*result)
+            else:
+                self._on_work_returned(result)
+                if return_callback is not None:
+                    return_callback(result)
+        except Exception:
+            self._on_work_error()
+            if error_callback is not None:
+                error_callback()
+            raise
+
+    def _on_work_returned(self, *args, **kwargs):
+        self.widget.hide_progress_bar()
+
+    def _on_work_yielded(
+        self, text: Optional[str] = None, value: Optional[int] = None, **kwargs
+    ):
+        self.widget.update_progress_bar(value=value, text=text)
+
+    def _on_work_error(self, *args, **kwargs):
+        self.widget.hide_progress_bar()
+
+    @property
+    def _current_document_index(self):
+        current_document_index, _ = self.current_subject.valid_documents[
+            self._current_valid_document_index
+        ]
+        return current_document_index
+
+    @property
+    def current_valid_document_index(self):
+        return self._current_valid_document_index
+
+    @property
+    def current_subject(self) -> BrainwaysSubject:
+        return self.project.subjects[self._current_valid_subject_index]
+
+    @current_subject.setter
+    def current_subject(self, value: BrainwaysSubject):
+        assert self._current_valid_subject_index is not None
+        self.project.subjects[self._current_valid_subject_index] = value
+
+    @property
+    def current_document(self):
+        return self.current_subject.documents[self._current_document_index]
+
+    @current_document.setter
+    def current_document(self, value: SliceInfo):
+        self.current_subject.documents[self._current_document_index] = value
+
+    @property
+    def current_step(self):
+        return self.steps[self._current_step_index]
+
+    @property
+    def current_params(self):
+        return self.current_subject.documents[self._current_document_index].params
+
+    @current_params.setter
+    def current_params(self, value: BrainwaysParams):
+        self.current_document = replace(self.current_document, params=value)
+
+    @property
+    def current_subject_index(self):
+        return self._current_valid_subject_index
+
+    @property
+    def subject_size(self):
+        return len(self.current_subject.valid_documents)

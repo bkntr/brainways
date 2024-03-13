@@ -5,11 +5,11 @@ repos:
       - id: check-docstring-first
       - id: end-of-file-fixer
       - id: trailing-whitespace
-  - repo: https://github.com/asottile/setup-cfg-fmt
-    rev: v1.20.1
-    hooks:
-      - id: setup-cfg-fmt
-        args: [--max-py-version=3.9]
+  # - repo: https://github.com/asottile/setup-cfg-fmt
+  #   rev: v1.20.1
+  #   hooks:
+  #     - id: setup-cfg-fmt
+  #       args: [--max-py-version=3.9]
   - repo: https://github.com/PyCQA/isort
     rev: 5.12.0
     hooks:

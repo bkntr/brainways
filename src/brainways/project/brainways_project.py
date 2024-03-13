@@ -35,6 +35,7 @@ from brainways.utils.pls_analysis import (
     save_lv_p_values_plot,
     save_salience_plot,
 )
+from brainways.utils.view_brain_structure import view_brain_structure
 
 
 class BrainwaysProject:
@@ -240,6 +241,25 @@ class BrainwaysProject:
             subject.run_cell_detector(
                 cell_detector, default_params=self.settings.default_cell_detector_params
             )
+
+    def view_brain_structure(
+        self,
+        structure_names: List[str],
+        condition_type: Optional[str] = None,
+        condition_value: Optional[str] = None,
+        num_subjects: Optional[int] = None,
+        display_channel: Optional[int] = None,
+        filter_cell_type: Optional[str] = None,
+    ) -> None:
+        view_brain_structure(
+            project=self,
+            structure_names=structure_names,
+            condition_type=condition_type,
+            condition_value=condition_value,
+            num_subjects=num_subjects,
+            display_channel=display_channel,
+            filter_cell_type=filter_cell_type,
+        )
 
     def calculate_contrast(
         self,

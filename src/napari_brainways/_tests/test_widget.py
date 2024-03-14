@@ -16,7 +16,7 @@ from brainways.project.info_classes import SliceInfo
 from brainways.utils.io_utils import ImagePath
 from napari_brainways.brainways_ui import BrainwaysUI
 from napari_brainways.controllers.base import Controller
-from napari_brainways.test_utils import randomly_modified_params
+from napari_brainways.utils.test_utils import randomly_modified_params
 
 
 @fixture(params=[0, 1])
@@ -188,7 +188,7 @@ def test_batch_run_model_works(
 
 @pytest.mark.skip
 def test_batch_run_model_ends_with_last_image(
-    app_batch_run_model: Tuple[BrainwaysUI, BrainwaysParams]
+    app_batch_run_model: Tuple[BrainwaysUI, BrainwaysParams],
 ):
     app, modified_params = app_batch_run_model
     assert app._current_valid_document_index == len(app.documents) - 1

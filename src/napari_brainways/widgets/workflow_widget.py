@@ -187,7 +187,11 @@ class WorkflowView(QWidget):
             return
 
         subject_id = values["subject_id"]
-        dialog = CreateSubjectDialog(project=self.controller.project, parent=self)
+        dialog = CreateSubjectDialog(
+            project=self.controller.project,
+            async_disabled=self.controller.async_disabled,
+            parent=self,
+        )
         dialog.new_subject(subject_id=subject_id, conditions={})
         result = dialog.exec()
         if result == QDialog.DialogCode.Rejected:
@@ -197,7 +201,11 @@ class WorkflowView(QWidget):
         self.controller.set_subject_index_async(subject_index)
 
     def on_edit_subject_clicked(self, _=None):
-        dialog = CreateSubjectDialog(project=self.controller.project, parent=self)
+        dialog = CreateSubjectDialog(
+            project=self.controller.project,
+            async_disabled=self.controller.async_disabled,
+            parent=self,
+        )
         dialog.edit_subject_async(
             subject_index=self.controller.current_subject_index,
             document_index=self.controller.current_valid_document_index,

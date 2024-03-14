@@ -13,7 +13,7 @@ from napari.utils.colormaps.colormap import Colormap
 
 from brainways.pipeline.brainways_params import BrainwaysParams
 from napari_brainways.controllers.base import Controller
-from napari_brainways.utils import update_layer_contrast_limits
+from napari_brainways.utils.general_utils import update_layer_contrast_limits
 from napari_brainways.widgets.analysis_widget import AnalysisWidget
 
 if TYPE_CHECKING:

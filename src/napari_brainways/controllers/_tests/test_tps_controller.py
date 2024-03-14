@@ -13,7 +13,7 @@ from brainways.pipeline.brainways_params import TPSTransformParams
 from brainways.project.info_classes import BrainwaysParams
 from napari_brainways.brainways_ui import BrainwaysUI
 from napari_brainways.controllers.tps_controller import TpsController
-from napari_brainways.test_utils import randomly_modified_params
+from napari_brainways.utils.test_utils import randomly_modified_params
 
 
 @fixture
@@ -178,7 +178,7 @@ def test_previous_next_previous_params(app_on_tps: Tuple[BrainwaysUI, TpsControl
 
 
 def test_previous_params_empty_does_nothing(
-    app_on_tps: Tuple[BrainwaysUI, TpsController]
+    app_on_tps: Tuple[BrainwaysUI, TpsController],
 ):
     app, controller = app_on_tps
     previous_params = controller.params
@@ -194,7 +194,7 @@ def test_next_params_empty_does_nothing(app_on_tps: Tuple[BrainwaysUI, TpsContro
 
 
 def test_change_params_empties_next_params(
-    app_on_tps: Tuple[BrainwaysUI, TpsController]
+    app_on_tps: Tuple[BrainwaysUI, TpsController],
 ):
     app, controller = app_on_tps
     next_params1 = replace(

@@ -8,7 +8,7 @@ import numpy as np
 from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.pipeline.brainways_pipeline import PipelineStep
 from napari_brainways.controllers.base import Controller
-from napari_brainways.utils import update_layer_contrast_limits
+from napari_brainways.utils.general_utils import update_layer_contrast_limits
 from napari_brainways.widgets.affine_2d_widget import Affine2DWidget
 
 if TYPE_CHECKING:

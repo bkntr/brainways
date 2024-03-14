@@ -12,7 +12,7 @@ from brainways.pipeline.brainways_pipeline import PipelineStep
 from brainways.transforms.tps_transform import TPSTransform
 from brainways.utils.image import brain_mask, nonzero_bounding_box
 from napari_brainways.controllers.base import Controller
-from napari_brainways.utils import update_layer_contrast_limits
+from napari_brainways.utils.general_utils import update_layer_contrast_limits
 from napari_brainways.widgets.tps_widget import TpsWidget
 
 if TYPE_CHECKING:

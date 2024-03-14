@@ -5,7 +5,6 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from magicgui import widgets
-from napari.qt.threading import FunctionWorker, create_worker
 from qtpy import QtCore
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import (
@@ -30,15 +29,21 @@ from brainways.project.info_classes import SliceInfo, SubjectInfo
 from brainways.utils.image import resize_image
 from brainways.utils.io_utils import ImagePath
 from brainways.utils.io_utils.readers import get_channels, get_scenes
+from napari_brainways.utils.async_utils import do_work_async
 
 
 class CreateSubjectDialog(QDialog):
-    def __init__(self, project: BrainwaysProject, parent: Optional[QWidget] = None):
+    def __init__(
+        self,
+        project: BrainwaysProject,
+        async_disabled: bool = False,
+        parent: Optional[QWidget] = None,
+    ):
         super().__init__(parent)
 
         self.project = project
+        self.async_disabled = async_disabled
         self.subject: Optional[BrainwaysSubject] = None
-        self._add_documents_worker: Optional[FunctionWorker] = None
         self.create_subject_button = QPushButton("&Create", self)
         self.create_subject_button.clicked.connect(self.on_create_subject_clicked)
         self.channels_combobox = QComboBox()
@@ -78,13 +83,11 @@ class CreateSubjectDialog(QDialog):
                 int(parent.parent().parent().parent().height() * 0.8),
             )
 
-    def edit_subject_async(
-        self, subject_index: int, document_index: int
-    ) -> FunctionWorker:
+    def edit_subject_async(self, subject_index: int, document_index: int) -> None:
         self.setWindowTitle("Edit Subject")
         self._set_subject(self.project.subjects[subject_index])
         self.create_subject_button.setText("Done")
-        return self.add_document_rows_async(
+        self.add_document_rows_async(
             documents=self.subject.documents, select_document_index=document_index
         )
 
@@ -130,7 +133,7 @@ class CreateSubjectDialog(QDialog):
         ]
         return widgets.Container(widgets=condition_widgets)
 
-    def add_filenames_async(self, filenames: List[str]) -> FunctionWorker:
+    def add_filenames_async(self, filenames: List[str]) -> None:
         progress = QProgressDialog(
             "Loading image scenes...", "Cancel", 0, len(filenames), self
         )
@@ -164,13 +167,13 @@ class CreateSubjectDialog(QDialog):
                 yield
             return documents
 
-        worker = create_worker(work)
-        worker.returned.connect(on_work_returned)
-        worker.yielded.connect(on_work_yielded)
-        worker.errored.connect(on_work_returned)
-        worker.start()
-
-        return worker
+        do_work_async(
+            work,
+            return_callback=on_work_returned,
+            yield_callback=on_work_yielded,
+            error_callback=on_work_returned,
+            async_disabled=self.async_disabled,
+        )
 
     def get_image_widget(self, thumbnail: np.ndarray) -> QWidget:
         image_widget = QLabel()
@@ -200,7 +203,7 @@ class CreateSubjectDialog(QDialog):
 
     def add_document_rows_async(
         self, documents: List[SliceInfo], select_document_index: Optional[int] = None
-    ) -> FunctionWorker:
+    ) -> None:
         progress = QProgressDialog(
             "Opening images...", "Cancel", 0, len(documents), self
         )
@@ -250,15 +253,13 @@ class CreateSubjectDialog(QDialog):
                 thumbnail = self.get_thumbnail_image(document)
                 yield document, thumbnail
 
-        worker = create_worker(work)
-        worker.returned.connect(on_work_returned)
-        worker.yielded.connect(on_work_yielded)
-        worker.errored.connect(on_work_returned)
-        worker.start()
-
-        self._add_documents_worker = worker
-
-        return worker
+        do_work_async(
+            work,
+            return_callback=on_work_returned,
+            yield_callback=on_work_yielded,
+            error_callback=on_work_returned,
+            async_disabled=self.async_disabled,
+        )
 
     @property
     def subject_path(self) -> Path:

@@ -45,7 +45,7 @@ def is_qupath_downloaded(version: str):
 
 def download_qupath(
     install_path: Optional[Path] = None,
-    version: str = "0.4.3",
+    version: str = "0.5.0",
     system: str = platform.system(),
     download_path: Optional[Path] = None,
     ssl_verify: bool = False,

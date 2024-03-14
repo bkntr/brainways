@@ -25,7 +25,7 @@ from brainways.utils.qupath import download_qupath, is_qupath_downloaded
 
 
 class QupathReader(Reader):
-    _qupath_version = "0.4.3"
+    _qupath_version = "0.5.0"
     _qupath_initialized = False
     ImageServerProvider = None
     BufferedImage = None

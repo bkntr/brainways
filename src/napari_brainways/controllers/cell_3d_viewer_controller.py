@@ -11,7 +11,7 @@ from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 from brainways.utils.cells import get_cell_struct_ids, get_struct_colors
 from napari_brainways.controllers.base import Controller
-from napari_brainways.utils import update_layer_contrast_limits
+from napari_brainways.utils.general_utils import update_layer_contrast_limits
 from napari_brainways.widgets.cell_viewer_widget import CellViewerWidget
 
 if TYPE_CHECKING:

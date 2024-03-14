@@ -45,7 +45,7 @@ def test_annotation_outline(annotation, expected):
     annotation = torch.as_tensor(annotation)
     outline = annotation_outline(annotation)
     expected = torch.as_tensor(expected).byte()
-    torch.testing.assert_allclose(outline, expected)
+    torch.testing.assert_close(outline, expected)
 
 
 @pytest.mark.parametrize(

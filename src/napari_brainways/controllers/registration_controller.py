@@ -9,7 +9,7 @@ import numpy as np
 from brainways.pipeline.brainways_params import AtlasRegistrationParams, BrainwaysParams
 from brainways.utils.image import brain_mask, nonzero_bounding_box
 from napari_brainways.controllers.base import Controller
-from napari_brainways.utils import update_layer_contrast_limits
+from napari_brainways.utils.general_utils import update_layer_contrast_limits
 from napari_brainways.widgets.registration_widget import RegistrationView
 
 if TYPE_CHECKING:

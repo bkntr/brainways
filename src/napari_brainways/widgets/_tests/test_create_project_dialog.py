@@ -10,7 +10,7 @@ from brainways.project.info_classes import SliceInfo
 from brainways.utils.image import ImageSizeHW, get_resize_size
 from brainways.utils.io_utils import ImagePath
 from brainways.utils.io_utils.readers import QupathReader
-from napari_brainways.test_utils import worker_join
+from napari_brainways.utils.test_utils import worker_join
 from napari_brainways.widgets.create_subject_dialog import CreateSubjectDialog
 
 
@@ -22,13 +22,11 @@ def create_subject_dialog(
     test_image_size: ImageSizeHW,
 ) -> CreateSubjectDialog:
     QupathReader.physical_pixel_sizes = PhysicalPixelSizes(Z=None, Y=10.0, X=10.0)
-    create_subject_dialog = CreateSubjectDialog(mock_project)
+    create_subject_dialog = CreateSubjectDialog(mock_project, async_disabled=True)
     create_subject_dialog.new_subject(
         subject_id="test_subject", conditions={"condition1": "c1", "condition2": "c2"}
     )
-    worker = create_subject_dialog.add_filenames_async([str(mock_image_path.filename)])
-    worker_join(worker, qtbot)
-    worker_join(create_subject_dialog._add_documents_worker, qtbot)
+    create_subject_dialog.add_filenames_async([str(mock_image_path.filename)])
     return create_subject_dialog
 
 
@@ -67,7 +65,7 @@ def test_ignore(
 
 
 def test_edit_subject(qtbot: QtBot, mock_project: BrainwaysProject, tmpdir):
-    dialog = CreateSubjectDialog(project=mock_project)
+    dialog = CreateSubjectDialog(project=mock_project, async_disabled=True)
     worker = dialog.edit_subject_async(subject_index=1, document_index=1)
     worker_join(worker, qtbot)
     assert dialog.subject == mock_project.subjects[1]

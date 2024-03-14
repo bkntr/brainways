@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-import inspect
 from dataclasses import replace
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 import napari
 import numpy as np
-from napari.qt.threading import FunctionWorker, GeneratorWorker, create_worker
-from qtpy.QtCore import Qt, Signal
+from napari.qt.threading import FunctionWorker, create_worker
+from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QProgressDialog, QVBoxLayout, QWidget
 
 from brainways.pipeline.brainways_params import BrainwaysParams
@@ -31,6 +30,7 @@ from napari_brainways.controllers.cell_3d_viewer_controller import (
 from napari_brainways.controllers.cell_detector_controller import CellDetectorController
 from napari_brainways.controllers.registration_controller import RegistrationController
 from napari_brainways.controllers.tps_controller import TpsController
+from napari_brainways.utils.async_utils import do_work_async
 from napari_brainways.widgets.workflow_widget import WorkflowView
 
 
@@ -84,8 +84,8 @@ class BrainwaysUI(QWidget):
         progress_dialog.setModal(True)
         progress_dialog.setWindowTitle("First time setup...")
         progress_dialog.setCancelButton(None)
-        progress_dialog.setWindowFlag(Qt.WindowType.CustomizeWindowHint)
-        progress_dialog.setWindowFlag(~Qt.WindowType.WindowCloseButtonHint)
+        # progress_dialog.setWindowFlag(Qt.WindowType.CustomizeWindowHint)
+        # progress_dialog.setWindowFlag(~Qt.WindowType.WindowCloseButtonHint)
         progress_dialog.show()
 
         def _progress_callback(desc: str):
@@ -464,9 +464,9 @@ class BrainwaysUI(QWidget):
     def do_work_async(
         self,
         function: Callable,
-        return_callback: Optional[Callable] = None,
-        yield_callback: Optional[Callable] = None,
-        error_callback: Optional[Callable] = None,
+        return_callback: Optional[Union[Callable, Sequence[Callable]]] = None,
+        yield_callback: Optional[Union[Callable, Sequence[Callable]]] = None,
+        error_callback: Optional[Union[Callable, Sequence[Callable]]] = None,
         progress_label: Optional[str] = None,
         progress_max_value: int = 0,
         **kwargs,
@@ -474,78 +474,28 @@ class BrainwaysUI(QWidget):
         self.widget.show_progress_bar(
             label=progress_label, max_value=progress_max_value
         )
-        if self.async_disabled:
-            return self._do_work_sync(
-                function=function,
-                return_callback=return_callback,
-                yield_callback=yield_callback,
-                error_callback=error_callback,
-                **kwargs,
-            )
+        return do_work_async(
+            function,
+            return_callback=self._merge_callbacks(
+                self._on_work_returned, return_callback
+            ),
+            yield_callback=self._merge_callbacks(self._on_work_yielded, yield_callback),
+            error_callback=self._merge_callbacks(self._on_work_error, error_callback),
+            async_disabled=self.async_disabled,
+            **kwargs,
+        )
 
-        worker = create_worker(function, **kwargs)
-
-        worker.returned.connect(self._on_work_returned)
-        if return_callback is not None:
-            worker.returned.connect(return_callback)
-        if isinstance(worker, GeneratorWorker):
-            worker.yielded.connect(self._on_work_yielded)
-            if yield_callback is not None:
-                worker.returned.connect(yield_callback)
-        worker.errored.connect(self._on_work_error)
-        if error_callback is not None:
-            worker.returned.connect(error_callback)
-        worker.start()
-        return worker
-
-    def _do_work_sync(
-        self,
-        function: Callable,
-        return_callback: Optional[Callable] = None,
-        yield_callback: Optional[Callable] = None,
-        error_callback: Optional[Callable] = None,
-        **kwargs,
+    @staticmethod
+    def _merge_callbacks(
+        callback: Callable,
+        callback_or_callbacks: Optional[Union[Callable, Sequence[Callable]]],
     ):
-        try:
-            if inspect.isgeneratorfunction(function):
-                gen = function(**kwargs)
-                try:
-                    while True:
-                        item = next(gen)
-                        if item is None:
-                            self._on_work_yielded()
-                            if yield_callback is not None:
-                                yield_callback()
-                        elif isinstance(item, (list, tuple)):
-                            self._on_work_yielded(*item)
-                            if yield_callback is not None:
-                                yield_callback(*item)
-                        else:
-                            self._on_work_yielded(item)
-                            if yield_callback is not None:
-                                yield_callback(item)
-                except StopIteration as e:
-                    result = e.value
-            else:
-                result = function(**kwargs)
-
-            if result is None:
-                self._on_work_returned()
-                if return_callback is not None:
-                    return_callback()
-            elif isinstance(result, (list, tuple)):
-                self._on_work_returned(*result)
-                if return_callback is not None:
-                    return_callback(*result)
-            else:
-                self._on_work_returned(result)
-                if return_callback is not None:
-                    return_callback(result)
-        except Exception:
-            self._on_work_error()
-            if error_callback is not None:
-                error_callback()
-            raise
+        if callback_or_callbacks is None:
+            return callback
+        elif isinstance(callback_or_callbacks, Sequence):
+            return [callback] + callback_or_callbacks
+        else:
+            return [callback, callback_or_callbacks]
 
     def _on_work_returned(self, *args, **kwargs):
         self.widget.hide_progress_bar()

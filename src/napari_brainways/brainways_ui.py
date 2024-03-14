@@ -7,7 +7,7 @@ from typing import Callable, List, Optional, Sequence, Tuple, Union
 import napari
 import numpy as np
 from napari.qt.threading import FunctionWorker, create_worker
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QProgressDialog, QVBoxLayout, QWidget
 
 from brainways.pipeline.brainways_params import BrainwaysParams
@@ -84,8 +84,8 @@ class BrainwaysUI(QWidget):
         progress_dialog.setModal(True)
         progress_dialog.setWindowTitle("First time setup...")
         progress_dialog.setCancelButton(None)
-        progress_dialog.setWindowFlag(Qt.WindowType.CustomizeWindowHint)
-        progress_dialog.setWindowFlag(~Qt.WindowType.WindowCloseButtonHint)
+        # progress_dialog.setWindowFlag(Qt.WindowType.CustomizeWindowHint)
+        # progress_dialog.setWindowFlag(~Qt.WindowType.WindowCloseButtonHint)
         progress_dialog.show()
 
         def _progress_callback(desc: str):

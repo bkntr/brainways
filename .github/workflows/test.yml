@@ -21,6 +21,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - if: github.event.ref_type != 'tag'
+        run: |
+          git fetch --prune --unshallow
+          git tag -d $(git tag --points-at HEAD)
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:

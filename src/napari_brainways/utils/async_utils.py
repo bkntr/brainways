@@ -1,7 +1,7 @@
 import inspect
 from typing import Any, Callable, Optional, Sequence, Union
 
-from napari.qt.threading import FunctionWorker, create_worker
+from napari.qt.threading import FunctionWorker, GeneratorWorker, create_worker
 
 
 def do_work_async(
@@ -22,7 +22,8 @@ def do_work_async(
         )
     worker = create_worker(function, **kwargs)
     _connect_callback(worker.returned, return_callback)
-    _connect_callback(worker.yielded, yield_callback)
+    if isinstance(worker, GeneratorWorker):
+        _connect_callback(worker.yielded, yield_callback)
     _connect_callback(worker.errored, error_callback)
     worker.start()
     return worker

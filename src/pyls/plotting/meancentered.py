@@ -174,7 +174,7 @@ def plot_contrast(
         hue="Condition",
         data=df,
         capsize=0.1,
-        errwidth=1.25,
+        err_kws={"linewidth": 1.25},
         alpha=0.25,
         errorbar=None,
         **kwargs

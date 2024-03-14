@@ -84,7 +84,7 @@ def save_estimated_lv_plot(path: Path, plot_df: pd.DataFrame):
         y=value_column,
         data=plot_df,
         capsize=0.1,
-        errwidth=1.25,
+        err_kws={"linewidth": 1.25},
         alpha=0.25,
         errorbar=None,
         color="k",
@@ -122,7 +122,7 @@ def save_lv_p_values_plot(path: Path, plot_df: pd.DataFrame, alpha: float = 0.05
         data=plot_df,
         color="k",
         capsize=0.1,
-        errwidth=1.25,
+        err_kws={"linewidth": 1.25},
         alpha=0.25,
         errorbar=None,
     )
@@ -155,7 +155,7 @@ def save_salience_plot(path: Path, plot_df: pd.DataFrame, alpha: float = 0.05):
         y="Salience",
         data=plot_df,
         capsize=0.1,
-        errwidth=1.25,
+        err_kws={"linewidth": 1.25},
         errorbar=None,
     )
     ax.tick_params(axis="x", rotation=90)

@@ -9,8 +9,12 @@ from brainways.utils.cell_detection_importer.cell_detection_importer import (
 from brainways.utils.cell_detection_importer.keren_cell_detection_importer import (
     KerenCellDetectionsImporter,
 )
+from brainways.utils.cell_detection_importer.qupath_cell_detection_importer import (
+    QupathCellDetectionsImporter,
+)
 
 _CELL_DETECTION_IMPORTERS = {
+    "qupath": QupathCellDetectionsImporter,
     "brainways": BrainwaysCellDetectionsImporter,
     "keren": KerenCellDetectionsImporter,
 }

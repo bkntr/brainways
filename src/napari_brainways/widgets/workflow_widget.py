@@ -288,7 +288,7 @@ class WorkflowView(QWidget):
         values = request_values(
             title="Import Cell Detections",
             importer_type=dict(
-                value="keren",
+                value="qupath",
                 widget_type="ComboBox",
                 options=dict(choices=cell_detection_importer_types()),
                 annotation=str,

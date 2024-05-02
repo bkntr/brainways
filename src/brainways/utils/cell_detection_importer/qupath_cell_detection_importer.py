@@ -61,7 +61,7 @@ class QupathCellDetectionsImporter(CellDetectionImporter):
 
     def read_cells_file(self, path: Path, document: SliceInfo) -> pd.DataFrame:
         input_cells_df = pd.read_csv(path, sep="\t")
-        if "Class" not in input_cells_df.columns:
+        if "Class" in input_cells_df.columns:
             input_cells_df = input_cells_df[
                 input_cells_df["Class"].isin(("Positive", "Negative"))
             ]

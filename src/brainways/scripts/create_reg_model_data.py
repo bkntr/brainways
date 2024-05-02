@@ -75,7 +75,7 @@ def create_reg_model_data(input: Path, output: Path):
                         rot_frontal = -document.params.affine.angle
 
                 if Path(document.path.filename).exists():
-                    reader = document.image_reader
+                    reader = document.image_reader()
                     channel_names = list(reader.channel_names)
                     images = [
                         reader.get_thumbnail(

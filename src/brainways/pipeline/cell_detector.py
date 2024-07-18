@@ -136,9 +136,15 @@ class CellDetector:
             regionprops["area"] = (
                 regionprops["area"] * physical_pixel_sizes[0] * physical_pixel_sizes[1]
             )
-            regionprops["include"] = (
-                regionprops["area"] >= params.cell_size_range[0]
-            ) & (regionprops["area"] <= params.cell_size_range[1])
+            if params.cell_size_range[0] > 0:
+                regionprops["include"] = (
+                    regionprops["area"] >= params.cell_size_range[0]
+                )
+            if params.cell_size_range[1] > 0:
+                regionprops["include"] = (
+                    regionprops["area"] <= params.cell_size_range[1]
+                )
+
             labels_include = np.in1d(
                 labels.flat, regionprops[regionprops["include"]]["label"]
             ).reshape(labels.shape)

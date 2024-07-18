@@ -21,7 +21,7 @@ class CellDetectorWidget(QWidget):
                 "orientation": "horizontal",
                 "choices": [
                     ("Quantile", "quantile"),
-                    # ("Value", "value"),
+                    ("Value", "value"),
                     ("CLAHE", "clahe"),
                     ("None", "none"),
                 ],
@@ -33,20 +33,10 @@ class CellDetectorWidget(QWidget):
             #     "max": 1000,
             #     "step": 1,
             # },
-            min_value={
-                "label": "Low",
-                "widget_type": "Slider",
-                "min": 0,
-                "max": 1000,
-                "step": 1,
-            },
-            max_value={
-                "label": "High",
-                "widget_type": "Slider",
-                "min": 0,
-                "max": 1000,
-                "step": 1,
-            },
+            min_value={"label": "Normalizer Low Value"},
+            max_value={"label": "Normalizer High Value"},
+            min_cell_size_value={"label": "Min Cell Size (um)"},
+            max_cell_size_value={"label": "Max Cell Size (um)"},
             auto_call=True,
         )
         self.cell_detector_params_widget.native.layout().setContentsMargins(0, 0, 0, 0)
@@ -65,12 +55,15 @@ class CellDetectorWidget(QWidget):
         self,
         normalizer: str,
         normalizer_range: Tuple[float, float],
+        cell_size_range: Tuple[float, float],
         unique: bool,
     ):
         widget = self.cell_detector_params_widget
         widget._auto_call = False
         widget.normalizer.value = normalizer
-        widget.min_value.value = int(normalizer_range[0] * 1000)
-        widget.max_value.value = int(normalizer_range[1] * 1000)
+        widget.min_value.value = normalizer_range[0]
+        widget.max_value.value = normalizer_range[1]
+        widget.min_cell_size_value.value = cell_size_range[0]
+        widget.max_cell_size_value.value = cell_size_range[1]
         widget.unique.value = unique
         widget._auto_call = True

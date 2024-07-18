@@ -55,7 +55,7 @@ meeting:
 
 ## Architecture
 
-Brainways is implemented as three python packages. [*napari-brainways*](https://github.com/bkntr/napari-brainways) contains the GUI implementation as a [napari](https://napari.org/stable/) plugin. napari-brainways is using [*brainways*](https://github.com/bkntr/brainways) as its backend. All of the functionality is implemented in the brainways package. This separation was done to guarantee that brainways is a GUI-agnostic software, and can be fully accessed and manipulated through python code to allow custom complex usage scenarios. The code that was used to train, evaluate and run the automatic registration model resides in [*brainways-reg-model*](https://github.com/bkntr/brainways-reg-model).
+Brainways is implemented as three modules. `napari-brainways` contains the GUI implementation as a [napari](https://napari.org/stable/) plugin. napari-brainways is using `brainways` as its backend. All of the functionality is implemented in the brainways package. This separation was done to guarantee that brainways is a GUI-agnostic software, and can be fully accessed and manipulated through python code to allow custom complex usage scenarios. The code that was used to train, evaluate and run the automatic registration model resides in `brainways-reg-model`.
 
 ## Development Status
 

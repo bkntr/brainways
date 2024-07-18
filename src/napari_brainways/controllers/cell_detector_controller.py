@@ -83,6 +83,7 @@ class CellDetectorController(Controller):
             self.widget.set_cell_detector_params(
                 normalizer=cell_detector_params.normalizer,
                 normalizer_range=cell_detector_params.normalizer_range,
+                cell_size_range=cell_detector_params.cell_size_range,
                 unique=self._params.cell is not None,
             )
 
@@ -198,13 +199,18 @@ class CellDetectorController(Controller):
         normalizer: str,
         min_value: float,
         max_value: float,
+        min_cell_size_value: float,
+        max_cell_size_value: float,
         unique: bool = False,
     ):
         if max_value <= min_value:
-            max_value = min(1, min_value + 0.001)
-        normalizer_range = (min_value / 1000, max_value / 1000)
+            max_value = min_value + 0.001
+        normalizer_range = (min_value, max_value)
+        cell_size_range = (min_cell_size_value, max_cell_size_value)
         cell_detector_params = CellDetectorParams(
-            normalizer=normalizer, normalizer_range=normalizer_range
+            normalizer=normalizer,
+            normalizer_range=normalizer_range,
+            cell_size_range=cell_size_range,
         )
         if unique:
             # in unique mode, set cell detector params unique to current slice
@@ -217,6 +223,7 @@ class CellDetectorController(Controller):
             self.widget.set_cell_detector_params(
                 normalizer=p.normalizer,
                 normalizer_range=p.normalizer_range,
+                cell_size_range=p.cell_size_range,
                 unique=False,
             )
         else:
@@ -235,7 +242,9 @@ class CellDetectorController(Controller):
         else:
             cell_detector_params = self.ui.project.settings.default_cell_detector_params
         return self.model.run_cell_detector(
-            image=self._crop, params=cell_detector_params
+            image=self._crop,
+            params=cell_detector_params,
+            physical_pixel_sizes=self.ui.current_document.physical_pixel_sizes,
         )
 
     def run_cell_detector_preview_async(self):

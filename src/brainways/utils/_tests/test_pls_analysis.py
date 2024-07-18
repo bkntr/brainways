@@ -22,11 +22,11 @@ def test_pls_analysis():
         ]
     )
     results_df_pls = get_results_df_for_pls(
-        results_df, values="val", condition="cond", min_per_group=3
+        results_df, values="val", condition_col="cond", min_per_group=3
     )
     pls_results = pls_analysis(
         results_df_pls=results_df_pls,
-        condition="cond",
+        condition_col="cond",
         n_perm=10,
         n_boot=10,
     )

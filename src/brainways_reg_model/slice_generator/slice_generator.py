@@ -2,7 +2,7 @@ from typing import Callable, Dict, List, Tuple, Union
 
 import numpy as np
 import torch
-from bg_atlasapi import BrainGlobeAtlas
+from brainglobe_atlasapi import BrainGlobeAtlas
 from torch.utils.data import Dataset
 
 from brainways_reg_model.slice_generator.slice_generator_sample import (

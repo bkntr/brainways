@@ -112,7 +112,7 @@ class Cell3DViewerController(Controller):
             colors = get_struct_colors(struct_ids, self._atlas.brainglobe_atlas)
             self.points_layer.data = all_cells[["z", "y", "x"]].values
             self.points_layer.face_color = colors
-            self.points_layer.edge_color = colors
+            self.points_layer.border_color = colors
             self.points_layer.selected_data = set()
         else:
             self.points_layer.data = []
@@ -157,7 +157,7 @@ class Cell3DViewerController(Controller):
             cell_xy = cells[["y", "x"]].values * [image.shape[0], image.shape[1]]
             self.points_layer.data = cell_xy
             self.points_layer.face_color = colors
-            self.points_layer.edge_color = colors
+            self.points_layer.border_color = colors
             self.points_layer.selected_data = set()
         else:
             self.points_layer.data = []

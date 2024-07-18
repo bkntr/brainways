@@ -7,7 +7,7 @@ import napari
 import numpy as np
 import PIL.Image
 import torch
-from bg_atlasapi import BrainGlobeAtlas
+from brainglobe_atlasapi import BrainGlobeAtlas
 from magicgui import magicgui
 
 from brainways_reg_model.model.model import BrainwaysRegModel

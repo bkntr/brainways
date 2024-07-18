@@ -8,7 +8,7 @@ from typing import Callable, List, Union
 
 import importlib_resources
 import PIL.Image
-from bg_atlasapi.list_atlases import get_all_atlases_lastversions
+from brainglobe_atlasapi.list_atlases import get_all_atlases_lastversions
 from magicgui import magicgui
 from magicgui.widgets import Image, request_values
 from napari.utils import progress

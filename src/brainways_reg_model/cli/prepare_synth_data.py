@@ -7,7 +7,7 @@ import click
 import pandas as pd
 import pytorch_lightning as pl
 import yaml
-from bg_atlasapi import BrainGlobeAtlas
+from brainglobe_atlasapi import BrainGlobeAtlas
 from lightning_fabric.utilities.seed import pl_worker_init_function
 from torch.utils.data import DataLoader
 from tqdm import tqdm

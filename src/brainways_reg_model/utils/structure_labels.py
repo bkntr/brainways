@@ -1,7 +1,7 @@
 from typing import List, Union
 
 import numpy as np
-from bg_atlasapi import BrainGlobeAtlas
+from brainglobe_atlasapi import BrainGlobeAtlas
 
 
 def structure_labels(

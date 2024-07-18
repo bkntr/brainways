@@ -7,7 +7,7 @@ from typing import Optional, Sequence, Union
 import cv2
 import numpy as np
 import torch
-from bg_atlasapi import BrainGlobeAtlas
+from brainglobe_atlasapi import BrainGlobeAtlas
 
 from brainways.utils.atlas.slice_atlas import slice_atlas
 from brainways.utils.image import nonzero_bounding_box

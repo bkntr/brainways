@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-from bg_atlasapi import BrainGlobeAtlas
+from brainglobe_atlasapi import BrainGlobeAtlas
 from skimage.measure import regionprops_table
 
 from brainways.pipeline.brainways_params import BrainwaysParams

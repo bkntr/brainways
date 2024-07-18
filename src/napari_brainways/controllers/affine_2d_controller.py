@@ -98,7 +98,8 @@ class Affine2DController(Controller):
 
     def unregister_key_bindings(self):
         for key in self._key_bindings:
-            self.ui.viewer.keymap.pop(key)
+            if key in self.ui.viewer.keymap:
+                self.ui.viewer.keymap.pop(key)
         self._key_bindings = None
 
     def show_help(self, _=None):

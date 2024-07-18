@@ -9,7 +9,7 @@ import napari
 import numpy as np
 import pytest
 import torch
-from bg_atlasapi.structure_class import StructuresDict
+from brainglobe_atlasapi.structure_class import StructuresDict
 from PIL import Image
 from pytest import MonkeyPatch, fixture
 from qtpy.QtWidgets import QApplication

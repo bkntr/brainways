@@ -10,8 +10,8 @@ import numpy as np
 import pytest
 import torch
 from aicsimageio.types import PhysicalPixelSizes
-from bg_atlasapi import BrainGlobeAtlas
-from bg_atlasapi.structure_class import StructuresDict
+from brainglobe_atlasapi import BrainGlobeAtlas
+from brainglobe_atlasapi.structure_class import StructuresDict
 from PIL import Image
 from pytest import fixture
 

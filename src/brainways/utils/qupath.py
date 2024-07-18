@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
-from bg_atlasapi.utils import check_internet_connection
+from brainglobe_atlasapi.utils import check_internet_connection
 from paquo import settings as paquo_settings
 from paquo.jpype_backend import find_qupath
 

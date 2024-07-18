@@ -41,6 +41,7 @@ class AtlasRegistration:
         self.download_model()
 
         import torch
+
         from brainways_reg_model.model.model import BrainwaysRegModel
 
         if self.brainways_reg_model is None:
@@ -82,7 +83,6 @@ class AtlasRegistration:
             repo_id=f"brainways/{self.atlas.atlas_name}",
             filename="model.ckpt",
             local_dir=self.local_checkpoint_path.parent,
-            local_dir_use_symlinks=False,
         )
 
     def checkpoint_downloaded(self) -> bool:

@@ -125,7 +125,9 @@ def view_brain_structure(
     viewer = napari.Viewer()
     layer = viewer.add_image(grid, colormap="green")
     update_layer_contrast_limits(layer)
-    viewer.add_points(cells_grid[:, ::-1], face_color="red", edge_color="red", size=50)
+    viewer.add_points(
+        cells_grid[:, ::-1], face_color="red", border_color="red", size=50
+    )
 
     image_shapes = [
         (row["image"].shape[0], row["image"].shape[1]) for _, row in data.iterrows()

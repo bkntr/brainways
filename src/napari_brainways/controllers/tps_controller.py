@@ -52,7 +52,8 @@ class TpsController(Controller):
 
     def unregister_key_bindings(self):
         for key in self._key_bindings:
-            self.ui.viewer.keymap.pop(key)
+            if key in self.ui.viewer.keymap:
+                self.ui.viewer.keymap.pop(key)
         self._key_bindings = None
 
     def show_help(self, _=None):
@@ -136,16 +137,16 @@ class TpsController(Controller):
         self.points_input_layer = self.ui.viewer.add_points(
             name="Input Points",
             face_color="green",
-            edge_color="#00ff0064",
+            border_color="#00ff0064",
             size=5,
-            edge_width=0.5,
+            border_width=0.5,
             visible=False,
         )
         self.points_atlas_layer = self.ui.viewer.add_points(
             name="Atlas Points",
             face_color="blue",
-            edge_color="#0000ff64",
-            edge_width=0.8,
+            border_color="#0000ff64",
+            border_width=0.8,
             size=5,
         )
         self.points_atlas_layer.mode = "select"
@@ -204,7 +205,10 @@ class TpsController(Controller):
         self.ui.viewer.layers.selection = {self.points_atlas_layer}
         self.points_atlas_layer.mode = "select"
 
-    def on_points_changed(self, _=None):
+    def on_points_changed(self, event=None):
+        if event is not None and event.action != "changed":
+            return
+
         if self.points_atlas_layer.mode == "add":
             point_to_add = self.points_atlas_layer.data[-1]
             transform = TPSTransform(params=self._params.tps).inv()

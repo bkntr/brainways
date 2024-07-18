@@ -6,7 +6,7 @@ from typing import Callable, Dict, Optional, Union
 import numpy as np
 import pandas as pd
 import torch
-from bg_atlasapi import BrainGlobeAtlas
+from brainglobe_atlasapi import BrainGlobeAtlas
 from PIL import Image
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset

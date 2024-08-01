@@ -385,7 +385,7 @@ class BrainwaysSubject:
             df = pd.concat(image_dfs, axis=0)
         else:
             if len(all_cells_on_atlas) == 0:
-                logging.warning(f"{document.path}: not found cells on atlas")
+                logging.warning(f"{self.subject_info.name}: not found cells on atlas")
                 return
 
             all_cells_on_atlas = pd.concat(all_cells_on_atlas, axis=0)

@@ -212,6 +212,12 @@ class BrainwaysUI(QWidget):
     def _open_project(self, path: Path):
         yield "Opening project..."
         self.project = BrainwaysProject.open(path, lazy_init=True)
+        # subjects with no valid documents are not supported in GUI
+        self.project.subjects = [
+            subject
+            for subject in self.project.subjects
+            if len(subject.valid_documents) > 0
+        ]
         yield f"Loading '{self.project.settings.atlas}' atlas..."
         self.project.load_atlas()
         yield "Loading Brainways Pipeline models..."

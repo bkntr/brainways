@@ -123,6 +123,15 @@ def test_open_project_without_subjects(
     assert app._current_valid_subject_index is None
 
 
+def test_open_project_filters_subjects_without_documents(
+    app: BrainwaysUI, mock_project: BrainwaysProject
+):
+    mock_project.subjects[0].documents = []
+    mock_project.subjects[0].save()
+    app.open_project_async(mock_project.path)
+    assert len(app.project.subjects) == 1
+
+
 def test_set_subject_index_async(
     opened_app: BrainwaysUI,
     subject_index: int,

@@ -140,12 +140,19 @@ def test_cant_calculate_contrast_only_one_condition(
     assert not brainways_project.can_calculate_contrast("condition")
 
 
-def test_cant_calculate_contrast_missing_conditions(
+def test_cant_calculate_contrast_missing_conditions_parameter(
     brainways_project: BrainwaysProject,
 ):
     brainways_project.subjects[0].subject_info = replace(
         brainways_project.subjects[0].subject_info, conditions=None
     )
+    assert not brainways_project.can_calculate_contrast("condition")
+
+
+def test_cant_calculate_contrast_missing_one_condition(
+    brainways_project: BrainwaysProject,
+):
+    brainways_project.subjects[0].subject_info.conditions.pop("condition")
     assert not brainways_project.can_calculate_contrast("condition")
 
 

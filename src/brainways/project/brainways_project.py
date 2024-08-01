@@ -418,7 +418,7 @@ class BrainwaysProject:
                         and field.name != "cell"
                     ):
                         logging.warning(
-                            f"Subject {subject.subject_info.name}: missing parameter {field.name} in slice {slice_info.path}"
+                            f"Missing parameter '{field.name}' in slice '{slice_info.path}' in subject '{subject.subject_info.name}'"
                         )
                         return subject_idx, slice_idx
         return None
@@ -431,10 +431,16 @@ class BrainwaysProject:
         missing_conditions = False
         for subject in self.subjects:
             if subject.subject_info.conditions is not None:
-                conditions.add(subject.subject_info.conditions.get(condition))
+                if condition in subject.subject_info.conditions:
+                    conditions.add(subject.subject_info.conditions[condition])
+                else:
+                    logging.warning(
+                        f"Missing condition '{condition}' in subject '{subject.subject_info.name}'"
+                    )
+                    missing_conditions = True
             else:
                 logging.warning(
-                    f"Missing conditions in subject {subject.subject_info.path}"
+                    f"Missing conditions parameter in subject '{subject.subject_info.name}'"
                 )
                 missing_conditions = True
 

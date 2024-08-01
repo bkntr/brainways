@@ -1,4 +1,5 @@
 import json
+import logging
 from dataclasses import asdict, fields
 from itertools import combinations
 from pathlib import Path
@@ -416,6 +417,9 @@ class BrainwaysProject:
                         getattr(slice_info.params, field.name) is None
                         and field.name != "cell"
                     ):
+                        logging.warning(
+                            f"Missing parameter {field.name} in slice {slice_info.path}"
+                        )
                         return subject_idx, slice_idx
         return None
 
@@ -424,14 +428,24 @@ class BrainwaysProject:
 
     def can_calculate_contrast(self, condition: str) -> bool:
         conditions = set()
+        missing_conditions = False
         for subject in self.subjects:
             if subject.subject_info.conditions is not None:
                 conditions.add(subject.subject_info.conditions.get(condition))
             else:
-                conditions.add(None)
+                logging.warning(
+                    f"Missing conditions in subject {subject.subject_info.path}"
+                )
+                missing_conditions = True
+
+        if len(conditions) == 1:
+            logging.warning(
+                f"Only one condition in all subjects, can't calculate contrast: {conditions}"
+            )
+
         return (
             self.can_calculate_results()
-            and None not in conditions
+            and not missing_conditions
             and len(conditions) > 1
         )
 

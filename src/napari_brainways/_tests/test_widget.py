@@ -61,6 +61,14 @@ def test_steps_are_loading(opened_app: BrainwaysUI, step: Controller):
     opened_app.set_step_index_async(opened_app.steps.index(step))
 
 
+def test_steps_are_loading_twice(opened_app: BrainwaysUI, step: Controller):
+    opened_app.set_step_index_async(opened_app.steps.index(step))
+    opened_app.set_step_index_async(
+        (opened_app.steps.index(step) + 1) % len(opened_app.steps)
+    )
+    opened_app.set_step_index_async(opened_app.steps.index(step))
+
+
 def test_steps_are_loading_for_new_subject(opened_app: BrainwaysUI):
     opened_app.current_document = replace(
         opened_app.current_document, params=BrainwaysParams()
@@ -121,6 +129,15 @@ def test_open_project_without_subjects(
     app.open_project_async(mock_project.path)
     assert isinstance(app.project, BrainwaysProject)
     assert app._current_valid_subject_index is None
+
+
+def test_open_project_filters_subjects_without_documents(
+    app: BrainwaysUI, mock_project: BrainwaysProject
+):
+    mock_project.subjects[0].documents = []
+    mock_project.subjects[0].save()
+    app.open_project_async(mock_project.path)
+    assert len(app.project.subjects) == 1
 
 
 def test_set_subject_index_async(

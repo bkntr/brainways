@@ -191,3 +191,11 @@ def test_run_cell_detector(
     )
     for i, document in brainways_subject.valid_documents:
         assert brainways_subject.cell_detections_path(document.path).exists()
+
+
+def test_empty_cell_count_summary_no_valid_documents(
+    brainways_subject: BrainwaysSubject,
+):
+    brainways_subject.documents = []
+    summary = brainways_subject.cell_count_summary()
+    assert summary is None

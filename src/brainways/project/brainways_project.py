@@ -1,4 +1,5 @@
 import json
+import logging
 from dataclasses import asdict, fields
 from itertools import combinations
 from pathlib import Path
@@ -272,7 +273,7 @@ class BrainwaysProject:
         if not self.can_calculate_contrast(condition_col):
             raise RuntimeError(
                 "Can't calculate contrast, some slice has missing parameters or missing"
-                " conditions"
+                " conditions (check logs for more info)"
             )
 
         if not self._results_path.exists():
@@ -309,7 +310,7 @@ class BrainwaysProject:
         if not self.can_calculate_contrast(condition_col):
             raise RuntimeError(
                 "Can't calculate contrast, some slice has missing parameters or missing"
-                " conditions"
+                " conditions (check logs for more info)"
             )
 
         if not self._results_path.exists():
@@ -382,7 +383,7 @@ class BrainwaysProject:
         if not self.can_calculate_contrast(condition_col):
             raise RuntimeError(
                 "Can't calculate contrast, some slice has missing parameters or missing"
-                " conditions"
+                " conditions (check logs for more info)"
             )
 
         if not self._results_path.exists():
@@ -416,6 +417,9 @@ class BrainwaysProject:
                         getattr(slice_info.params, field.name) is None
                         and field.name != "cell"
                     ):
+                        logging.warning(
+                            f"Missing parameter '{field.name}' in slice '{slice_info.path}' in subject '{subject.subject_info.name}'"
+                        )
                         return subject_idx, slice_idx
         return None
 
@@ -424,14 +428,30 @@ class BrainwaysProject:
 
     def can_calculate_contrast(self, condition: str) -> bool:
         conditions = set()
+        missing_conditions = False
         for subject in self.subjects:
             if subject.subject_info.conditions is not None:
-                conditions.add(subject.subject_info.conditions.get(condition))
+                if condition in subject.subject_info.conditions:
+                    conditions.add(subject.subject_info.conditions[condition])
+                else:
+                    logging.warning(
+                        f"Missing condition '{condition}' in subject '{subject.subject_info.name}'"
+                    )
+                    missing_conditions = True
             else:
-                conditions.add(None)
+                logging.warning(
+                    f"Missing conditions parameter in subject '{subject.subject_info.name}'"
+                )
+                missing_conditions = True
+
+        if len(conditions) == 1:
+            logging.warning(
+                f"Only one condition in all subjects, can't calculate contrast: {conditions}"
+            )
+
         return (
             self.can_calculate_results()
-            and None not in conditions
+            and not missing_conditions
             and len(conditions) > 1
         )
 

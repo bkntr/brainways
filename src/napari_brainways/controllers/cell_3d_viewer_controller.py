@@ -64,6 +64,7 @@ class Cell3DViewerController(Controller):
         else:
             self.ui.viewer.layers.remove(self.input_layer)
         self.ui.viewer.layers.remove(self.points_layer)
+        self.input_layer = None
         self.atlas_layer = None
         self.points_layer = None
         self.ui.viewer.dims.ndisplay = 2

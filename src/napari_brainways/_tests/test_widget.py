@@ -61,6 +61,14 @@ def test_steps_are_loading(opened_app: BrainwaysUI, step: Controller):
     opened_app.set_step_index_async(opened_app.steps.index(step))
 
 
+def test_steps_are_loading_twice(opened_app: BrainwaysUI, step: Controller):
+    opened_app.set_step_index_async(opened_app.steps.index(step))
+    opened_app.set_step_index_async(
+        (opened_app.steps.index(step) + 1) % len(opened_app.steps)
+    )
+    opened_app.set_step_index_async(opened_app.steps.index(step))
+
+
 def test_steps_are_loading_for_new_subject(opened_app: BrainwaysUI):
     opened_app.current_document = replace(
         opened_app.current_document, params=BrainwaysParams()

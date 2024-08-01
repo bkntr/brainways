@@ -273,7 +273,7 @@ class BrainwaysProject:
         if not self.can_calculate_contrast(condition_col):
             raise RuntimeError(
                 "Can't calculate contrast, some slice has missing parameters or missing"
-                " conditions"
+                " conditions (check logs for more info)"
             )
 
         if not self._results_path.exists():
@@ -310,7 +310,7 @@ class BrainwaysProject:
         if not self.can_calculate_contrast(condition_col):
             raise RuntimeError(
                 "Can't calculate contrast, some slice has missing parameters or missing"
-                " conditions"
+                " conditions (check logs for more info)"
             )
 
         if not self._results_path.exists():
@@ -383,7 +383,7 @@ class BrainwaysProject:
         if not self.can_calculate_contrast(condition_col):
             raise RuntimeError(
                 "Can't calculate contrast, some slice has missing parameters or missing"
-                " conditions"
+                " conditions (check logs for more info)"
             )
 
         if not self._results_path.exists():
@@ -418,7 +418,7 @@ class BrainwaysProject:
                         and field.name != "cell"
                     ):
                         logging.warning(
-                            f"Missing parameter {field.name} in slice {slice_info.path}"
+                            f"Subject {subject.subject_info.name}: missing parameter {field.name} in slice {slice_info.path}"
                         )
                         return subject_idx, slice_idx
         return None

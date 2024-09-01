@@ -415,6 +415,23 @@ class BrainwaysSubject:
     def cell_detections_path(self, image_path: ImagePath) -> Path:
         return self.cell_detections_root / (Path(str(image_path)).name + ".csv")
 
+    def set_rotation(self, rot_horizontal: float, rot_sagittal: float):
+        self.subject_info = replace(
+            self.subject_info,
+            rotation=(rot_horizontal, rot_sagittal),
+        )
+        for i, document in enumerate(self.documents):
+            atlas_params = document.params.atlas
+            if atlas_params is not None:
+                atlas_params = replace(
+                    atlas_params,
+                    rot_horizontal=rot_horizontal,
+                    rot_sagittal=rot_sagittal,
+                )
+                self.documents[i] = replace(
+                    document, params=replace(document.params, atlas=atlas_params)
+                )
+
     @property
     def thumbnails_root(self) -> Path:
         return self._save_dir / "thumbnails"

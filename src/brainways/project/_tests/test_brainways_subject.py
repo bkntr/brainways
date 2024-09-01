@@ -1,14 +1,18 @@
 from dataclasses import replace
 from pathlib import Path
 from typing import List, Tuple
-from unittest.mock import create_autospec
+from unittest.mock import MagicMock, create_autospec
 
 import numpy as np
 import pandas as pd
 import pytest
 from PIL import Image
 
-from brainways.pipeline.brainways_params import CellDetectorParams
+from brainways.pipeline.brainways_params import (
+    AtlasRegistrationParams,
+    BrainwaysParams,
+    CellDetectorParams,
+)
 from brainways.pipeline.cell_detector import CellDetector
 from brainways.project.brainways_project import BrainwaysProject
 from brainways.project.brainways_subject import BrainwaysSubject
@@ -199,3 +203,86 @@ def test_empty_cell_count_summary_no_valid_documents(
     brainways_subject.documents = []
     summary = brainways_subject.cell_count_summary()
     assert summary is None
+
+
+def test_set_rotation_updates_subject_info():
+    # Create a BrainwaysSubject instance
+    brainways_subject = BrainwaysSubject(
+        subject_info=SubjectInfo(name="test_subject"),
+        slice_infos=[],
+        project=MagicMock(),
+    )
+
+    # Initial rotation values
+    initial_rotation = brainways_subject.subject_info.rotation
+    new_rotation = (45.0, 30.0)
+
+    # Set new rotation
+    brainways_subject.set_rotation(*new_rotation)
+
+    # Verify subject_info rotation is updated
+    assert brainways_subject.subject_info.rotation == new_rotation
+    assert brainways_subject.subject_info.rotation != initial_rotation
+
+
+def test_set_rotation_updates_slice_infos():
+    subject_info = SubjectInfo(name="test_subject")
+    slice_infos = [
+        SliceInfo(
+            path=ImagePath("test_image.jpg"),
+            image_size=(100, 100),
+            lowres_image_size=(100, 100),
+            params=BrainwaysParams(atlas=AtlasRegistrationParams()),
+        )
+        for _ in range(3)
+    ]
+    brainways_subject = BrainwaysSubject(
+        subject_info=subject_info, slice_infos=slice_infos, project=MagicMock()
+    )
+
+    new_rotation = (45.0, 30.0)
+
+    # Set new rotation
+    brainways_subject.set_rotation(*new_rotation)
+
+    # Verify each document's atlas_params rotation is updated
+    for document in brainways_subject.documents:
+        assert document.params.atlas.rot_horizontal == new_rotation[0]
+        assert document.params.atlas.rot_sagittal == new_rotation[1]
+
+
+def test_set_rotation_with_none_atlas_params():
+    # Create a BrainwaysSubject instance with documents having None atlas_params
+    subject_info = SubjectInfo(name="test_subject")
+    slice_infos = [
+        SliceInfo(
+            path=ImagePath("test_image.jpg"),
+            image_size=(100, 100),
+            lowres_image_size=(100, 100),
+            params=BrainwaysParams(atlas=AtlasRegistrationParams()),
+        ),
+        SliceInfo(
+            path=ImagePath("test_image.jpg"),
+            image_size=(100, 100),
+            lowres_image_size=(100, 100),
+            params=BrainwaysParams(atlas=None),
+        ),
+    ]
+    brainways_subject = BrainwaysSubject(
+        subject_info=subject_info, slice_infos=slice_infos, project=MagicMock()
+    )
+
+    new_rotation = (45.0, 30.0)
+
+    # Set new rotation
+    brainways_subject.set_rotation(*new_rotation)
+
+    # Verify subject_info rotation is updated
+    assert brainways_subject.subject_info.rotation == new_rotation
+
+    # Verify documents with atlas_params are updated
+    assert brainways_subject.documents[0].params.atlas.rot_horizontal == new_rotation[0]
+    assert brainways_subject.documents[0].params.atlas.rot_sagittal == new_rotation[1]
+
+    # Verify documents without atlas_params are not updated
+    assert slice_infos[1].params.atlas is None

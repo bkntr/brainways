@@ -122,12 +122,14 @@ class RegistrationController(Controller):
         self, image: np.ndarray, params: BrainwaysParams
     ) -> BrainwaysParams:
         if self.model_available():
-            return self.run_model(image=image, params=params)
+            atlas_params = self.run_model(image=image, params=params).atlas
+            assert atlas_params is not None
         else:
-            return replace(
-                params,
-                atlas=AtlasRegistrationParams(ap=self.pipeline.atlas.shape[0] // 2),
-            )
+            atlas_params = AtlasRegistrationParams(ap=self.pipeline.atlas.shape[0] // 2)
+
+        # If the subject has a rotation, use it
+        atlas_params = self._apply_subject_rotation(atlas_params)
+        return replace(params, atlas=atlas_params)
 
     def run_model(self, image: np.ndarray, params: BrainwaysParams) -> BrainwaysParams:
         model_registration_params = (
@@ -141,12 +143,34 @@ class RegistrationController(Controller):
             hemisphere=model_registration_params.hemisphere,
             confidence=model_registration_params.confidence,
         )
+
+        # If the subject has a rotation, use it
+        atlas_params = self._apply_subject_rotation(atlas_params)
         return replace(params, atlas=atlas_params)
+
+    def _apply_subject_rotation(
+        self, atlas_params: AtlasRegistrationParams
+    ) -> AtlasRegistrationParams:
+        if self.ui.current_subject.subject_info.rotation is not None:
+            rot_horizontal, rot_sagittal = self.ui.current_subject.subject_info.rotation
+            atlas_params = replace(
+                atlas_params,
+                rot_horizontal=rot_horizontal,
+                rot_sagittal=rot_sagittal,
+            )
+        return atlas_params
 
     def on_run_model_button_click(self):
         if self.model_available():
             params = self.run_model(image=self._image, params=self._params)
             self.show(params)
+
+    def on_apply_rotation_to_subject_click(self):
+        self.ui.current_subject.set_rotation(
+            self._params.atlas.rot_horizontal,
+            self._params.atlas.rot_sagittal,
+        )
+        self.ui.save_subject()
 
     def model_available(self) -> bool:
         return self.pipeline.atlas_registration.automatic_registration_available()

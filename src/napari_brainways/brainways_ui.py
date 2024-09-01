@@ -24,6 +24,7 @@ from napari_brainways.controllers.analysis_controller import AnalysisController
 from napari_brainways.controllers.annotation_viewer_controller import (
     AnnotationViewerController,
 )
+from napari_brainways.controllers.base import Controller
 from napari_brainways.controllers.cell_3d_viewer_controller import (
     Cell3DViewerController,
 )
@@ -543,7 +544,7 @@ class BrainwaysUI(QWidget):
         self.current_subject.documents[self._current_document_index] = value
 
     @property
-    def current_step(self):
+    def current_step(self) -> Controller:
         return self.steps[self._current_step_index]
 
     @property

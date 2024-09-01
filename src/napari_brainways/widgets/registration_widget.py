@@ -53,9 +53,15 @@ class RegistrationView(QWidget):
         self.run_model_button = QPushButton("Automatic Registration")
         self.run_model_button.clicked.connect(self.controller.on_run_model_button_click)
 
+        self.apply_rotation_button = QPushButton("Apply Rotation to Subject")
+        self.apply_rotation_button.clicked.connect(
+            self.controller.on_apply_rotation_to_subject_click
+        )
+
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(self.registration_params_widget.native)
         self.layout().addWidget(self.run_model_button)
+        self.layout().addWidget(self.apply_rotation_button)
 
     def show_help(self, key_bindings: Dict[str, Tuple[Callable, str]]):
         message = "\n".join(

@@ -25,6 +25,7 @@ class ProjectSettings:
 class SubjectInfo:
     name: str
     conditions: Dict[str, str] = field(default_factory=dict)
+    rotation: Optional[tuple[float, float]] = None
 
 
 @dataclass(frozen=True, eq=False)

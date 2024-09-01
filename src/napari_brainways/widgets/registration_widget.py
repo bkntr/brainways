@@ -51,17 +51,31 @@ class RegistrationView(QWidget):
             widget.installEventFilter(self)
 
         self.run_model_button = QPushButton("Automatic Registration")
+        self.run_model_button.setToolTip("Run the automatic registration model")
         self.run_model_button.clicked.connect(self.controller.on_run_model_button_click)
 
         self.apply_rotation_button = QPushButton("Apply Rotation to Subject")
-        self.apply_rotation_button.clicked.connect(
-            self.controller.on_apply_rotation_to_subject_click
+        self.apply_rotation_button.setToolTip(
+            "Apply the rotation to all slices in the current subject"
+        )
+        self.apply_rotation_button.clicked.connect(self.confirm_apply_rotation)
+
+        self.evenly_space_slices_button = QPushButton("Evenly Space Slices")
+        self.evenly_space_slices_button.setToolTip(
+            "Evenly space slices along AP axis between the first and last slices"
+        )
+        self.evenly_space_slices_button.clicked.connect(
+            self.confirm_evenly_space_slices
         )
 
         self.setLayout(QVBoxLayout())
-        self.layout().addWidget(self.registration_params_widget.native)
-        self.layout().addWidget(self.run_model_button)
-        self.layout().addWidget(self.apply_rotation_button)
+        layout = self.layout()
+        assert layout is not None
+
+        layout.addWidget(self.registration_params_widget.native)
+        layout.addWidget(self.run_model_button)
+        layout.addWidget(self.apply_rotation_button)
+        layout.addWidget(self.evenly_space_slices_button)
 
     def show_help(self, key_bindings: Dict[str, Tuple[Callable, str]]):
         message = "\n".join(
@@ -141,3 +155,25 @@ class RegistrationView(QWidget):
             self.run_model_button.setToolTip(
                 "Automatic registration model is not installed"
             )
+
+    def confirm_apply_rotation(self):
+        reply = QMessageBox.question(
+            self,
+            "Confirm",
+            "Are you sure you want to apply the current slice rotation to all slices in the current subject?\n\nThis will overwrite current slice rotations.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if reply == QMessageBox.Yes:
+            self.controller.on_apply_rotation_to_subject_click()
+
+    def confirm_evenly_space_slices(self):
+        reply = QMessageBox.question(
+            self,
+            "Confirm",
+            "Are you sure you want to evenly space slices along the AP axis between the first and last slices of the current subject?\n\nThis will overwrite current slice positions.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if reply == QMessageBox.Yes:
+            self.controller.on_evenly_space_slices_on_ap_axis_click()

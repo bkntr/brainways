@@ -286,3 +286,175 @@ def test_set_rotation_with_none_atlas_params():
 
     # Verify documents without atlas_params are not updated
     assert slice_infos[1].params.atlas is None
+
+
+def create_slice_info(ap_value=None, ignore: bool = False):
+    return SliceInfo(
+        path=ImagePath("test_image.jpg"),
+        image_size=(100, 100),
+        lowres_image_size=(100, 100),
+        params=BrainwaysParams(
+            atlas=AtlasRegistrationParams(ap=ap_value) if ap_value is not None else None
+        ),
+        ignore=ignore,
+    )
+
+
+def test_evenly_space_slices_on_ap_axis():
+    subject_info = SubjectInfo(name="test_subject")
+    slice_infos = [
+        create_slice_info(10),
+        create_slice_info(20),
+        create_slice_info(30),
+        create_slice_info(40),
+        create_slice_info(50),
+    ]
+    brainways_subject = BrainwaysSubject(
+        subject_info=subject_info, slice_infos=slice_infos, project=MagicMock()
+    )
+
+    brainways_subject.evenly_space_slices_on_ap_axis()
+
+    expected_aps = [10, 20, 30, 40, 50]
+    assert len(brainways_subject.valid_documents) == len(expected_aps)
+    for i, (_, document) in enumerate(brainways_subject.valid_documents):
+        assert document.params.atlas.ap == expected_aps[i]
+
+
+def test_evenly_space_unordered_slices_on_ap_axis():
+    subject_info = SubjectInfo(name="test_subject")
+    slice_infos = [
+        create_slice_info(10),
+        create_slice_info(100),
+        create_slice_info(90),
+        create_slice_info(80),
+        create_slice_info(50),
+    ]
+    brainways_subject = BrainwaysSubject(
+        subject_info=subject_info, slice_infos=slice_infos, project=MagicMock()
+    )
+
+    brainways_subject.evenly_space_slices_on_ap_axis()
+
+    expected_aps = [10, 20, 30, 40, 50]
+    assert len(brainways_subject.valid_documents) == len(expected_aps)
+    for i, (_, document) in enumerate(brainways_subject.valid_documents):
+        assert document.params.atlas.ap == expected_aps[i]
+
+
+def test_evenly_space_slices_on_ap_axis_with_ignored_documents():
+    subject_info = SubjectInfo(name="test_subject")
+    slice_infos = [
+        create_slice_info(10),
+        create_slice_info(20),
+        create_slice_info(30, ignore=True),
+        create_slice_info(40),
+        create_slice_info(70),
+    ]
+    brainways_subject = BrainwaysSubject(
+        subject_info=subject_info, slice_infos=slice_infos, project=MagicMock()
+    )
+
+    brainways_subject.evenly_space_slices_on_ap_axis()
+
+    expected_aps = [10, 30, 50, 70]
+    assert len(brainways_subject.valid_documents) == len(expected_aps)
+    for i, (_, document) in enumerate(brainways_subject.valid_documents):
+        assert document.params.atlas.ap == expected_aps[i]
+
+
+def test_evenly_space_slices_on_ap_axis_two_or_fewer_documents():
+    subject_info = SubjectInfo(name="test_subject")
+    slice_infos = [
+        create_slice_info(10),
+        create_slice_info(20),
+    ]
+    brainways_subject = BrainwaysSubject(
+        subject_info=subject_info, slice_infos=slice_infos, project=MagicMock()
+    )
+
+    brainways_subject.evenly_space_slices_on_ap_axis()
+
+    assert brainways_subject.documents[0].params.atlas.ap == 10
+    assert brainways_subject.documents[1].params.atlas.ap == 20
+
+
+def test_evenly_space_slices_on_ap_axis_missing_atlas_params():
+    subject_info = SubjectInfo(name="test_subject")
+    slice_infos = [
+        create_slice_info(10),
+        create_slice_info(),
+        create_slice_info(0),
+        create_slice_info(),
+        create_slice_info(50),
+    ]
+    brainways_subject = BrainwaysSubject(
+        subject_info=subject_info, slice_infos=slice_infos, project=MagicMock()
+    )
+
+    brainways_subject.evenly_space_slices_on_ap_axis()
+
+    expected_aps = [10, 20, 30, 40, 50]
+    assert len(brainways_subject.valid_documents) == len(expected_aps)
+    for i, (_, document) in enumerate(brainways_subject.valid_documents):
+        assert document.params.atlas.ap == expected_aps[i]
+
+
+def test_evenly_spaced_slices_on_ap_axis_no_valid_documents():
+    subject_info = SubjectInfo(name="test_subject")
+    slice_infos = [
+        create_slice_info(ignore=True),
+        create_slice_info(ignore=True),
+        create_slice_info(ignore=True),
+    ]
+    brainways_subject = BrainwaysSubject(
+        subject_info=subject_info, slice_infos=slice_infos, project=MagicMock()
+    )
+
+    brainways_subject.evenly_space_slices_on_ap_axis()
+
+    assert len(brainways_subject.valid_documents) == 0
+
+
+def test_evenly_spaced_slices_on_ap_axis_no_slices():
+    subject_info = SubjectInfo(name="test_subject")
+    brainways_subject = BrainwaysSubject(
+        subject_info=subject_info, slice_infos=[], project=MagicMock()
+    )
+
+    brainways_subject.evenly_space_slices_on_ap_axis()
+
+    assert len(brainways_subject.valid_documents) == 0
+
+
+def test_evenly_spaced_slices_on_ap_axis_adds_subject_rotation():
+    subject_info = SubjectInfo(name="test_subject", rotation=(45.0, 30.0))
+    slice_infos = [
+        create_slice_info(10),
+        create_slice_info(None),
+        create_slice_info(50),
+    ]
+    brainways_subject = BrainwaysSubject(
+        subject_info=subject_info, slice_infos=slice_infos, project=MagicMock()
+    )
+
+    brainways_subject.evenly_space_slices_on_ap_axis()
+
+    tested_slice_info = slice_infos[1]
+    assert tested_slice_info.params.atlas.rot_horizontal == 45.0
+    assert tested_slice_info.params.atlas.rot_sagittal == 30.0
+
+
+def test_evenly_spaced_slices_on_ap_axis_raises_error_if_last_slice_missing_params():
+    subject_info = SubjectInfo(name="test_subject")
+    slice_infos = [
+        create_slice_info(10),
+        create_slice_info(20),
+        create_slice_info(None),
+    ]
+    brainways_subject = BrainwaysSubject(
+        subject_info=subject_info, slice_infos=slice_infos, project=MagicMock()
+    )
+
+    with pytest.raises(ValueError):
+        brainways_subject.evenly_space_slices_on_ap_axis()

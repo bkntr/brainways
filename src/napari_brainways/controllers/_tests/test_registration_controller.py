@@ -145,3 +145,18 @@ def test_run_model_with_subject_rotation(setup_controller: RegistrationControlle
     )
 
     assert result.atlas == expected_params
+
+
+def test_on_evenly_space_slices_on_ap_axis_click(
+    setup_controller: RegistrationController,
+):
+    controller = setup_controller
+    controller.show = MagicMock()
+    controller.ui.current_subject.evenly_space_slices_on_ap_axis = MagicMock()
+    params = BrainwaysParams(atlas=AtlasRegistrationParams(ap=1))
+    controller.ui.current_params = params
+    controller.on_evenly_space_slices_on_ap_axis_click()
+    controller.ui.persist_current_params.assert_called_once()  # type: ignore
+    controller.ui.current_subject.evenly_space_slices_on_ap_axis.assert_called_once()
+    controller.show.assert_called_once_with(params)  # type: ignore
+    controller.ui.save_subject.assert_called_once()  # type: ignore

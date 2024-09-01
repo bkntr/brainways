@@ -10,7 +10,10 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 
-from brainways.pipeline.brainways_params import CellDetectorParams
+from brainways.pipeline.brainways_params import (
+    AtlasRegistrationParams,
+    CellDetectorParams,
+)
 from brainways.pipeline.brainways_pipeline import BrainwaysPipeline, PipelineStep
 from brainways.pipeline.cell_detector import CellDetector
 from brainways.project.info_classes import (
@@ -431,6 +434,47 @@ class BrainwaysSubject:
                 self.documents[i] = replace(
                     document, params=replace(document.params, atlas=atlas_params)
                 )
+
+    def evenly_space_slices_on_ap_axis(self):
+        if len(self.valid_documents) <= 2:
+            return
+
+        _, first_slice_info = self.valid_documents[0]
+        _, last_slice_info = self.valid_documents[-1]
+
+        if (
+            first_slice_info.params.atlas is None
+            or last_slice_info.params.atlas is None
+        ):
+            raise ValueError(
+                "First and last slices must have atlas parameters, please go to the first and last slices and select an AP value."
+            )
+
+        first_ap = first_slice_info.params.atlas.ap
+        last_ap = last_slice_info.params.atlas.ap
+        ap_diff = last_ap - first_ap
+        ap_step = ap_diff / (len(self.valid_documents) - 1)
+
+        for valid_document_index, (document_index, document) in enumerate(
+            self.valid_documents
+        ):
+            atlas_params = document.params.atlas
+            if atlas_params is None:
+                atlas_params = AtlasRegistrationParams()
+                # Set the rotation parameters
+                if self.subject_info.rotation is not None:
+                    atlas_params = replace(
+                        atlas_params,
+                        rot_horizontal=self.subject_info.rotation[0],
+                        rot_sagittal=self.subject_info.rotation[1],
+                    )
+
+            atlas_params = replace(
+                atlas_params, ap=first_ap + valid_document_index * ap_step
+            )
+            self.documents[document_index] = replace(
+                document, params=replace(document.params, atlas=atlas_params)
+            )
 
     @property
     def thumbnails_root(self) -> Path:

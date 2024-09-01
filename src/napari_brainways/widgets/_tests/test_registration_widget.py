@@ -1,8 +1,9 @@
-from typing import cast
+# mypy: disable-error-code="method-assign"
+
 from unittest.mock import MagicMock, Mock, create_autospec
 
 import pytest
-from pytest_mock import MockerFixture
+from qtpy.QtWidgets import QMessageBox
 
 from napari_brainways.controllers.registration_controller import RegistrationController
 from napari_brainways.widgets.registration_widget import RegistrationView
@@ -21,8 +22,29 @@ def test_has_registration_model(model_available: bool):
         assert len(widget.run_model_button.toolTip()) > 0
 
 
-def test_apply_rotation_button_click(mocker: MockerFixture):
+def test_confirm_apply_rotation(monkeypatch):
     widget = RegistrationView(MagicMock())
-    widget.controller = cast(MagicMock, widget.controller)
-    widget.apply_rotation_button.click()
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: QMessageBox.Yes)
+    widget.confirm_apply_rotation()
     widget.controller.on_apply_rotation_to_subject_click.assert_called_once()
+
+
+def test_no_confirm_apply_rotation(monkeypatch):
+    widget = RegistrationView(MagicMock())
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: QMessageBox.No)
+    widget.confirm_apply_rotation()
+    widget.controller.on_apply_rotation_to_subject_click.assert_not_called()
+
+
+def test_confirm_evenly_space_slices(monkeypatch):
+    widget = RegistrationView(MagicMock())
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: QMessageBox.Yes)
+    widget.confirm_evenly_space_slices()
+    widget.controller.on_evenly_space_slices_on_ap_axis_click.assert_called_once()
+
+
+def test_no_confirm_evenly_space_slices(monkeypatch):
+    widget = RegistrationView(MagicMock())
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: QMessageBox.No)
+    widget.confirm_evenly_space_slices()
+    widget.controller.on_evenly_space_slices_on_ap_axis_click.assert_not_called()

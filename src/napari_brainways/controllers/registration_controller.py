@@ -172,6 +172,12 @@ class RegistrationController(Controller):
         )
         self.ui.save_subject()
 
+    def on_evenly_space_slices_on_ap_axis_click(self):
+        self.ui.persist_current_params()
+        self.ui.current_subject.evenly_space_slices_on_ap_axis()
+        self.show(self.ui.current_params)
+        self.ui.save_subject()
+
     def model_available(self) -> bool:
         return self.pipeline.atlas_registration.automatic_registration_available()
 

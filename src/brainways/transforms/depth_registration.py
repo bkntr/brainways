@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Tuple
 
 import kornia.geometry as KG
 import kornia.geometry.transform as KGT
@@ -10,6 +12,7 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from brainways.transforms.base import BrainwaysTransform
+from brainways.utils.image import ImageSizeHW
 
 
 @dataclass
@@ -65,6 +68,16 @@ class DepthRegistration(BrainwaysTransform):
             align_corners=True,
         )
         return slice.squeeze()
+
+    from typing import Optional
+
+    def transform_image(
+        self,
+        image: np.ndarray,
+        output_size: ImageSizeHW | None = None,
+        mode: str = "bilinear",
+    ) -> np.ndarray:
+        return image
 
     def transform_points(self, points: np.array) -> np.array:
         """

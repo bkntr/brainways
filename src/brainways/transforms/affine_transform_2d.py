@@ -19,7 +19,7 @@ class BrainwaysAffineTransform2D(BrainwaysTransform):
         self,
         params: Optional[AffineTransform2DParams] = None,
         mat: Optional[Tensor] = None,
-        input_size: ImageSizeHW = None,
+        input_size: Optional[ImageSizeHW] = None,
         scale: Optional[float] = None,
     ):
         self.input_size = input_size
@@ -29,8 +29,19 @@ class BrainwaysAffineTransform2D(BrainwaysTransform):
             raise ValueError("Please provide either mat or params")
         if params is not None:
             self.params = params
-            center_x = params.cx or (self.input_size[1] - 1) // 2
-            center_y = params.cy or (self.input_size[0] - 1) // 2
+            center_x = params.cx
+            center_y = params.cy
+
+            if center_x is None:
+                if self.input_size is None:
+                    raise ValueError("Input size must be provided if params.cx is not")
+                center_x = (self.input_size[1] - 1) // 2
+
+            if center_y is None:
+                if self.input_size is None:
+                    raise ValueError("Input size must be provided if params.cy is not")
+                center_y = (self.input_size[0] - 1) // 2
+
             scale_trans_mat = KG.get_affine_matrix2d(
                 translations=torch.as_tensor(
                     [[params.tx, params.ty]], dtype=torch.float32

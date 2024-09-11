@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 import matplotlib.pyplot as plt
@@ -12,6 +13,7 @@ from napari.qt.threading import FunctionWorker
 from napari.utils.colormaps.colormap import Colormap
 
 from brainways.pipeline.brainways_params import BrainwaysParams
+from brainways.project.info_classes import SliceSelection
 from napari_brainways.controllers.base import Controller
 from napari_brainways.utils.general_utils import update_layer_contrast_limits
 from napari_brainways.widgets.analysis_widget import AnalysisWidget
@@ -293,6 +295,32 @@ class AnalysisController(Controller):
             values_col=values_col,
             min_group_size=min_group_size,
             alpha=alpha,
+        )
+
+    def export_registration_masks_async(
+        self, output_path: Path, slice_selection: SliceSelection
+    ):
+        assert self.ui.project is not None
+
+        if slice_selection == SliceSelection.CURRENT_SLICE:
+            slice_infos = [self.ui.current_document]
+        elif slice_selection == SliceSelection.CURRENT_SUBJECT:
+            slice_infos = [
+                slice_info for _, slice_info in self.ui.current_subject.valid_documents
+            ]
+        else:
+            slice_infos = [
+                slice_info
+                for subject in self.ui.project.subjects
+                for _, slice_info in subject.valid_documents
+            ]
+
+        self.ui.do_work_async(
+            self.ui.project.export_registration_masks_async,
+            progress_label="Exporting Registered Annotation Masks...",
+            progress_max_value=len(slice_infos),
+            output_path=output_path,
+            slice_infos=slice_infos,
         )
 
     @property

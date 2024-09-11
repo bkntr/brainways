@@ -1,10 +1,12 @@
+from pathlib import Path
 from typing import Tuple
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pandas as pd
 from pytest import fixture
 
+from brainways.project.info_classes import SliceSelection
 from napari_brainways.brainways_ui import BrainwaysUI
 from napari_brainways.controllers.analysis_controller import AnalysisController
 
@@ -122,3 +124,62 @@ def test_analysis_controller_run_network_analysis(
     )
 
     assert graph_path.exists()
+
+
+def test_export_registration_masks_async_current_slice(
+    app_on_analysis: Tuple[BrainwaysUI, AnalysisController]
+):
+    app, controller = app_on_analysis
+    output_path = Path("/fake/path")
+    slice_selection = SliceSelection.CURRENT_SLICE
+
+    with patch.object(
+        controller.ui.project, "export_registration_masks_async"
+    ) as mock_export:
+        controller.export_registration_masks_async(output_path, slice_selection)
+        mock_export.assert_called_once()
+        assert mock_export.call_args[1]["output_path"] == output_path
+        assert mock_export.call_args[1]["slice_infos"] == [
+            controller.ui.current_document
+        ]
+
+
+def test_export_registration_masks_async_current_subject(
+    app_on_analysis: Tuple[BrainwaysUI, AnalysisController]
+):
+    app, controller = app_on_analysis
+    output_path = Path("/fake/path")
+    slice_selection = SliceSelection.CURRENT_SUBJECT
+
+    with patch.object(
+        controller.ui.project, "export_registration_masks_async"
+    ) as mock_export:
+        controller.export_registration_masks_async(output_path, slice_selection)
+        mock_export.assert_called_once()
+        expected_slice_infos = [
+            slice_info for _, slice_info in app.current_subject.valid_documents
+        ]
+        assert mock_export.call_args[1]["output_path"] == output_path
+        assert mock_export.call_args[1]["slice_infos"] == expected_slice_infos
+
+
+def test_export_registration_masks_async_all_subjects(
+    app_on_analysis: Tuple[BrainwaysUI, AnalysisController]
+):
+    app, controller = app_on_analysis
+    assert app.project is not None
+    output_path = Path("/fake/path")
+    slice_selection = SliceSelection.ALL_SUBJECTS
+
+    with patch.object(
+        controller.ui.project, "export_registration_masks_async"
+    ) as mock_export:
+        controller.export_registration_masks_async(output_path, slice_selection)
+        mock_export.assert_called_once()
+        expected_slice_infos = [
+            slice_info
+            for subject in app.project.subjects
+            for _, slice_info in subject.valid_documents
+        ]
+        assert mock_export.call_args[1]["output_path"] == output_path
+        assert mock_export.call_args[1]["slice_infos"] == expected_slice_infos

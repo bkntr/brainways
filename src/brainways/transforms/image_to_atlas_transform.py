@@ -58,11 +58,13 @@ class ImageToAtlasTransform(BrainwaysTransform):
     def inv(self) -> ImageToAtlasTransform:
         return ImageToAtlasTransform(
             atlas_transform=self.atlas_transform,
-            affine_2d_transform=self.affine_2d_transform.inv()
-            if self.affine_2d_transform is not None
-            else None,
-            tps_transform=self.tps_transform.inv()
-            if self.tps_transform is not None
-            else None,
+            affine_2d_transform=(
+                self.affine_2d_transform.inv()
+                if self.affine_2d_transform is not None
+                else None
+            ),
+            tps_transform=(
+                self.tps_transform.inv() if self.tps_transform is not None else None
+            ),
             inverse=not self.inverse,
         )

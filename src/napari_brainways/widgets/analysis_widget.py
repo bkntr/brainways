@@ -1,7 +1,10 @@
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from magicgui.widgets import request_values
 from qtpy.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
+
+from brainways.project.info_classes import SliceSelection
 
 if TYPE_CHECKING:
     from napari_brainways.controllers.analysis_controller import AnalysisController
@@ -33,6 +36,13 @@ class AnalysisWidget(QWidget):
         show_posthoc_button = QPushButton("Show Posthoc")
         show_posthoc_button.clicked.connect(self.on_show_posthoc_clicked)
 
+        export_registration_masks_button = QPushButton(
+            "Export Registered Annotation Masks"
+        )
+        export_registration_masks_button.clicked.connect(
+            self.on_export_registration_masks_clicked
+        )
+
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(self.label)
         self.layout().addWidget(calculate_results_button)
@@ -41,6 +51,7 @@ class AnalysisWidget(QWidget):
         self.layout().addWidget(network_analysis_button)
         self.layout().addWidget(show_anova_button)
         self.layout().addWidget(show_posthoc_button)
+        self.layout().addWidget(export_registration_masks_button)
 
     def on_run_calculate_results_clicked(self, _=None):
         values = request_values(
@@ -265,6 +276,44 @@ class AnalysisWidget(QWidget):
 
         self.controller.show_posthoc(
             contrast=values["contrast"], pvalue=values["pvalue"]
+        )
+
+    def on_export_registration_masks_clicked(self, _=None):
+        values = request_values(
+            title="Export Registered Annotation Masks",
+            output_path=dict(
+                value="",
+                annotation=Path,
+                label="Output Directory",
+                options=dict(
+                    mode="d",
+                    tooltip="Directory to save the registered annotation masks to",
+                ),
+            ),
+            slice_selection=dict(
+                value="Current Slice",
+                widget_type="ComboBox",
+                options=dict(
+                    choices=["Current Slice", "Current Subject", "All Subjects"],
+                    tooltip="Which slices to export",
+                ),
+                annotation=str,
+                label="Slice Selection",
+            ),
+        )
+        if values is None:
+            return
+
+        slice_selection_disp = values["slice_selection"]
+        if slice_selection_disp == "Current Slice":
+            slice_selection = SliceSelection.CURRENT_SLICE
+        elif slice_selection_disp == "Current Subject":
+            slice_selection = SliceSelection.CURRENT_SUBJECT
+        elif slice_selection_disp == "All Subjects":
+            slice_selection = SliceSelection.ALL_SUBJECTS
+
+        self.controller.export_registration_masks_async(
+            output_path=values["output_path"], slice_selection=slice_selection
         )
 
     def set_label(self):

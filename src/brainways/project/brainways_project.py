@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Callable, Iterator, List, Optional, Tuple, Union
 
 import dacite
+import numpy as np
 import pandas as pd
 from natsort import natsorted, ns
 from pandas import ExcelWriter
@@ -454,6 +455,22 @@ class BrainwaysProject:
             and not missing_conditions
             and len(conditions) > 1
         )
+
+    def export_registration_masks_async(
+        self, output_path: Path, slice_infos: List[SliceInfo]
+    ):
+        assert self.pipeline is not None
+
+        for slice_info in slice_infos:
+            registered_annotation = self.pipeline.get_registered_annotation_on_image(
+                slice_info
+            )
+            output_path.mkdir(parents=True, exist_ok=True)
+            np.savez_compressed(
+                output_path / f"{slice_info.path}.npz",
+                annotation=registered_annotation,
+            )
+            yield
 
     @property
     def n_valid_images(self):

@@ -254,3 +254,34 @@ def test_network_analysis(
     )
 
     assert graph_path.exists()
+
+
+def test_export_registration_masks_async(brainways_project: BrainwaysProject, tmp_path):
+    brainways_project.pipeline = Mock()
+    brainways_project.pipeline.get_registered_annotation_on_image = Mock(
+        return_value=np.array([[1, 2], [3, 4]])
+    )
+    slice_infos = brainways_project.subjects[0].documents
+    assert len(slice_infos) > 0
+    output_path = tmp_path / "output"
+    generator = brainways_project.export_registration_masks_async(
+        output_path, slice_infos
+    )
+
+    for _ in generator:
+        pass
+
+    assert (
+        brainways_project.pipeline.get_registered_annotation_on_image.call_count
+        == len(slice_infos)
+    )
+    for slice_info in slice_infos:
+        brainways_project.pipeline.get_registered_annotation_on_image.assert_any_call(
+            slice_info
+        )
+
+    for slice_info in slice_infos:
+        output_file = output_path / f"{slice_info.path}.npz"
+        assert output_file.exists()
+        with np.load(output_file) as data:
+            assert np.array_equal(data["annotation"], np.array([[1, 2], [3, 4]]))

@@ -19,5 +19,9 @@ class ImagePath:
             suffixes.append(f"Scene #{self.scene}")
         if self.channel is not None:
             suffixes.append(f"Channel #{self.channel}")
-        suffix = " ".join(suffixes)
-        return f"{self.filename} [{suffix}]"
+
+        if suffixes:
+            suffix = " ".join(suffixes)
+            return f"{self.filename} [{suffix}]"
+        else:
+            return self.filename

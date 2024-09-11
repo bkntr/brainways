@@ -55,3 +55,9 @@ class SubjectFileFormat:
 class ExcelMode(Enum):
     ROW_PER_SUBJECT = auto()
     ROW_PER_IMAGE = auto()
+
+
+class SliceSelection(Enum):
+    CURRENT_SLICE = "current_slice"
+    CURRENT_SUBJECT = "current_subject"
+    ALL_SUBJECTS = "all_subjects"

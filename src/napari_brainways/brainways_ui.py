@@ -536,7 +536,7 @@ class BrainwaysUI(QWidget):
         self.project.subjects[self._current_valid_subject_index] = value
 
     @property
-    def current_document(self):
+    def current_document(self) -> SliceInfo:
         return self.current_subject.documents[self._current_document_index]
 
     @current_document.setter

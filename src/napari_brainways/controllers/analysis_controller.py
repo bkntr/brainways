@@ -14,6 +14,7 @@ from napari.utils.colormaps.colormap import Colormap
 
 from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.project.info_classes import (
+    ExcelMode,
     RegisteredAnnotationFileFormat,
     SliceSelection,
 )
@@ -220,6 +221,7 @@ class AnalysisController(Controller):
         cells_per_area_um2: Optional[int] = None,
         min_cell_size_um: Optional[float] = None,
         max_cell_size_um: Optional[float] = None,
+        excel_mode: ExcelMode = ExcelMode.ROW_PER_SUBJECT,
     ) -> FunctionWorker:
         return self.ui.do_work_async(
             self.ui.project.calculate_results_iter,
@@ -227,6 +229,7 @@ class AnalysisController(Controller):
             cells_per_area_um2=cells_per_area_um2,
             min_cell_size_um=min_cell_size_um,
             max_cell_size_um=max_cell_size_um,
+            excel_mode=excel_mode,
             progress_label="Calculating Brainways Results...",
             progress_max_value=len(self.ui.project.subjects),
         )

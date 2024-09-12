@@ -1,12 +1,12 @@
 # Overview
 
 [![DOI](https://img.shields.io/badge/DOI-10.1101/2023.05.25.542252-green.svg)](https://doi.org/10.1101/2023.05.25.542252)
-[![License GNU GPL v3.0](https://img.shields.io/pypi/l/napari-brainways.svg?color=green)](https://github.com/bkntr/napari-brainways/raw/main/LICENSE)
+[![License GNU GPL v3.0](https://img.shields.io/pypi/l/brainways.svg?color=green)](https://github.com/bkntr/napari-brainways/raw/main/LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/napari-brainways.svg?color=green)](https://pypi.org/project/napari-brainways)
 [![Python Version](https://img.shields.io/pypi/pyversions/napari-brainways.svg?color=green)](https://python.org)
-[![tests](https://github.com/bkntr/napari-brainways/workflows/tests/badge.svg)](https://github.com/bkntr/napari-brainways/actions)
-[![codecov](https://codecov.io/gh/bkntr/napari-brainways/branch/main/graph/badge.svg)](https://codecov.io/gh/bkntr/napari-brainways)
-[![Documentation Status](https://readthedocs.org/projects/napari-brainways/badge/?version=latest)](https://napari-brainways.readthedocs.io/en/latest/?badge=latest)
+[![tests](https://github.com/bkntr/brainways/workflows/tests/badge.svg)](https://github.com/bkntr/napari-brainways/actions)
+[![codecov](https://codecov.io/gh/bkntr/brainways/branch/main/graph/badge.svg)](https://codecov.io/gh/bkntr/napari-brainways)
+[![Documentation Status](https://readthedocs.org/projects/brainways/badge/?version=latest)](https://brainways.readthedocs.io/en/latest/?badge=latest)
 [![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/napari-brainways)](https://napari-hub.org/plugins/napari-brainways)
 
 <!-- markdownlint-disable MD026 -->
@@ -25,6 +25,9 @@ Coronal slice registration, cell quantification and whole-brain contrast analysi
 Customization should be made easy by having a highly flexible pythonic backend.
 
 ## Getting Started
+
+!!! note
+    If you are installing Brainways on Windows and need GPU support, you need to first install PyTorch and TensorBoard with GPU support. Please refer to the [PyTorch](https://pytorch.org/get-started/locally/) and [TensorBoard](https://www.tensorflow.org/install/pip) websites for detailed instructions. After installing these dependencies, you can proceed with the Brainways installation.
 
 To install and run brainways, run the following in your python environment:
 
@@ -48,18 +51,13 @@ Brainways allows users to register, quantify and provide statistical contrast an
     * PLS (Partial Least Square) analysis.
     * Network graph creation.
 
-<!-- For a quick 10 minute overview of brainways, check out the demo presented to The Social Club community
-meeting:
-
-[![Brainways Overview Demo](https://img.youtube.com/vi/aWDIQMbp1cc/0.jpg)](https://youtu.be/aWDIQMbp1cc?t=1m4s) -->
-
 ## Architecture
 
-Brainways is implemented as three python packages. [*napari-brainways*](https://github.com/bkntr/napari-brainways) contains the GUI implementation as a [napari](https://napari.org/stable/) plugin. napari-brainways is using [*brainways*](https://github.com/bkntr/brainways) as its backend. All of the functionality is implemented in the brainways package. This separation was done to guarantee that brainways is a GUI-agnostic software, and can be fully accessed and manipulated through python code to allow custom complex usage scenarios. The code that was used to train, evaluate and run the automatic registration model resides in [*brainways-reg-model*](https://github.com/bkntr/brainways-reg-model).
+Brainways is implemented as a monorepo with three sub-packages. *napari-brainways* contains the GUI implementation as a [napari](https://napari.org/stable/) plugin. napari-brainways is using *brainways* as its backend. All of the functionality is implemented in the brainways package. This separation was done to guarantee that brainways is a GUI-agnostic software, and can be fully accessed and manipulated through python code to allow custom complex usage scenarios. The code that was used to train, evaluate and run the automatic registration model resides in *brainways-reg-model*.
 
 ## Development Status
 
-Brainways is being actively developed by Ben Kantor of Bartal lab, Tel Aviv University, Israel. Our releases can be found [here](https://github.com/bkntr/napari-brainways/releases).
+Brainways is being actively developed by Ben Kantor of Bartal lab, Tel Aviv University, Israel. Our releases can be found [here](https://github.com/bkntr/brainways/releases).
 
 ## Citation
 
@@ -77,7 +75,7 @@ If you use brainways, please cite [Kantor and Bartal (2023)](https://doi.org/10.
 ## License
 
 Distributed under the terms of the [GNU GPL v3.0] license,
-"napari-brainways" is free and open source software
+"brainways" is free and open source software
 
 ## Issues
 
@@ -94,7 +92,7 @@ If you encounter any problems, please [file an issue] along with a detailed desc
 [Mozilla Public License 2.0]: https://www.mozilla.org/media/MPL/2.0/index.txt
 [cookiecutter-napari-plugin]: https://github.com/napari/cookiecutter-napari-plugin
 
-[file an issue]: https://github.com/bkntr/napari-brainways/issues
+[file an issue]: https://github.com/bkntr/brainways/issues
 
 [napari]: https://github.com/napari/napari
 [tox]: https://tox.readthedocs.io/en/latest/

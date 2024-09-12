@@ -480,6 +480,7 @@ class BrainwaysProject:
                 scipy.io.savemat(
                     output_path / f"{slice_info.path}.mat",
                     {"annotation": registered_annotation},
+                    do_compression=True,
                 )
             elif file_format == RegisteredAnnotationFileFormat.CSV:
                 np.savetxt(

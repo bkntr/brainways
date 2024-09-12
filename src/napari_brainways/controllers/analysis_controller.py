@@ -13,7 +13,10 @@ from napari.qt.threading import FunctionWorker
 from napari.utils.colormaps.colormap import Colormap
 
 from brainways.pipeline.brainways_params import BrainwaysParams
-from brainways.project.info_classes import SliceSelection
+from brainways.project.info_classes import (
+    RegisteredAnnotationFileFormat,
+    SliceSelection,
+)
 from napari_brainways.controllers.base import Controller
 from napari_brainways.utils.general_utils import update_layer_contrast_limits
 from napari_brainways.widgets.analysis_widget import AnalysisWidget
@@ -298,7 +301,10 @@ class AnalysisController(Controller):
         )
 
     def export_registration_masks_async(
-        self, output_path: Path, slice_selection: SliceSelection
+        self,
+        output_path: Path,
+        slice_selection: SliceSelection,
+        file_format: RegisteredAnnotationFileFormat,
     ):
         assert self.ui.project is not None
 
@@ -321,6 +327,7 @@ class AnalysisController(Controller):
             progress_max_value=len(slice_infos),
             output_path=output_path,
             slice_infos=slice_infos,
+            file_format=file_format,
         )
 
     @property

@@ -59,5 +59,5 @@ def test_get_registered_annotation_on_image():
 
     # Assert the expected behavior/output
     assert result.shape == image_size
-    assert result.dtype == np.int32
+    assert result.dtype == np.int64
     assert np.all(result == expected_annotation)

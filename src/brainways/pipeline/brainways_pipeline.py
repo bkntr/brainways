@@ -121,5 +121,5 @@ class BrainwaysPipeline:
             transformed_annotation,
             (slice_info.image_size[1], slice_info.image_size[0]),
             interpolation=cv2.INTER_NEAREST,
-        ).astype(np.int32)
+        ).astype(np.int64)
         return transformed_annotation

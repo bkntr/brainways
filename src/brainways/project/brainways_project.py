@@ -8,6 +8,7 @@ from typing import Callable, Iterator, List, Optional, Tuple, Union
 import dacite
 import numpy as np
 import pandas as pd
+import scipy.io
 from natsort import natsorted, ns
 from pandas import ExcelWriter
 
@@ -18,6 +19,7 @@ from brainways.project.brainways_subject import BrainwaysSubject
 from brainways.project.info_classes import (
     ExcelMode,
     ProjectSettings,
+    RegisteredAnnotationFileFormat,
     SliceInfo,
     SubjectInfo,
 )
@@ -457,7 +459,10 @@ class BrainwaysProject:
         )
 
     def export_registration_masks_async(
-        self, output_path: Path, slice_infos: List[SliceInfo]
+        self,
+        output_path: Path,
+        slice_infos: List[SliceInfo],
+        file_format: RegisteredAnnotationFileFormat,
     ):
         assert self.pipeline is not None
 
@@ -466,10 +471,24 @@ class BrainwaysProject:
                 slice_info
             )
             output_path.mkdir(parents=True, exist_ok=True)
-            np.savez_compressed(
-                output_path / f"{slice_info.path}.npz",
-                annotation=registered_annotation,
-            )
+            if file_format == RegisteredAnnotationFileFormat.NPZ:
+                np.savez_compressed(
+                    output_path / f"{slice_info.path}.npz",
+                    annotation=registered_annotation,
+                )
+            elif file_format == RegisteredAnnotationFileFormat.MAT:
+                scipy.io.savemat(
+                    output_path / f"{slice_info.path}.mat",
+                    {"annotation": registered_annotation},
+                    do_compression=True,
+                )
+            elif file_format == RegisteredAnnotationFileFormat.CSV:
+                np.savetxt(
+                    output_path / f"{slice_info.path}.csv",
+                    registered_annotation,
+                    fmt="%d",
+                    delimiter=",",
+                )
             yield
 
     @property

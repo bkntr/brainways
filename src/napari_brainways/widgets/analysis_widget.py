@@ -304,7 +304,7 @@ class AnalysisWidget(QWidget):
                 label="Slice Selection",
             ),
             file_format=dict(
-                value=RegisteredAnnotationFileFormat.CSV.value,
+                value=RegisteredAnnotationFileFormat.NPZ.value,
                 widget_type="ComboBox",
                 options=dict(
                     choices=[e.value for e in RegisteredAnnotationFileFormat],

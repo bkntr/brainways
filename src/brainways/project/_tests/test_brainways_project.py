@@ -1,10 +1,12 @@
 from dataclasses import replace
 from pathlib import Path
-from typing import List
+from typing import Callable, List
 from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
+import pytest
+import scipy
 
 from brainways.project.brainways_project import BrainwaysProject
 from brainways.project.info_classes import (
@@ -261,8 +263,35 @@ def test_network_analysis(
     assert graph_path.exists()
 
 
-def test_export_registration_masks_async_npz(
-    brainways_project: BrainwaysProject, tmp_path
+@pytest.mark.parametrize(
+    "file_format, extension, loader",
+    [
+        pytest.param(
+            RegisteredAnnotationFileFormat.NPZ,
+            "npz",
+            lambda x: np.load(x)["annotation"],
+            id="npz",
+        ),
+        pytest.param(
+            RegisteredAnnotationFileFormat.CSV,
+            "csv",
+            lambda x: np.loadtxt(x, delimiter=","),
+            id="csv",
+        ),
+        pytest.param(
+            RegisteredAnnotationFileFormat.MAT,
+            "mat",
+            lambda x: scipy.io.loadmat(x)["annotation"],
+            id="mat",
+        ),
+    ],
+)
+def test_export_registration_masks_async(
+    brainways_project: BrainwaysProject,
+    file_format: RegisteredAnnotationFileFormat,
+    extension: str,
+    loader: Callable[[Path], np.ndarray],
+    tmp_path,
 ):
     brainways_project.pipeline = Mock()
     brainways_project.pipeline.get_registered_annotation_on_image = Mock(
@@ -272,7 +301,7 @@ def test_export_registration_masks_async_npz(
     assert len(slice_infos) > 0
     output_path = tmp_path / "output"
     generator = brainways_project.export_registration_masks_async(
-        output_path, slice_infos, RegisteredAnnotationFileFormat.NPZ
+        output_path, slice_infos, file_format
     )
 
     for _ in generator:
@@ -288,40 +317,7 @@ def test_export_registration_masks_async_npz(
         )
 
     for slice_info in slice_infos:
-        output_file = output_path / f"{slice_info.path}.npz"
+        output_file = output_path / f"{slice_info.path}.{extension}"
         assert output_file.exists()
-        with np.load(output_file) as data:
-            assert np.array_equal(data["annotation"], np.array([[1, 2], [3, 4]]))
-
-
-def test_export_registration_masks_async_csv(
-    brainways_project: BrainwaysProject, tmp_path
-):
-    brainways_project.pipeline = Mock()
-    brainways_project.pipeline.get_registered_annotation_on_image = Mock(
-        return_value=np.array([[1, 2], [3, 4]])
-    )
-    slice_infos = brainways_project.subjects[0].documents
-    assert len(slice_infos) > 0
-    output_path = tmp_path / "output"
-    generator = brainways_project.export_registration_masks_async(
-        output_path, slice_infos, RegisteredAnnotationFileFormat.CSV
-    )
-
-    for _ in generator:
-        pass
-
-    assert (
-        brainways_project.pipeline.get_registered_annotation_on_image.call_count
-        == len(slice_infos)
-    )
-    for slice_info in slice_infos:
-        brainways_project.pipeline.get_registered_annotation_on_image.assert_any_call(
-            slice_info
-        )
-
-    for slice_info in slice_infos:
-        output_file = output_path / f"{slice_info.path}.csv"
-        assert output_file.exists()
-        data = np.loadtxt(output_file, delimiter=",")
+        data = loader(output_file)
         assert np.array_equal(data, np.array([[1, 2], [3, 4]]))

@@ -65,4 +65,5 @@ class SliceSelection(Enum):
 
 class RegisteredAnnotationFileFormat(Enum):
     NPZ = "npz"
+    MAT = "mat"
     CSV = "csv"

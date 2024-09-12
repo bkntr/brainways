@@ -8,6 +8,7 @@ from typing import Callable, Iterator, List, Optional, Tuple, Union
 import dacite
 import numpy as np
 import pandas as pd
+import scipy.io
 from natsort import natsorted, ns
 from pandas import ExcelWriter
 
@@ -475,10 +476,16 @@ class BrainwaysProject:
                     output_path / f"{slice_info.path}.npz",
                     annotation=registered_annotation,
                 )
+            elif file_format == RegisteredAnnotationFileFormat.MAT:
+                scipy.io.savemat(
+                    output_path / f"{slice_info.path}.mat",
+                    {"annotation": registered_annotation},
+                )
             elif file_format == RegisteredAnnotationFileFormat.CSV:
                 np.savetxt(
                     output_path / f"{slice_info.path}.csv",
                     registered_annotation,
+                    fmt="%d",
                     delimiter=",",
                 )
             yield

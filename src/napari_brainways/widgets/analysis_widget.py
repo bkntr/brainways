@@ -4,7 +4,10 @@ from typing import TYPE_CHECKING
 from magicgui.widgets import request_values
 from qtpy.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
-from brainways.project.info_classes import SliceSelection
+from brainways.project.info_classes import (
+    RegisteredAnnotationFileFormat,
+    SliceSelection,
+)
 
 if TYPE_CHECKING:
     from napari_brainways.controllers.analysis_controller import AnalysisController
@@ -291,29 +294,33 @@ class AnalysisWidget(QWidget):
                 ),
             ),
             slice_selection=dict(
-                value="Current Slice",
+                value=SliceSelection.CURRENT_SLICE.value,
                 widget_type="ComboBox",
                 options=dict(
-                    choices=["Current Slice", "Current Subject", "All Subjects"],
+                    choices=[e.value for e in SliceSelection],
                     tooltip="Which slices to export",
                 ),
                 annotation=str,
                 label="Slice Selection",
             ),
+            file_format=dict(
+                value=RegisteredAnnotationFileFormat.CSV.value,
+                widget_type="ComboBox",
+                options=dict(
+                    choices=[e.value for e in RegisteredAnnotationFileFormat],
+                    tooltip="File format to save the masks to",
+                ),
+                annotation=str,
+                label="File Format",
+            ),
         )
         if values is None:
             return
 
-        slice_selection_disp = values["slice_selection"]
-        if slice_selection_disp == "Current Slice":
-            slice_selection = SliceSelection.CURRENT_SLICE
-        elif slice_selection_disp == "Current Subject":
-            slice_selection = SliceSelection.CURRENT_SUBJECT
-        elif slice_selection_disp == "All Subjects":
-            slice_selection = SliceSelection.ALL_SUBJECTS
-
         self.controller.export_registration_masks_async(
-            output_path=values["output_path"], slice_selection=slice_selection
+            output_path=values["output_path"],
+            slice_selection=SliceSelection(values["slice_selection"]),
+            file_format=RegisteredAnnotationFileFormat(values["file_format"]),
         )
 
     def set_label(self):

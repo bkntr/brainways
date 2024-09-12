@@ -6,7 +6,10 @@ import numpy as np
 import pandas as pd
 from pytest import fixture
 
-from brainways.project.info_classes import SliceSelection
+from brainways.project.info_classes import (
+    RegisteredAnnotationFileFormat,
+    SliceSelection,
+)
 from napari_brainways.brainways_ui import BrainwaysUI
 from napari_brainways.controllers.analysis_controller import AnalysisController
 
@@ -132,16 +135,20 @@ def test_export_registration_masks_async_current_slice(
     app, controller = app_on_analysis
     output_path = Path("/fake/path")
     slice_selection = SliceSelection.CURRENT_SLICE
+    file_format = RegisteredAnnotationFileFormat.CSV
 
     with patch.object(
         controller.ui.project, "export_registration_masks_async"
     ) as mock_export:
-        controller.export_registration_masks_async(output_path, slice_selection)
+        controller.export_registration_masks_async(
+            output_path, slice_selection, file_format
+        )
         mock_export.assert_called_once()
         assert mock_export.call_args[1]["output_path"] == output_path
         assert mock_export.call_args[1]["slice_infos"] == [
             controller.ui.current_document
         ]
+        assert mock_export.call_args[1]["file_format"] == file_format
 
 
 def test_export_registration_masks_async_current_subject(
@@ -150,17 +157,21 @@ def test_export_registration_masks_async_current_subject(
     app, controller = app_on_analysis
     output_path = Path("/fake/path")
     slice_selection = SliceSelection.CURRENT_SUBJECT
+    file_format = RegisteredAnnotationFileFormat.NPZ
 
     with patch.object(
         controller.ui.project, "export_registration_masks_async"
     ) as mock_export:
-        controller.export_registration_masks_async(output_path, slice_selection)
+        controller.export_registration_masks_async(
+            output_path, slice_selection, file_format
+        )
         mock_export.assert_called_once()
         expected_slice_infos = [
             slice_info for _, slice_info in app.current_subject.valid_documents
         ]
         assert mock_export.call_args[1]["output_path"] == output_path
         assert mock_export.call_args[1]["slice_infos"] == expected_slice_infos
+        assert mock_export.call_args[1]["file_format"] == file_format
 
 
 def test_export_registration_masks_async_all_subjects(
@@ -170,11 +181,14 @@ def test_export_registration_masks_async_all_subjects(
     assert app.project is not None
     output_path = Path("/fake/path")
     slice_selection = SliceSelection.ALL_SUBJECTS
+    file_format = RegisteredAnnotationFileFormat.CSV
 
     with patch.object(
         controller.ui.project, "export_registration_masks_async"
     ) as mock_export:
-        controller.export_registration_masks_async(output_path, slice_selection)
+        controller.export_registration_masks_async(
+            output_path, slice_selection, file_format
+        )
         mock_export.assert_called_once()
         expected_slice_infos = [
             slice_info
@@ -183,3 +197,4 @@ def test_export_registration_masks_async_all_subjects(
         ]
         assert mock_export.call_args[1]["output_path"] == output_path
         assert mock_export.call_args[1]["slice_infos"] == expected_slice_infos
+        assert mock_export.call_args[1]["file_format"] == file_format

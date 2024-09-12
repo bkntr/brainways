@@ -58,6 +58,11 @@ class ExcelMode(Enum):
 
 
 class SliceSelection(Enum):
-    CURRENT_SLICE = "current_slice"
-    CURRENT_SUBJECT = "current_subject"
-    ALL_SUBJECTS = "all_subjects"
+    CURRENT_SLICE = "Current Slice"
+    CURRENT_SUBJECT = "Current Subject"
+    ALL_SUBJECTS = "All Subjects"
+
+
+class RegisteredAnnotationFileFormat(Enum):
+    NPZ = "npz"
+    CSV = "csv"

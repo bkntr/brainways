@@ -1,22 +1,37 @@
+from __future__ import annotations
+
 from typing import List
 
-from torch import Tensor
+import numpy as np
 
 from brainways.transforms.base import BrainwaysTransform
+from brainways.utils.image import ImageSizeHW
 
 
 class Compose(BrainwaysTransform):
-    def __init__(
-        self,
-        transforms_2d: List[BrainwaysTransform],
-        transforms_3d: List[BrainwaysTransform],
-    ):
-        self._transforms_2d = transforms_2d
-        self._transforms_3d = transforms_3d
+    def __init__(self, transforms: List[BrainwaysTransform]):
+        self.transforms = transforms
 
-    def transform_points(self, points: Tensor) -> Tensor:
-        for t in self._transforms_2d:
-            points = t.transform_points(points)
-        for t in self._transforms_3d:
-            points = t.transform_points(points)
+    def transform_image(
+        self,
+        image: np.ndarray,
+        output_size: ImageSizeHW | None = None,
+        mode: str = "bilinear",
+    ) -> np.ndarray:
+        for transform in self.transforms:
+            image = transform.transform_image(image, output_size=output_size, mode=mode)
+
+        return image
+
+    def transform_points(
+        self,
+        points: np.ndarray,
+    ) -> np.ndarray:
+        for transform in self.transforms:
+            points = transform.transform_points(points)
         return points
+
+    def inv(self) -> Compose:
+        return Compose(
+            transforms=[transform.inv() for transform in self.transforms[::-1]]
+        )

@@ -2,20 +2,24 @@ from __future__ import annotations
 
 import numpy as np
 
+from brainways.transforms.base import BrainwaysTransform
 from brainways.utils.image import ImageSizeHW
 
 
-class BrainwaysTransform:
+class IdentityTransform(BrainwaysTransform):
+    def __init__(self):
+        pass
+
     def transform_image(
         self,
         image: np.ndarray,
         output_size: ImageSizeHW | None = None,
         mode: str = "bilinear",
     ) -> np.ndarray:
-        raise NotImplementedError()
+        return image
 
     def transform_points(self, points: np.ndarray) -> np.ndarray:
-        raise NotImplementedError()
+        return points
 
-    def inv(self) -> BrainwaysTransform:
-        raise NotImplementedError()
+    def inv(self):
+        return IdentityTransform()

@@ -7,7 +7,6 @@ from brainways.pipeline.brainways_params import (
     AffineTransform2DParams,
     AtlasRegistrationParams,
     BrainwaysParams,
-    TPSTransformParams,
 )
 from brainways.pipeline.brainways_pipeline import BrainwaysPipeline
 from brainways.project.info_classes import SliceInfo
@@ -31,11 +30,9 @@ def test_get_registered_annotation_on_image():
     mock_slice_info = MagicMock(spec=SliceInfo)
     lowres_image_size = (51, 51)
     image_size = (102, 102)
-    tps_points = (np.random.rand(10, 2) * lowres_image_size).astype(np.float32).tolist()
     mock_slice_info.params = BrainwaysParams(
         atlas=AtlasRegistrationParams(),
         affine=AffineTransform2DParams(angle=90),
-        tps=TPSTransformParams(points_src=tps_points, points_dst=tps_points),
     )
     mock_slice_info.lowres_image_size = lowres_image_size
     mock_slice_info.image_size = image_size

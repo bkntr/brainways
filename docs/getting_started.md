@@ -7,6 +7,9 @@
 !!! tip
     We recommend installing brainways in a separated virtual environment, for example using [anaconda](https://docs.anaconda.com/free/anaconda/install/).
 
+!!! tip
+    If you are installing Brainways on Windows and need GPU support, you need to first install PyTorch and TensorBoard with GPU support. Please refer to the [PyTorch](https://pytorch.org/get-started/locally/) and [TensorBoard](https://www.tensorflow.org/install/pip) websites for detailed instructions. After installing these dependencies, you can proceed with the Brainways installation.
+
 ## 1. Install Brainways
 
 Run the following command (if you created a virtual environment, run this command inside the virtual environment):
@@ -103,6 +106,56 @@ The "unique" check box can be used to determine whether the adjusted normalizati
 * If the "unique" checkbox is not ticked, the parameters will be used for the whole project.
 
 ![Cell detection](./assets/cell-detection.jpg)
+
+### Outputs
+
+#### Export Excel with Cell Density per Region
+
+Brainways allows you to export cell density data for each brain region and animal to an Excel file. Follow the steps below:
+
+1. **Open the Calculate Results Dialog:**
+   - Navigate to the `Analysis` section and click the `Calculate results` button.
+
+2. **Configure Calculation Options:**
+   - In the calculation dialog, you will need to specify the following options:
+     - **Min Structure Square Area (μm):** Minimum area (in µm²) for regions to be included in the excel.
+     - **Cells Per Square Area (μm):** Excel will output cell density per square area (raw cell counts will also be provided).
+     - **Min Cell Area (μm):** Filter out detected cells with area smaller than this value.
+     - **Max Cell Area (μm):** Filter out detected cells with area larger than this value.
+     - **Excel Mode:** Select the mode for the Excel output. Options include:
+       - `ROW_PER_SUBJECT`: One row per subject.
+       - `ROW_PER_IMAGE`: One row per slice image.
+
+3. **Calculate Results:**
+   - After configuring the options, click the `OK` button to start the calculation process. A progress bar will indicate the status of the calculation.
+
+4. **Verify Exported Files:**
+   - Once the calculation is complete, navigate to the specified output directory to find the exported Excel file. The file will contain cell density data for each brain region and animal.
+
+#### Export Registered Annotation Masks
+
+The Export Registered Annotation Masks feature allows you to export the registered annotations of your brain slices to various file formats. Follow the steps below to use this feature:
+
+1. **Open the Export Dialog:**
+   - Navigate to the `Analysis` section and click the `Export Registered Annotation Masks` button.
+
+2. **Configure Export Options:**
+   - In the export dialog, you will need to specify the following options:
+     - **Output Directory:** The directory where the registered annotation masks will be saved.
+     - **Slice Selection:** Choose which slices to export. Options include:
+       - `Current Slice`: Export the currently selected slice.
+       - `Current Subject`: Export all slices of the currently selected subject.
+       - `All Subjects`: Export all slices of all subjects in the project.
+     - **File Format:** Select the file format for the exported masks. Supported formats include:
+       - `CSV`
+       - `NPZ`
+       - `MAT`
+
+3. **Export the Masks:**
+   - After configuring the options, click the `OK` button to start the export process. A progress bar will indicate the status of the export.
+
+4. **Verify Exported Files:**
+   - Once the export is complete, navigate to the specified output directory to find the exported files. Each file will be named according to the slice image name and saved in the chosen format.
 
 ### Analysis
 

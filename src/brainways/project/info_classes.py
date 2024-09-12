@@ -57,7 +57,7 @@ class SubjectFileFormat:
 
 class ExcelMode(Enum):
     ROW_PER_SUBJECT = "Row per Subject"
-    ROW_PER_IMAGE = "Row per Slice"
+    ROW_PER_IMAGE = "Row per Image"
 
 
 class SliceSelection(Enum):

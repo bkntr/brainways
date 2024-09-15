@@ -1,7 +1,7 @@
 from dataclasses import replace
 from pathlib import Path
 from typing import Callable, List
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pandas as pd
@@ -286,7 +286,9 @@ def test_network_analysis(
         ),
     ],
 )
+@patch("brainways.project.brainways_project.open_directory")
 def test_export_registration_masks_async(
+    open_directory_mock,
     brainways_project: BrainwaysProject,
     file_format: RegisteredAnnotationFileFormat,
     extension: str,
@@ -317,7 +319,7 @@ def test_export_registration_masks_async(
         )
 
     for slice_info in slice_infos:
-        output_file = output_path / f"{slice_info.path}.{extension}"
+        output_file = output_path / f"{Path(str(slice_info.path)).name}.{extension}"
         assert output_file.exists()
         data = loader(output_file)
         assert np.array_equal(data, np.array([[1, 2], [3, 4]]))

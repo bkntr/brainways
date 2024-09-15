@@ -518,7 +518,7 @@ class BrainwaysUI(QWidget):
                 + ["", "Do you want to continue?"]
             )
             return show_warning_dialog(warning_text)
-        return False
+        return True
 
     @staticmethod
     def _merge_callbacks(

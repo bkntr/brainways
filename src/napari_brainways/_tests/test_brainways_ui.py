@@ -288,7 +288,7 @@ def brainways_ui():
 @patch("napari_brainways.brainways_ui.show_warning_dialog", return_value=True)
 def test_no_subjects(mock_show_warning_dialog, brainways_ui):
     brainways_ui.project = MagicMock(subjects=[])
-    assert not brainways_ui.prompt_user_slices_have_missing_params()
+    assert brainways_ui.prompt_user_slices_have_missing_params()
     mock_show_warning_dialog.assert_not_called()
 
 
@@ -296,7 +296,7 @@ def test_no_subjects(mock_show_warning_dialog, brainways_ui):
 def test_no_valid_documents(mock_show_warning_dialog, brainways_ui):
     subject = MagicMock(valid_documents=[])
     brainways_ui.project = MagicMock(subjects=[subject])
-    assert not brainways_ui.prompt_user_slices_have_missing_params()
+    assert brainways_ui.prompt_user_slices_have_missing_params()
     mock_show_warning_dialog.assert_not_called()
 
 
@@ -306,7 +306,7 @@ def test_all_params_present(mock_show_warning_dialog, brainways_ui):
     slice_info = MagicMock(params=params)
     subject = MagicMock(valid_documents=[(0, slice_info)])
     brainways_ui.project = MagicMock(subjects=[subject])
-    assert not brainways_ui.prompt_user_slices_have_missing_params()
+    assert brainways_ui.prompt_user_slices_have_missing_params()
     mock_show_warning_dialog.assert_not_called()
 
 

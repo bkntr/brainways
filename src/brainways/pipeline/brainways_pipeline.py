@@ -12,7 +12,9 @@ from brainways.pipeline.atlas_registration import AtlasRegistration
 from brainways.pipeline.brainways_params import AffineTransform2DParams, BrainwaysParams
 from brainways.pipeline.tps import TPS
 from brainways.project.info_classes import SliceInfo
-from brainways.transforms.image_to_atlas_transform import ImageToAtlasTransform
+from brainways.transforms.base import BrainwaysTransform
+from brainways.transforms.compose import Compose
+from brainways.transforms.identity_transform import IdentityTransform
 from brainways.utils.atlas.brainways_atlas import AtlasSlice, BrainwaysAtlas
 from brainways.utils.image import ImageSizeHW, convert_to_uint8
 
@@ -39,28 +41,39 @@ class BrainwaysPipeline:
         lowres_image_size: ImageSizeHW,
         until_step: PipelineStep | None = None,
         scale: float | None = None,
-    ) -> ImageToAtlasTransform:
+    ) -> BrainwaysTransform:
         until_step_value = 1000 if until_step is None else until_step.value
-        affine_2d_transform = None
-        tps_transform = None
-        atlas_registration_transform = None
-        if until_step_value >= PipelineStep.AFFINE_2D.value:
+        affine_2d_transform: BrainwaysTransform = IdentityTransform()
+        tps_transform: BrainwaysTransform = IdentityTransform()
+        atlas_registration_transform: BrainwaysTransform = IdentityTransform()
+        if (
+            until_step_value >= PipelineStep.AFFINE_2D.value
+            and brainways_params.affine is not None
+        ):
             affine_2d_transform = self.affine_2d.get_transform(
                 brainways_params.affine,
                 input_size=lowres_image_size,
                 scale=scale,
             )
-        if until_step_value >= PipelineStep.TPS.value:
+        if (
+            until_step_value >= PipelineStep.TPS.value
+            and brainways_params.tps is not None
+        ):
             tps_transform = self.tps.get_transform(brainways_params.tps, scale=scale)
-        if until_step_value >= PipelineStep.ATLAS_REGISTRATION.value:
+        if (
+            until_step_value >= PipelineStep.ATLAS_REGISTRATION.value
+            and brainways_params.atlas is not None
+        ):
             atlas_registration_transform = self.atlas_registration.get_transform(
                 brainways_params.atlas
             )
 
-        image_to_atlas_transform = ImageToAtlasTransform(
-            atlas_transform=atlas_registration_transform,
-            affine_2d_transform=affine_2d_transform,
-            tps_transform=tps_transform,
+        image_to_atlas_transform = Compose(
+            [
+                affine_2d_transform,
+                tps_transform,
+                atlas_registration_transform,
+            ]
         )
         return image_to_atlas_transform
 

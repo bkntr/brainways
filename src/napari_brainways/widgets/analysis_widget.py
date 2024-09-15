@@ -57,6 +57,9 @@ class AnalysisWidget(QWidget):
         self.layout().addWidget(export_registration_masks_button)
 
     def on_run_calculate_results_clicked(self, _=None):
+        if not self.controller.ui.prompt_user_slices_have_missing_params():
+            return
+
         values = request_values(
             title="Excel Parameters",
             min_region_area_um2=dict(
@@ -282,6 +285,9 @@ class AnalysisWidget(QWidget):
         )
 
     def on_export_registration_masks_clicked(self, _=None):
+        if not self.controller.ui.prompt_user_slices_have_missing_params():
+            return
+
         values = request_values(
             title="Export Registered Annotation Masks",
             output_path=dict(

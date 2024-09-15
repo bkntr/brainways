@@ -28,6 +28,7 @@ class DepthRegistration(BrainwaysTransform):
         params: DepthRegistrationParams,
         volume_shape: Tuple[int, int, int],
         mode: str = "bilinear",
+        _inverse: bool = False,
     ):
         self.params = params
         self.volume_shape = volume_shape
@@ -48,8 +49,17 @@ class DepthRegistration(BrainwaysTransform):
             angles=torch.as_tensor([[params.rx, params.ry, 0]], dtype=torch.float32),
         )
         self.mat_inverse = torch.inverse(self.mat)
+        self._inverse = _inverse
 
-    def slice_volume(self, volume: Tensor, mode: Optional[str] = None) -> Tensor:
+    def inv(self) -> DepthRegistration:
+        return DepthRegistration(
+            params=self.params,
+            volume_shape=self.volume_shape,
+            mode=self.mode,
+            _inverse=not self._inverse,
+        )
+
+    def slice_volume(self, volume: Tensor, mode: str | None = None) -> Tensor:
         depth, height, width = volume.shape
         grid = KU.create_meshgrid(
             height=height, width=width, normalized_coordinates=False
@@ -69,8 +79,6 @@ class DepthRegistration(BrainwaysTransform):
         )
         return slice.squeeze()
 
-    from typing import Optional
-
     def transform_image(
         self,
         image: np.ndarray,
@@ -79,12 +87,15 @@ class DepthRegistration(BrainwaysTransform):
     ) -> np.ndarray:
         return image
 
-    def transform_points(self, points: np.array) -> np.array:
+    def transform_points(self, points: np.ndarray) -> np.ndarray:
         """
 
         :param points: Nx2
         :return: Nx3
         """
+        if self._inverse:
+            raise NotImplementedError("Inverse transform is not implemented")
+
         if len(points) > 0:
             points = torch.as_tensor(points)
             points_3d = torch.zeros(points.shape[0], 3, dtype=torch.float32)

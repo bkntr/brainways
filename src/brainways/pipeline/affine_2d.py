@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import numpy as np
 
 from brainways.pipeline.brainways_params import AffineTransform2DParams
@@ -26,7 +24,7 @@ class Affine2D:
         params: AffineTransform2DParams,
         input_size: ImageSizeHW,
         scale: float | None,
-    ) -> Optional[BrainwaysAffineTransform2D]:
+    ) -> BrainwaysAffineTransform2D:
         return BrainwaysAffineTransform2D(
             params=params, input_size=input_size, scale=scale
         )

@@ -32,6 +32,7 @@ from napari_brainways.controllers.cell_detector_controller import CellDetectorCo
 from napari_brainways.controllers.registration_controller import RegistrationController
 from napari_brainways.controllers.tps_controller import TpsController
 from napari_brainways.utils.async_utils import do_work_async
+from napari_brainways.widgets.warning_dialog import show_warning_dialog
 from napari_brainways.widgets.workflow_widget import WorkflowView
 
 
@@ -491,6 +492,33 @@ class BrainwaysUI(QWidget):
             async_disabled=self.async_disabled,
             **kwargs,
         )
+
+    def prompt_user_slices_have_missing_params(self) -> bool:
+        assert self.project is not None
+        warnings = []
+        for subject_idx, subject in enumerate(self.project.subjects):
+            for slice_idx, slice_info in subject.valid_documents:
+                missing_params = []
+                params = slice_info.params
+                if params.atlas is None:
+                    missing_params.append("Atlas Registration")
+                if params.affine is None:
+                    missing_params.append("Rigid Registration")
+                if params.tps is None:
+                    missing_params.append("Non-rigid Registration")
+                if missing_params:
+                    warnings.append(
+                        f"Subject #{subject_idx + 1}, Slice #{slice_idx + 1}: {missing_params}"
+                    )
+
+        if warnings:
+            warning_text = "\n".join(
+                ["The following slices have missing parameters:", ""]
+                + warnings
+                + ["", "Do you want to continue?"]
+            )
+            return show_warning_dialog(warning_text)
+        return False
 
     @staticmethod
     def _merge_callbacks(

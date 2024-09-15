@@ -470,6 +470,9 @@ class BrainwaysProject:
             registered_annotation = self.pipeline.get_registered_annotation_on_image(
                 slice_info
             )
+            logging.info(
+                f"Exporting registration mask for slice '{slice_info.path}' to '{output_path}'"
+            )
             output_path.mkdir(parents=True, exist_ok=True)
             if file_format == RegisteredAnnotationFileFormat.NPZ:
                 np.savez_compressed(

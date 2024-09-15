@@ -2,7 +2,7 @@ import shutil
 from dataclasses import replace
 from pathlib import Path
 from typing import Tuple
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock, patch
 
 import numpy as np
 import pandas as pd
@@ -277,3 +277,64 @@ def test_import_cells(opened_app: BrainwaysUI, tmpdir):
 
     for i, document in enumerate(opened_app.documents):
         assert np.allclose(document.cells, cells[i])
+
+
+@pytest.fixture
+def brainways_ui():
+    viewer = MagicMock()
+    return BrainwaysUI(viewer)
+
+
+@patch("napari_brainways.brainways_ui.show_warning_dialog", return_value=True)
+def test_no_subjects(mock_show_warning_dialog, brainways_ui):
+    brainways_ui.project = MagicMock(subjects=[])
+    assert not brainways_ui.prompt_user_slices_have_missing_params()
+    mock_show_warning_dialog.assert_not_called()
+
+
+@patch("napari_brainways.brainways_ui.show_warning_dialog", return_value=True)
+def test_no_valid_documents(mock_show_warning_dialog, brainways_ui):
+    subject = MagicMock(valid_documents=[])
+    brainways_ui.project = MagicMock(subjects=[subject])
+    assert not brainways_ui.prompt_user_slices_have_missing_params()
+    mock_show_warning_dialog.assert_not_called()
+
+
+@patch("napari_brainways.brainways_ui.show_warning_dialog", return_value=True)
+def test_all_params_present(mock_show_warning_dialog, brainways_ui):
+    params = BrainwaysParams(atlas="atlas", affine="affine", tps="tps", cell="cell")
+    slice_info = MagicMock(params=params)
+    subject = MagicMock(valid_documents=[(0, slice_info)])
+    brainways_ui.project = MagicMock(subjects=[subject])
+    assert not brainways_ui.prompt_user_slices_have_missing_params()
+    mock_show_warning_dialog.assert_not_called()
+
+
+@patch("napari_brainways.brainways_ui.show_warning_dialog", return_value=True)
+def test_some_params_missing(mock_show_warning_dialog, brainways_ui):
+    params = BrainwaysParams(atlas=None, affine="affine", tps="tps", cell="cell")
+    slice_info = MagicMock(params=params)
+    subject = MagicMock(valid_documents=[(0, slice_info)])
+    brainways_ui.project = MagicMock(subjects=[subject])
+    assert brainways_ui.prompt_user_slices_have_missing_params()
+    mock_show_warning_dialog.assert_called_once()
+
+
+@patch("napari_brainways.brainways_ui.show_warning_dialog", return_value=True)
+def test_all_params_missing(mock_show_warning_dialog, brainways_ui):
+    params = BrainwaysParams(atlas=None, affine=None, tps=None, cell=None)
+    slice_info = MagicMock(params=params)
+    subject = MagicMock(valid_documents=[(0, slice_info)])
+    brainways_ui.project = MagicMock(subjects=[subject])
+    assert brainways_ui.prompt_user_slices_have_missing_params()
+    mock_show_warning_dialog.assert_called_once()
+
+
+@patch("napari_brainways.brainways_ui.show_warning_dialog", return_value=False)
+def test_all_params_missing_user_rejects(mock_show_warning_dialog, brainways_ui):
+    params = BrainwaysParams(atlas=None, affine=None, tps=None, cell=None)
+    slice_info = MagicMock(params=params)
+    subject = MagicMock(valid_documents=[(0, slice_info)])
+    brainways_ui.project = MagicMock(subjects=[subject])
+    assert not brainways_ui.prompt_user_slices_have_missing_params()
+    mock_show_warning_dialog.assert_called_once()

@@ -325,7 +325,7 @@ class AnalysisController(Controller):
             self.ui.project.export_registration_masks_async,
             progress_label="Exporting Registered Annotation Masks...",
             progress_max_value=len(slice_infos),
-            output_path=output_path,
+            output_dir=output_path,
             slice_infos=slice_infos,
             file_format=file_format,
         )

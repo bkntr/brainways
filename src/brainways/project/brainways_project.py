@@ -29,6 +29,7 @@ from brainways.utils.cell_detection_importer.cell_detection_importer import (
 )
 from brainways.utils.contrast import calculate_contrast
 from brainways.utils.network_analysis import calculate_network_graph
+from brainways.utils.paths import open_directory
 from brainways.utils.pls_analysis import (
     get_estimated_lv_plot,
     get_lv_p_values_plot,
@@ -460,7 +461,7 @@ class BrainwaysProject:
 
     def export_registration_masks_async(
         self,
-        output_path: Path,
+        output_dir: Path,
         slice_infos: List[SliceInfo],
         file_format: RegisteredAnnotationFileFormat,
     ):
@@ -470,29 +471,31 @@ class BrainwaysProject:
             registered_annotation = self.pipeline.get_registered_annotation_on_image(
                 slice_info
             )
-            logging.info(
-                f"Exporting registration mask for slice '{slice_info.path}' to '{output_path}'"
-            )
-            output_path.mkdir(parents=True, exist_ok=True)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            file_name = Path(str(slice_info.path)).name + f".{file_format.value}"
+            output_path = output_dir / file_name
+            print(f"Saving {file_format.value} file to {output_path}")
             if file_format == RegisteredAnnotationFileFormat.NPZ:
                 np.savez_compressed(
-                    output_path / f"{slice_info.path}.npz",
+                    output_path,
                     annotation=registered_annotation,
                 )
             elif file_format == RegisteredAnnotationFileFormat.MAT:
                 scipy.io.savemat(
-                    output_path / f"{slice_info.path}.mat",
+                    output_path,
                     {"annotation": registered_annotation},
                     do_compression=True,
                 )
             elif file_format == RegisteredAnnotationFileFormat.CSV:
                 np.savetxt(
-                    output_path / f"{slice_info.path}.csv",
+                    output_path,
                     registered_annotation,
                     fmt="%d",
                     delimiter=",",
                 )
             yield
+
+        open_directory(output_dir)
 
     @property
     def n_valid_images(self):

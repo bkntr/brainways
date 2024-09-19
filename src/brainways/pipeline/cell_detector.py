@@ -120,7 +120,7 @@ class CellDetector:
         labels, details = self.stardist.predict_instances_big(
             image,
             axes="YX",
-            block_size=4096,
+            block_size=2048,
             min_overlap=128,
             normalizer=normalizer,
             **kwargs,

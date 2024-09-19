@@ -122,17 +122,17 @@ class TpsController(Controller):
         #     self.ui.viewer.reset_view()
 
     def open(self) -> None:
-        # if self._is_open:
-        #     return
+        if self._is_open:
+            return
 
-        # self.input_layer = self.ui.viewer.add_image(
-        #     np.zeros((10, 10), np.uint8),
-        #     name="Input",
-        # )
-        # self.atlas_layer = self.ui.viewer.add_labels(
-        #     np.zeros((10, 10), np.uint8),
-        #     name="Atlas",
-        # )
+        self.input_layer = self.ui.viewer.add_image(
+            np.zeros((10, 10), np.uint8),
+            name="Input",
+        )
+        self.atlas_layer = self.ui.viewer.add_labels(
+            np.zeros((10, 10), np.uint8),
+            name="Atlas",
+        )
         # self.atlas_layer.contour = True
         # self.points_input_layer = self.ui.viewer.add_points(
         #     name="Input Points",
@@ -156,10 +156,10 @@ class TpsController(Controller):
         # self.points_atlas_layer.bind_key(
         #     "s", self.set_points_mode_select, overwrite=True
         # )
-        # self._prev_params = []
-        # self._next_params = []
+        self._prev_params = []
+        self._next_params = []
 
-        # self.register_key_bindings()
+        self.register_key_bindings()
         self._is_open = True
 
     def close(self) -> None:

@@ -137,12 +137,12 @@ class TpsController(Controller):
         self.atlas_layer.contour = True
         QApplication.instance().processEvents()
         self.points_input_layer = self.ui.viewer.add_points(
-            name="Input Points",
-            face_color="green",
-            edge_color="#00ff0064",
-            size=5,
-            edge_width=0.5,
-            visible=False,
+            # name="Input Points",
+            # face_color="green",
+            # edge_color="#00ff0064",
+            # size=5,
+            # edge_width=0.5,
+            # visible=False,
         )
         # self.points_atlas_layer = self.ui.viewer.add_points(
         #     name="Atlas Points",

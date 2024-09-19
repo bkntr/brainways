@@ -137,7 +137,7 @@ class TpsController(Controller):
         self.points_input_layer = self.ui.viewer.add_points(
             name="Input Points",
             face_color="green",
-            border_color="#00ff0064",
+            edge_color="#00ff0064",
             size=5,
             border_width=0.5,
             visible=False,
@@ -145,7 +145,7 @@ class TpsController(Controller):
         self.points_atlas_layer = self.ui.viewer.add_points(
             name="Atlas Points",
             face_color="blue",
-            border_color="#0000ff64",
+            edge_color="#0000ff64",
             border_width=0.8,
             size=5,
         )

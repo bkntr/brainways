@@ -33,7 +33,7 @@ def display_cells_3d(subject: BrainwaysSubject):
         name="Cells",
         ndim=3,
         size=1,
-        border_color=colors,
+        edge_color=colors,
         face_color=colors,
     )
     viewer.title = subject.subject_path.name
@@ -67,7 +67,7 @@ def display_cells_2d(subject: BrainwaysSubject):
             cells[["y", "x"]].values * [image.shape[0], image.shape[1]],
             name="Cells",
             size=max(image.shape) * 0.002,
-            border_color=colors,
+            edge_color=colors,
             face_color=colors,
         )
         viewer.title = str(document.path)

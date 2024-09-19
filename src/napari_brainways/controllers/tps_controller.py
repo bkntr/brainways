@@ -135,6 +135,7 @@ class TpsController(Controller):
         )
         self.atlas_layer.contour = True
         self.points_input_layer = self.ui.viewer.add_points(
+            data=np.zeros((1, 2)),
             # name="Input Points",
             # face_color="green",
             # edge_color="#00ff0064",

@@ -139,14 +139,14 @@ class TpsController(Controller):
             face_color="green",
             edge_color="#00ff0064",
             size=5,
-            border_width=0.5,
+            edge_width=0.5,
             visible=False,
         )
         self.points_atlas_layer = self.ui.viewer.add_points(
             name="Atlas Points",
             face_color="blue",
             edge_color="#0000ff64",
-            border_width=0.8,
+            edge_width=0.8,
             size=5,
         )
         self.points_atlas_layer.mode = "select"

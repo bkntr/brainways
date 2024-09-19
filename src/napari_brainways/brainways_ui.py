@@ -240,10 +240,12 @@ class BrainwaysUI(QWidget):
             )
 
     def _open_step(self):
+        print("Opening step")
         self.current_step.open()
         self.current_step.show(self.current_params, self._image)
         self.widget.update_enabled_steps()
         self._set_title()
+        print("Opened step")
 
     def _set_title(self, valid_document_index: Optional[int] = None):
         if valid_document_index is None:

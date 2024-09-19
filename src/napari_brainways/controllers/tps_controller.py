@@ -142,14 +142,14 @@ class TpsController(Controller):
             edge_width=0.5,
             visible=False,
         )
-        self.points_atlas_layer = self.ui.viewer.add_points(
-            name="Atlas Points",
-            face_color="blue",
-            edge_color="#0000ff64",
-            edge_width=0.8,
-            size=5,
-        )
-        self.points_atlas_layer.mode = "select"
+        # self.points_atlas_layer = self.ui.viewer.add_points(
+        #     name="Atlas Points",
+        #     face_color="blue",
+        #     edge_color="#0000ff64",
+        #     edge_width=0.8,
+        #     size=5,
+        # )
+        # self.points_atlas_layer.mode = "select"
         # self.points_atlas_layer.events.data.connect(self.on_points_changed)
 
         # self.points_atlas_layer.bind_key("a", self.set_points_mode_add, overwrite=True)

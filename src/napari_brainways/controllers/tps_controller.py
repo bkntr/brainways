@@ -133,23 +133,23 @@ class TpsController(Controller):
             np.zeros((10, 10), np.uint8),
             name="Atlas",
         )
-        # self.atlas_layer.contour = True
-        # self.points_input_layer = self.ui.viewer.add_points(
-        #     name="Input Points",
-        #     face_color="green",
-        #     edge_color="#00ff0064",
-        #     size=5,
-        #     edge_width=0.5,
-        #     visible=False,
-        # )
-        # self.points_atlas_layer = self.ui.viewer.add_points(
-        #     name="Atlas Points",
-        #     face_color="blue",
-        #     edge_color="#0000ff64",
-        #     edge_width=0.8,
-        #     size=5,
-        # )
-        # self.points_atlas_layer.mode = "select"
+        self.atlas_layer.contour = True
+        self.points_input_layer = self.ui.viewer.add_points(
+            name="Input Points",
+            face_color="green",
+            edge_color="#00ff0064",
+            size=5,
+            edge_width=0.5,
+            visible=False,
+        )
+        self.points_atlas_layer = self.ui.viewer.add_points(
+            name="Atlas Points",
+            face_color="blue",
+            edge_color="#0000ff64",
+            edge_width=0.8,
+            size=5,
+        )
+        self.points_atlas_layer.mode = "select"
         # self.points_atlas_layer.events.data.connect(self.on_points_changed)
 
         # self.points_atlas_layer.bind_key("a", self.set_points_mode_add, overwrite=True)

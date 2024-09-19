@@ -122,64 +122,64 @@ class TpsController(Controller):
         #     self.ui.viewer.reset_view()
 
     def open(self) -> None:
-        if self._is_open:
-            return
+        # if self._is_open:
+        #     return
 
-        self.input_layer = self.ui.viewer.add_image(
-            np.zeros((10, 10), np.uint8),
-            name="Input",
-        )
-        self.atlas_layer = self.ui.viewer.add_labels(
-            np.zeros((10, 10), np.uint8),
-            name="Atlas",
-        )
-        self.atlas_layer.contour = True
-        self.points_input_layer = self.ui.viewer.add_points(
-            name="Input Points",
-            face_color="green",
-            edge_color="#00ff0064",
-            size=5,
-            edge_width=0.5,
-            visible=False,
-        )
-        self.points_atlas_layer = self.ui.viewer.add_points(
-            name="Atlas Points",
-            face_color="blue",
-            edge_color="#0000ff64",
-            edge_width=0.8,
-            size=5,
-        )
-        self.points_atlas_layer.mode = "select"
-        self.points_atlas_layer.events.data.connect(self.on_points_changed)
+        # self.input_layer = self.ui.viewer.add_image(
+        #     np.zeros((10, 10), np.uint8),
+        #     name="Input",
+        # )
+        # self.atlas_layer = self.ui.viewer.add_labels(
+        #     np.zeros((10, 10), np.uint8),
+        #     name="Atlas",
+        # )
+        # self.atlas_layer.contour = True
+        # self.points_input_layer = self.ui.viewer.add_points(
+        #     name="Input Points",
+        #     face_color="green",
+        #     edge_color="#00ff0064",
+        #     size=5,
+        #     edge_width=0.5,
+        #     visible=False,
+        # )
+        # self.points_atlas_layer = self.ui.viewer.add_points(
+        #     name="Atlas Points",
+        #     face_color="blue",
+        #     edge_color="#0000ff64",
+        #     edge_width=0.8,
+        #     size=5,
+        # )
+        # self.points_atlas_layer.mode = "select"
+        # self.points_atlas_layer.events.data.connect(self.on_points_changed)
 
-        self.points_atlas_layer.bind_key("a", self.set_points_mode_add, overwrite=True)
-        self.points_atlas_layer.bind_key(
-            "s", self.set_points_mode_select, overwrite=True
-        )
-        self._prev_params = []
-        self._next_params = []
+        # self.points_atlas_layer.bind_key("a", self.set_points_mode_add, overwrite=True)
+        # self.points_atlas_layer.bind_key(
+        #     "s", self.set_points_mode_select, overwrite=True
+        # )
+        # self._prev_params = []
+        # self._next_params = []
 
-        self.register_key_bindings()
+        # self.register_key_bindings()
         self._is_open = True
 
     def close(self) -> None:
-        if not self._is_open:
-            return
+        # if not self._is_open:
+        #     return
 
-        self.points_atlas_layer.events.data.disconnect(self.on_points_changed)
-        self.ui.viewer.layers.remove(self.input_layer)
-        self.ui.viewer.layers.remove(self.atlas_layer)
-        self.ui.viewer.layers.remove(self.points_input_layer)
-        self.ui.viewer.layers.remove(self.points_atlas_layer)
-        self._image = None
-        self._params = None
-        self.input_layer = None
-        self.atlas_layer = None
-        self.points_input_layer = None
-        self.points_atlas_layer = None
-        self._prev_params = None
-        self._next_params = None
-        self.unregister_key_bindings()
+        # self.points_atlas_layer.events.data.disconnect(self.on_points_changed)
+        # self.ui.viewer.layers.remove(self.input_layer)
+        # self.ui.viewer.layers.remove(self.atlas_layer)
+        # self.ui.viewer.layers.remove(self.points_input_layer)
+        # self.ui.viewer.layers.remove(self.points_atlas_layer)
+        # self._image = None
+        # self._params = None
+        # self.input_layer = None
+        # self.atlas_layer = None
+        # self.points_input_layer = None
+        # self.points_atlas_layer = None
+        # self._prev_params = None
+        # self._next_params = None
+        # self.unregister_key_bindings()
         self._is_open = False
 
     def default_params(self, image: np.ndarray, params: BrainwaysParams):

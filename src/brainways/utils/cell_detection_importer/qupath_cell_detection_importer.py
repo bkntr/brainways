@@ -52,10 +52,10 @@ class QupathCellDetectionsImporter(CellDetectionImporter):
         root: Path,
         document: SliceInfo,
     ) -> Optional[Path]:
-        csv_filename = f"{Path(document.path.filename).name} Detections.txt"
-        csv_path = root / csv_filename
-        if csv_path.exists():
-            return csv_path
+        image_filename = f"{Path(document.path.filename).name}"
+        candidates = list(root.rglob(f"{image_filename}*"))
+        if len(candidates) == 1:
+            return candidates[0]
         else:
             return None
 

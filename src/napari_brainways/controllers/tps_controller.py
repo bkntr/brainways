@@ -12,7 +12,6 @@ from brainways.pipeline.brainways_pipeline import PipelineStep
 from brainways.transforms.tps_transform import TPSTransform
 from brainways.utils.image import brain_mask, nonzero_bounding_box
 from napari_brainways.controllers.base import Controller
-from napari_brainways.utils.general_utils import update_layer_contrast_limits
 from napari_brainways.widgets.tps_widget import TpsWidget
 
 if TYPE_CHECKING:
@@ -82,44 +81,45 @@ class TpsController(Controller):
         image: np.ndarray | None = None,
         from_ui: bool = False,
     ) -> None:
-        assert params.tps is not None
+        pass
+        # assert params.tps is not None
 
-        if from_ui:
-            self._prev_params.append(self._params)
-            self._next_params = []
+        # if from_ui:
+        #     self._prev_params.append(self._params)
+        #     self._next_params = []
 
-        self._params = params
-        display_scale = 1 / min(params.affine.sx, params.affine.sy)
+        # self._params = params
+        # display_scale = 1 / min(params.affine.sx, params.affine.sy)
 
-        if image is not None:
-            self._image = image
-            self._next_params = []
-            self._prev_params = []
+        # if image is not None:
+        #     self._image = image
+        #     self._next_params = []
+        #     self._prev_params = []
 
-            atlas_slice = self.pipeline.get_atlas_slice(params)
-            self.atlas_layer.data = atlas_slice.annotation.numpy()
-            self.atlas_layer.scale = (display_scale, display_scale)
-            self.points_input_layer.scale = (display_scale, display_scale)
-            self.points_atlas_layer.scale = (display_scale, display_scale)
-        with self.points_input_layer.events.data.blocker():
-            np_pts = np.array(params.tps.points_src)[:, ::-1]
-            self.points_input_layer.data = np_pts.copy()
-            self.points_input_layer.selected_data = set()
-        with self.points_atlas_layer.events.data.blocker():
-            np_pts = np.array(params.tps.points_dst)[:, ::-1]
-            self.points_atlas_layer.data = np_pts.copy()
-            self.points_atlas_layer.selected_data = set()
+        #     atlas_slice = self.pipeline.get_atlas_slice(params)
+        #     self.atlas_layer.data = atlas_slice.annotation.numpy()
+        #     self.atlas_layer.scale = (display_scale, display_scale)
+        #     self.points_input_layer.scale = (display_scale, display_scale)
+        #     self.points_atlas_layer.scale = (display_scale, display_scale)
+        # with self.points_input_layer.events.data.blocker():
+        #     np_pts = np.array(params.tps.points_src)[:, ::-1]
+        #     self.points_input_layer.data = np_pts.copy()
+        #     self.points_input_layer.selected_data = set()
+        # with self.points_atlas_layer.events.data.blocker():
+        #     np_pts = np.array(params.tps.points_dst)[:, ::-1]
+        #     self.points_atlas_layer.data = np_pts.copy()
+        #     self.points_atlas_layer.selected_data = set()
 
-        self.input_layer.data = self.pipeline.transform_image(
-            image=self._image,
-            params=params,
-            until_step=PipelineStep.TPS,
-            scale=display_scale,
-        )
+        # self.input_layer.data = self.pipeline.transform_image(
+        #     image=self._image,
+        #     params=params,
+        #     until_step=PipelineStep.TPS,
+        #     scale=display_scale,
+        # )
 
-        if image is not None:
-            update_layer_contrast_limits(self.input_layer)
-            self.ui.viewer.reset_view()
+        # if image is not None:
+        #     update_layer_contrast_limits(self.input_layer)
+        #     self.ui.viewer.reset_view()
 
     def open(self) -> None:
         if self._is_open:

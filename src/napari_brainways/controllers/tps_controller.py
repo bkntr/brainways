@@ -82,6 +82,7 @@ class TpsController(Controller):
         image: np.ndarray | None = None,
         from_ui: bool = False,
     ) -> None:
+        print("show start")
         assert params.tps is not None
 
         if from_ui:
@@ -96,7 +97,9 @@ class TpsController(Controller):
             self._next_params = []
             self._prev_params = []
 
+            print("before get_atlas_slice")
             atlas_slice = self.pipeline.get_atlas_slice(params)
+            print("after get_atlas_slice")
             self.atlas_layer.data = atlas_slice.annotation.numpy()
             self.atlas_layer.scale = (display_scale, display_scale)
             self.points_input_layer.scale = (display_scale, display_scale)
@@ -110,16 +113,20 @@ class TpsController(Controller):
             self.points_atlas_layer.data = np_pts.copy()
             self.points_atlas_layer.selected_data = set()
 
+        print("before transform_image")
         self.input_layer.data = self.pipeline.transform_image(
             image=self._image,
             params=params,
             until_step=PipelineStep.TPS,
             scale=display_scale,
         )
+        print("after transform_image")
 
         if image is not None:
             update_layer_contrast_limits(self.input_layer)
             self.ui.viewer.reset_view()
+
+        print("show end")
 
     def open(self) -> None:
         if self._is_open:

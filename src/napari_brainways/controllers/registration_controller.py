@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Callable
 
 import napari.layers
 import numpy as np
+from qtpy.QtWidgets import QApplication
 
 from brainways.pipeline.brainways_params import AtlasRegistrationParams, BrainwaysParams
 from brainways.utils.image import brain_mask, nonzero_bounding_box
@@ -275,6 +276,7 @@ class RegistrationController(Controller):
         self.ui.viewer.layers.remove(self.input_layer)
         self.ui.viewer.layers.remove(self.mask_layer)
         self.ui.viewer.layers.remove(self.atlas_slice_layer)
+        QApplication.instance().processEvents()
         self.input_layer = None
         self.mask_layer = None
         self.atlas_slice_layer = None

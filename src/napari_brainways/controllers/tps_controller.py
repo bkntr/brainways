@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, List
 import napari.layers
 import numpy as np
 from napari.qt.threading import FunctionWorker
-from qtpy.QtWidgets import QApplication
 
 from brainways.pipeline.brainways_params import BrainwaysParams, TPSTransformParams
 from brainways.pipeline.brainways_pipeline import PipelineStep
@@ -135,7 +134,6 @@ class TpsController(Controller):
             name="Atlas",
         )
         self.atlas_layer.contour = True
-        QApplication.instance().processEvents()
         self.points_input_layer = self.ui.viewer.add_points(
             # name="Input Points",
             # face_color="green",

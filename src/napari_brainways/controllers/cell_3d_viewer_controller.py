@@ -6,6 +6,7 @@ import napari
 import napari.layers
 import numpy as np
 from napari.qt.threading import FunctionWorker
+from PyQt5.QtWidgets import QApplication
 
 from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
@@ -64,6 +65,7 @@ class Cell3DViewerController(Controller):
         else:
             self.ui.viewer.layers.remove(self.input_layer)
         self.ui.viewer.layers.remove(self.points_layer)
+        QApplication.instance().processEvents()
         self.input_layer = None
         self.atlas_layer = None
         self.points_layer = None

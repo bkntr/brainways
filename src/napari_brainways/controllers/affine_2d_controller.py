@@ -4,6 +4,7 @@ from dataclasses import replace
 from typing import TYPE_CHECKING, Callable, Optional
 
 import numpy as np
+from PyQt5.QtWidgets import QApplication
 
 from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.pipeline.brainways_pipeline import PipelineStep
@@ -203,6 +204,7 @@ class Affine2DController(Controller):
         self.unregister_key_bindings()
         self.ui.viewer.layers.remove(self.input_layer)
         self.ui.viewer.layers.remove(self.atlas_slice_layer)
+        QApplication.instance().processEvents()
 
         self.input_layer = None
         self.atlas_slice_layer = None

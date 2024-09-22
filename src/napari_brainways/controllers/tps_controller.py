@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, List
 import napari.layers
 import numpy as np
 from napari.qt.threading import FunctionWorker
+from PyQt5.QtWidgets import QApplication
 
 from brainways.pipeline.brainways_params import BrainwaysParams, TPSTransformParams
 from brainways.pipeline.brainways_pipeline import PipelineStep
@@ -171,6 +172,7 @@ class TpsController(Controller):
         self.ui.viewer.layers.remove(self.atlas_layer)
         self.ui.viewer.layers.remove(self.points_input_layer)
         self.ui.viewer.layers.remove(self.points_atlas_layer)
+        QApplication.instance().processEvents()
         self._image = None
         self._params = None
         self.input_layer = None

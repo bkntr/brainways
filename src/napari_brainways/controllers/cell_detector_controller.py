@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Tuple
 import napari
 import napari.layers
 import numpy as np
+from PyQt5.QtWidgets import QApplication
 
 from brainways.pipeline.brainways_params import BrainwaysParams, CellDetectorParams
 from napari_brainways.controllers.base import Controller
@@ -131,7 +132,7 @@ class CellDetectorController(Controller):
 
         self._is_open = True
 
-    def close(self):
+    def close(self) -> None:
         if not self._is_open:
             return
 
@@ -141,6 +142,7 @@ class CellDetectorController(Controller):
         self.ui.viewer.layers.remove(self.crop_layer)
         self.ui.viewer.layers.remove(self.normalized_crop_layer)
         self.ui.viewer.layers.remove(self.cell_mask_layer)
+        QApplication.instance().processEvents()
 
         self._image = None
         self._params = None

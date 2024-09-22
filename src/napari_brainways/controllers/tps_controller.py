@@ -206,7 +206,7 @@ class TpsController(Controller):
         self.points_atlas_layer.mode = "select"
 
     def on_points_changed(self, event=None):
-        if event is not None and event.action != "changed":
+        if event is not None and event.action not in ("added", "changed"):
             return
 
         if self.points_atlas_layer.mode == "add":

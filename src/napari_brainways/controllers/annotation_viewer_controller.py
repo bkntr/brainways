@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import napari
 import napari.layers
 import numpy as np
+from PyQt5.QtWidgets import QApplication
 
 from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.pipeline.brainways_pipeline import PipelineStep
@@ -73,6 +74,7 @@ class AnnotationViewerController(Controller):
     def close(self) -> None:
         self.ui.viewer.layers.remove(self.input_layer)
         self.ui.viewer.layers.remove(self.annotations_layer)
+        QApplication.instance().processEvents()
         self.input_layer = None
         self.annotations_layer = None
         self._image = None

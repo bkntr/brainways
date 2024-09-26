@@ -11,6 +11,7 @@ import pandas as pd
 import scipy.stats
 from napari.qt.threading import FunctionWorker
 from napari.utils.colormaps.colormap import Colormap
+from PyQt5.QtWidgets import QApplication
 
 from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.project.info_classes import (
@@ -136,6 +137,7 @@ class AnalysisController(Controller):
         self.ui.viewer.layers.remove(self.atlas_layer)
         self.ui.viewer.layers.remove(self.annotations_layer)
         self.ui.viewer.layers.remove(self.contrast_layer)
+        QApplication.instance().processEvents()
         self.atlas_layer = None
         self.annotations_layer = None
         self.contrast_layer = None

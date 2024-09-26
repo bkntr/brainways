@@ -9,7 +9,6 @@ from PyQt5.QtWidgets import QApplication
 from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.pipeline.brainways_pipeline import PipelineStep
 from napari_brainways.controllers.base import Controller
-from napari_brainways.utils.general_utils import update_layer_contrast_limits
 from napari_brainways.widgets.affine_2d_widget import Affine2DWidget
 
 if TYPE_CHECKING:
@@ -146,7 +145,7 @@ class Affine2DController(Controller):
                 ty=(-image.shape[0], image.shape[0]),
             )
             self.input_layer.data = image
-            update_layer_contrast_limits(self.input_layer)
+            self.ui.update_layer_contrast_limits(self.input_layer)
 
         if not from_ui:
             self.widget.set_params(
@@ -188,9 +187,13 @@ class Affine2DController(Controller):
         self.input_layer = self.ui.viewer.add_image(
             np.zeros((512, 512), np.uint8), name="Input"
         )
+        self.input_layer.events.contrast_limits.connect(self.ui.set_contrast_limits)
         self.atlas_slice_layer = self.ui.viewer.add_labels(
             np.zeros((512, 512), np.uint8),
             name="Atlas",
+        )
+        self.atlas_slice_layer.events.contrast_limits.connect(
+            self.ui.set_contrast_limits
         )
         self.atlas_slice_layer.contour = True
         self.register_key_bindings()

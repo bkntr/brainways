@@ -12,7 +12,6 @@ from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 from brainways.utils.cells import get_cell_struct_ids, get_struct_colors
 from napari_brainways.controllers.base import Controller
-from napari_brainways.utils.general_utils import update_layer_contrast_limits
 from napari_brainways.widgets.cell_viewer_widget import CellViewerWidget
 
 if TYPE_CHECKING:
@@ -136,7 +135,8 @@ class Cell3DViewerController(Controller):
         if self.input_layer is not None:
             self.ui.viewer.layers.remove(self.input_layer)
         self.input_layer = self.ui.viewer.add_image(image, name="Image")
-        update_layer_contrast_limits(self.input_layer)
+        self.input_layer.events.contrast_limits.connect(self.ui.set_contrast_limits)
+        self.ui.update_layer_contrast_limits(self.input_layer)
         self.ui.viewer.dims.ndisplay = 2
 
         self.ui.viewer.layers.remove(self.points_layer)

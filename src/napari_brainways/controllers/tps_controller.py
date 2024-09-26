@@ -13,7 +13,6 @@ from brainways.pipeline.brainways_pipeline import PipelineStep
 from brainways.transforms.tps_transform import TPSTransform
 from brainways.utils.image import brain_mask, nonzero_bounding_box
 from napari_brainways.controllers.base import Controller
-from napari_brainways.utils.general_utils import update_layer_contrast_limits
 from napari_brainways.widgets.tps_widget import TpsWidget
 
 if TYPE_CHECKING:
@@ -119,7 +118,7 @@ class TpsController(Controller):
         )
 
         if image is not None:
-            update_layer_contrast_limits(self.input_layer)
+            self.ui.update_layer_contrast_limits(self.input_layer)
             self.ui.viewer.reset_view()
 
     def open(self) -> None:
@@ -130,10 +129,12 @@ class TpsController(Controller):
             np.zeros((10, 10), np.uint8),
             name="Input",
         )
+        self.input_layer.events.contrast_limits.connect(self.ui.set_contrast_limits)
         self.atlas_layer = self.ui.viewer.add_labels(
             np.zeros((10, 10), np.uint8),
             name="Atlas",
         )
+        self.atlas_layer.events.contrast_limits.connect(self.ui.set_contrast_limits)
         self.atlas_layer.contour = True
         self.points_input_layer = self.ui.viewer.add_points(
             name="Input Points",

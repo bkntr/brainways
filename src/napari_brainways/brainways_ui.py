@@ -521,21 +521,25 @@ class BrainwaysUI(QWidget):
 
         warning_text = []
         if missing_param_warnings:
-            warning_text += [
-                "The following slices have missing parameters:",
-                "",
-            ] + missing_param_warnings
+            warning_text += (
+                [
+                    "The following slices have missing parameters:",
+                ]
+                + [f"  {warning}" for warning in missing_param_warnings]
+                + [""]
+            )
         if missing_cell_detction_warnings:
-            warning_text += [
-                "",
-                "The following slices have missing cell detections:",
-                "",
-            ] + missing_cell_detction_warnings
+            warning_text += (
+                [
+                    "The following slices have missing cell detections:",
+                ]
+                + [f"  {warning}" for warning in missing_cell_detction_warnings]
+                + [""]
+            )
 
         if warning_text:
             warning_text += [
-                "",
-                "These issues may potentially lead to incorrect results. Do you want to continue?",
+                "These issues may lead to incorrect results. Do you want to continue?",
             ]
             return show_warning_dialog("\n".join(warning_text))
         return True

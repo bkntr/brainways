@@ -18,7 +18,7 @@ from brainways.project.info_classes import (
 
 
 def test_brainways_project_create_excel(brainways_project: BrainwaysProject):
-    cells_df = pd.DataFrame({"x": [0.5], "y": [0.5]})
+    cells_df = pd.DataFrame({"x": [0.5], "y": [0.5], "area_um": [10.0]})
     subject = brainways_project.subjects[0]
     _, slice_info = subject.valid_documents[0]
     cells_df.to_csv(subject.cell_detections_path(slice_info.path), index=False)

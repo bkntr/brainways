@@ -1,9 +1,9 @@
 # Brainways
 
 [![DOI](https://img.shields.io/badge/DOI-10.1101/2023.05.25.542252-green.svg)](https://doi.org/10.1101/2023.05.25.542252)
-[![License GNU GPL v3.0](https://img.shields.io/pypi/l/brainways.svg?color=green)](https://github.com/bkntr/brainways/raw/main/LICENSE)
-[![PyPI](https://img.shields.io/pypi/v/brainways.svg?color=green)](https://pypi.org/project/brainways)
-[![Python Version](https://img.shields.io/pypi/pyversions/brainways.svg?color=green)](https://python.org)
+[![License GNU GPL v3.0](https://img.shields.io/pypi/l/napari-brainways.svg?color=green)](https://github.com/bkntr/brainways/raw/main/LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/napari-brainways.svg?color=green)](https://pypi.org/project/brainways)
+[![Python Version](https://img.shields.io/pypi/pyversions/napari-brainways.svg?color=green)](https://python.org)
 [![tests](https://github.com/bkntr/brainways/workflows/tests/badge.svg)](https://github.com/bkntr/brainways/actions)
 [![codecov](https://codecov.io/gh/bkntr/brainways/branch/main/graph/badge.svg)](https://codecov.io/gh/bkntr/brainways)
 [![Documentation Status](https://readthedocs.org/projects/napari-brainways/badge/?version=latest)](https://napari-brainways.readthedocs.io/en/latest/?badge=latest)

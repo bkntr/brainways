@@ -134,7 +134,6 @@ class TpsController(Controller):
             np.zeros((10, 10), np.uint8),
             name="Atlas",
         )
-        self.atlas_layer.events.contrast_limits.connect(self.ui.set_contrast_limits)
         self.atlas_layer.contour = True
         self.points_input_layer = self.ui.viewer.add_points(
             name="Input Points",

@@ -192,9 +192,6 @@ class Affine2DController(Controller):
             np.zeros((512, 512), np.uint8),
             name="Atlas",
         )
-        self.atlas_slice_layer.events.contrast_limits.connect(
-            self.ui.set_contrast_limits
-        )
         self.atlas_slice_layer.contour = True
         self.register_key_bindings()
 

@@ -167,7 +167,14 @@ class BrainwaysProject:
         excel_mode: ExcelMode = ExcelMode.ROW_PER_SUBJECT,
     ) -> Iterator:
         if path is None:
-            path = self._results_path
+            if excel_mode == ExcelMode.ROW_PER_SUBJECT:
+                path = self.path.parent / (
+                    self.path.stem + "_cell_density_per_area_per_animal.xlsx"
+                )
+            else:
+                path = self.path.parent / (
+                    self.path.stem + "_cell_density_per_area_per_slice.xlsx"
+                )
         if not path.suffix == ".xlsx":
             path = Path(str(path) + ".xlsx")
 

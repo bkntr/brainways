@@ -58,7 +58,9 @@ class AnalysisWidget(QWidget):
         self.layout().addWidget(export_registration_masks_button)
 
     def on_run_calculate_results_clicked(self, _=None):
-        if not self.controller.ui.prompt_user_slices_have_missing_params():
+        if not self.controller.ui.prompt_user_slices_have_missing_params(
+            check_cells=True
+        ):
             return
 
         values = request_values(

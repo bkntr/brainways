@@ -55,12 +55,18 @@ class QupathCellDetectionsImporter(CellDetectionImporter):
         document: SliceInfo,
     ) -> Optional[Path]:
         image_filename = Path(document.path.filename).name
-        candidates = list(root.rglob(f"{image_filename}*"))
+        image_pattern = re.compile(f"{re.escape(image_filename)}.*")
+        candidates = [
+            candidate
+            for candidate in root.rglob("*")
+            if image_pattern.search(candidate.name)
+        ]
         if len(candidates) == 1:
             return candidates[0]
         elif len(candidates) > 1:
+            scene_number = document.path.scene
             image_and_scene_pattern = re.compile(
-                f"{re.escape(image_filename)}.*{document.path.scene}"
+                f"{re.escape(image_filename)}.*(?<!\\d){scene_number}(?!\\d)"
             )
             scene_candidates = [
                 candidate

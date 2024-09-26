@@ -115,3 +115,28 @@ def test_find_cell_detections_file_single_scene_candidate(
     csv_path_2.touch()
     found_csv_path = importer.find_cell_detections_file(root=root, document=document)
     assert found_csv_path == csv_path_2
+
+
+def test_find_cell_detections_file_single_scene_candidate_complex(
+    mock_subject_documents, tmpdir, caplog, importer
+):
+    document = mock_subject_documents[0]
+    root = Path(tmpdir) / "detections"
+    root.mkdir()
+    csv_path_1 = (
+        root
+        / f"{Path(document.path.filename).name} 1{document.path.scene} Detections.txt"
+    )
+    csv_path_2 = (
+        root
+        / f"{Path(document.path.filename).name}_{document.path.scene}_Detections.txt"
+    )
+    csv_path_3 = (
+        root
+        / f"{Path(document.path.filename).name}_1{document.path.scene}_Detections.txt"
+    )
+    csv_path_1.touch()
+    csv_path_2.touch()
+    csv_path_3.touch()
+    found_csv_path = importer.find_cell_detections_file(root=root, document=document)
+    assert found_csv_path == csv_path_2

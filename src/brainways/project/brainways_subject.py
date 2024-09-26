@@ -204,9 +204,11 @@ class BrainwaysSubject:
         for i, document in self.valid_documents:
             try:
                 cell_detections_path = self.cell_detections_path(document.path)
+                cell_detections_path.parent.mkdir(parents=True, exist_ok=True)
                 if cell_detections_path.exists():
                     yield
                     continue
+
                 reader = document.image_reader()
                 image = reader.get_image_dask_data(
                     "YX", C=self.project.settings.channel

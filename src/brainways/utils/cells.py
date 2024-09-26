@@ -1,3 +1,4 @@
+import logging
 from collections import Counter
 from typing import Dict, List, Optional
 
@@ -154,8 +155,16 @@ def filter_cells_by_size(
     max_size_um: Optional[float] = None,
 ):
     query = np.ones(len(cells), dtype=bool)
+    if cells["area_um"].isna().any():
+        logging.warning(
+            "Images do not have pixel size information, filtering cell size by pixels."
+        )
+        cell_sizes = cells["area_pixels"]
+    else:
+        cell_sizes = cells["area_um"]
+
     if min_size_um:
-        query &= cells["area_um"] >= min_size_um
+        query &= cell_sizes >= min_size_um
     if max_size_um:
-        query &= cells["area_um"] <= max_size_um
+        query &= cell_sizes <= max_size_um
     return cells[query]

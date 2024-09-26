@@ -56,7 +56,7 @@ class QupathCellDetectionsImporter(CellDetectionImporter):
     ) -> Optional[Path]:
         image_filename = Path(document.path.filename).name
         image_pattern = re.compile(f"{re.escape(image_filename)}.*")
-        logging.info(
+        logging.warning(
             f"Looking for cell detection file for {image_filename} with pattern {re.escape(image_filename)}.*"
         )
         candidates = [
@@ -65,19 +65,19 @@ class QupathCellDetectionsImporter(CellDetectionImporter):
             if image_pattern.search(candidate.name)
         ]
         if len(candidates) == 1:
-            logging.info(
+            logging.warning(
                 f"Found cell detection file for {image_filename}: {candidates[0]}"
             )
             return candidates[0]
         elif len(candidates) > 1:
-            logging.info(
+            logging.warning(
                 f"Multiple cell detection files found for {image_filename}: {candidates}"
             )
             scene_number = document.path.scene
             image_and_scene_pattern = re.compile(
                 f"{re.escape(image_filename)}.*(?<!\\d){scene_number}(?!\\d)"
             )
-            logging.info(
+            logging.warning(
                 f"Looking for cell detection file for {image_filename} scene {scene_number} with pattern {re.escape(image_filename)}.*(?<!\\d){scene_number}(?!\\d)"
             )
             scene_candidates = [
@@ -86,7 +86,7 @@ class QupathCellDetectionsImporter(CellDetectionImporter):
                 if image_and_scene_pattern.search(candidate.name)
             ]
             if len(scene_candidates) == 1:
-                logging.info(
+                logging.warning(
                     f"Found cell detection file for {image_filename} scene {document.path.scene}: {scene_candidates[0]}"
                 )
                 return candidates[0]

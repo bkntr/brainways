@@ -71,10 +71,24 @@ def test_cells_on_mask_ignore_outliers_empty_cells():
     filter_cells_on_mask(cells=cells, mask=mask, ignore_outliers=True)
 
 
-def test_filter_cells_by_size():
+def test_filter_cells_by_size_with_min_and_max():
     cells = pd.DataFrame({"x": [1, 2, 3], "y": [1, 2, 3], "area_um": [1, 10, 15]})
     filtered_cells = filter_cells_by_size(cells=cells, min_size_um=5, max_size_um=10)
     expected = cells.loc[[1]]
+    pd.testing.assert_frame_equal(filtered_cells, expected)
+
+
+def test_filter_cells_by_size_with_min():
+    cells = pd.DataFrame({"x": [1, 2, 3], "y": [1, 2, 3], "area_um": [1, 10, 15]})
+    filtered_cells = filter_cells_by_size(cells=cells, min_size_um=10)
+    expected = cells.loc[[1, 2]]
+    pd.testing.assert_frame_equal(filtered_cells, expected)
+
+
+def test_filter_cells_by_size_with_max():
+    cells = pd.DataFrame({"x": [1, 2, 3], "y": [1, 2, 3], "area_um": [1, 10, 15]})
+    filtered_cells = filter_cells_by_size(cells=cells, max_size_um=10)
+    expected = cells.loc[[0, 1]]
     pd.testing.assert_frame_equal(filtered_cells, expected)
 
 
@@ -82,4 +96,18 @@ def test_filter_cells_by_size_no_params():
     cells = pd.DataFrame({"x": [1, 2], "y": [1, 2], "area_um": [1, 10]})
     filtered_cells = filter_cells_by_size(cells=cells)
     expected = cells
+    pd.testing.assert_frame_equal(filtered_cells, expected)
+
+
+def test_filter_cells_by_size_with_area_pixels():
+    cells = pd.DataFrame(
+        {
+            "x": [1, 2, 3],
+            "y": [1, 2, 3],
+            "area_pixels": [1, 10, 15],
+            "area_um": [np.nan, np.nan, np.nan],
+        }
+    )
+    filtered_cells = filter_cells_by_size(cells=cells, min_size_um=5, max_size_um=10)
+    expected = cells.loc[[1]]
     pd.testing.assert_frame_equal(filtered_cells, expected)

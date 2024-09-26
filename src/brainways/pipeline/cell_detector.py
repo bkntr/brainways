@@ -15,7 +15,7 @@ from brainways.utils.image import normalize_contrast
 if STARDIST_AVAILABLE:
     from csbdeep.data import Normalizer
 else:
-    Normalizer = object
+    Normalizer = None
 
 
 class ClaheNormalizer(Normalizer):
@@ -80,6 +80,51 @@ class QuantileNormalizer(Normalizer):
         return False
 
 
+def predict_cells(self, image: np.ndarray, normalizer: Normalizer, **kwargs):
+    return self.stardist.predict_instances_big(
+        image,
+        axes="YX",
+        block_size=2048,
+        min_overlap=128,
+        normalizer=normalizer,
+        **kwargs,
+    )
+
+
+def filter_by_cell_size(
+    labels: np.ndarray,
+    image: np.ndarray,
+    params: CellDetectorParams,
+    physical_pixel_sizes: Tuple[float, float],
+):
+    regionprops = pd.DataFrame(
+        regionprops_table(
+            labels,
+            image,
+            properties=("label", "area"),
+        )
+    )
+    if np.isnan(physical_pixel_sizes).any():
+        logging.warning(
+            "Images do not have pixel size information, filtering cell size by pixels."
+        )
+    else:
+        regionprops["area"] = (
+            regionprops["area"] * physical_pixel_sizes[0] * physical_pixel_sizes[1]
+        )
+
+    regionprops["include"] = True
+    if params.cell_size_range[0] > 0:
+        regionprops["include"] &= regionprops["area"] >= params.cell_size_range[0]
+    if params.cell_size_range[1] > 0:
+        regionprops["include"] &= regionprops["area"] <= params.cell_size_range[1]
+
+    labels_include = np.in1d(
+        labels.flat, regionprops[regionprops["include"]]["label"]
+    ).reshape(labels.shape)
+    return labels * labels_include.astype(labels.dtype)
+
+
 class CellDetector:
     @cached_property
     def stardist(self):
@@ -118,45 +163,15 @@ class CellDetector:
         **kwargs,
     ) -> np.ndarray:
         normalizer = self.get_normalizer(params)
-        labels, details = self.stardist.predict_instances_big(
-            image,
-            axes="YX",
-            block_size=2048,
-            min_overlap=128,
-            normalizer=normalizer,
-            **kwargs,
-        )
-        if params.cell_size_range != (0, 0):
-            regionprops = pd.DataFrame(
-                regionprops_table(
-                    labels,
-                    image,
-                    properties=("label", "area"),
-                )
-            )
-            if np.isnan(physical_pixel_sizes).any():
-                logging.warning(
-                    "Images do not have pixel size information, filtering cell size by pixels."
-                )
-            else:
-                regionprops["area"] = (
-                    regionprops["area"]
-                    * physical_pixel_sizes[0]
-                    * physical_pixel_sizes[1]
-                )
-            if params.cell_size_range[0] > 0:
-                regionprops["include"] = (
-                    regionprops["area"] >= params.cell_size_range[0]
-                )
-            if params.cell_size_range[1] > 0:
-                regionprops["include"] = (
-                    regionprops["area"] <= params.cell_size_range[1]
-                )
+        labels = predict_cells(image, normalizer, **kwargs)
 
-            labels_include = np.in1d(
-                labels.flat, regionprops[regionprops["include"]]["label"]
-            ).reshape(labels.shape)
-            labels *= labels_include.astype(labels.dtype)
+        if params.cell_size_range != (0, 0):
+            labels = filter_by_cell_size(
+                labels=labels,
+                image=image,
+                params=params,
+                physical_pixel_sizes=physical_pixel_sizes,
+            )
 
         return labels
 

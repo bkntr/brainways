@@ -54,6 +54,10 @@ def test_find_cell_detections_file_multiple_candidates(
     csv_path_2 = root / f"{Path(document.path.filename).name} 2 Detections.txt"
     csv_path_1.touch()
     csv_path_2.touch()
+
+    for path in [csv_path_1, csv_path_2]:
+        assert path.exists(), f"File {path} was not created"
+
     with caplog.at_level(logging.WARNING):
         found_csv_path = importer.find_cell_detections_file(
             root=root, document=document
@@ -92,6 +96,10 @@ def test_find_cell_detections_file_multiple_candidates_same_scene(
     )
     csv_path_1.touch()
     csv_path_2.touch()
+
+    for path in [csv_path_1, csv_path_2]:
+        assert path.exists(), f"File {path} was not created"
+
     with caplog.at_level(logging.WARNING):
         found_csv_path = importer.find_cell_detections_file(
             root=root, document=document
@@ -113,6 +121,10 @@ def test_find_cell_detections_file_single_scene_candidate(
     )
     csv_path_1.touch()
     csv_path_2.touch()
+
+    for path in [csv_path_1, csv_path_2]:
+        assert path.exists(), f"File {path} was not created"
+
     found_csv_path = importer.find_cell_detections_file(root=root, document=document)
     assert found_csv_path == csv_path_2
 
@@ -138,5 +150,9 @@ def test_find_cell_detections_file_single_scene_candidate_complex(
     csv_path_1.touch()
     csv_path_2.touch()
     csv_path_3.touch()
+
+    for path in [csv_path_1, csv_path_2, csv_path_3]:
+        assert path.exists(), f"File {path} was not created"
+
     found_csv_path = importer.find_cell_detections_file(root=root, document=document)
     assert found_csv_path == csv_path_2

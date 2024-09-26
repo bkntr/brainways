@@ -16,7 +16,9 @@ from brainways.utils.io_utils.readers import QupathReader
 class ProjectSettings:
     atlas: str
     channel: Union[int, str]
-    default_cell_detector_params: CellDetectorParams = CellDetectorParams()
+    default_cell_detector_params: CellDetectorParams = field(
+        default_factory=CellDetectorParams
+    )
     condition_names: List[str] = field(default_factory=list)
     version: str = brainways._version.version
 

@@ -10,7 +10,6 @@ from PyQt5.QtWidgets import QApplication
 from brainways.pipeline.brainways_params import AtlasRegistrationParams, BrainwaysParams
 from brainways.utils.image import brain_mask, nonzero_bounding_box
 from napari_brainways.controllers.base import Controller
-from napari_brainways.utils.general_utils import update_layer_contrast_limits
 from napari_brainways.widgets.registration_widget import RegistrationView
 
 if TYPE_CHECKING:
@@ -196,7 +195,7 @@ class RegistrationController(Controller):
             self._input_box = nonzero_bounding_box(mask)
             self.mask_layer.data = mask
             self.input_layer.data = image
-            update_layer_contrast_limits(self.input_layer, (0.01, 0.98))
+            self.ui.update_layer_contrast_limits(self.input_layer, (0.01, 0.98))
 
         if not from_ui:
             self.widget.set_registration_params(
@@ -208,7 +207,7 @@ class RegistrationController(Controller):
 
         atlas_slice = self.pipeline.get_atlas_slice(self.params).reference.numpy()
         self.atlas_slice_layer.data = atlas_slice
-        update_layer_contrast_limits(self.atlas_slice_layer, (0.01, 0.98))
+        self.ui.update_layer_contrast_limits(self.atlas_slice_layer, (0.01, 0.98))
 
         atlas_box = self.pipeline.atlas.bounding_box(int(self.params.atlas.ap))
         input_scale = atlas_box[3] / self._input_box[3]
@@ -248,6 +247,7 @@ class RegistrationController(Controller):
             np.zeros((512, 512), np.uint8),
             name="Input",
         )
+        self.input_layer.events.contrast_limits.connect(self.ui.set_contrast_limits)
         self.mask_layer = self.ui.viewer.add_image(
             np.zeros((512, 512), np.uint8),
             name="Mask",
@@ -261,6 +261,9 @@ class RegistrationController(Controller):
                 np.uint8,
             ),
             name="Atlas Slice",
+        )
+        self.atlas_slice_layer.events.contrast_limits.connect(
+            self.ui.set_contrast_limits
         )
         self.input_layer.translate = (0, self.pipeline.atlas.shape[2])
         self.mask_layer.translate = (0, self.pipeline.atlas.shape[2])

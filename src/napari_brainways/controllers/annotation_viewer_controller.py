@@ -10,7 +10,6 @@ from PyQt5.QtWidgets import QApplication
 from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.pipeline.brainways_pipeline import PipelineStep
 from napari_brainways.controllers.base import Controller
-from napari_brainways.utils.general_utils import update_layer_contrast_limits
 
 if TYPE_CHECKING:
     from napari_brainways.brainways_ui import BrainwaysUI
@@ -47,6 +46,7 @@ class AnnotationViewerController(Controller):
             return
 
         self.input_layer = self.ui.viewer.add_image(np.zeros((10, 10)), name="Image")
+        self.input_layer.events.contrast_limits.connect(self.ui.set_contrast_limits)
         self.annotations_layer = self.ui.viewer.add_labels(
             np.zeros((10, 10), np.int32), name="Annotations"
         )
@@ -94,7 +94,7 @@ class AnnotationViewerController(Controller):
                 image=self._image, params=params, until_step=PipelineStep.TPS
             )
             self.input_layer.data = registered_image
-            update_layer_contrast_limits(self.input_layer)
+            self.ui.update_layer_contrast_limits(self.input_layer)
             self.annotations_layer.data = self.pipeline.get_atlas_slice(
                 params
             ).annotation.numpy()

@@ -1,3 +1,4 @@
+import logging
 from functools import cached_property
 from typing import Tuple
 
@@ -133,9 +134,16 @@ class CellDetector:
                     properties=("label", "area"),
                 )
             )
-            regionprops["area"] = (
-                regionprops["area"] * physical_pixel_sizes[0] * physical_pixel_sizes[1]
-            )
+            if np.isnan(physical_pixel_sizes).any():
+                logging.warning(
+                    "Images do not have pixel size information, filtering cell size by pixels."
+                )
+            else:
+                regionprops["area"] = (
+                    regionprops["area"]
+                    * physical_pixel_sizes[0]
+                    * physical_pixel_sizes[1]
+                )
             if params.cell_size_range[0] > 0:
                 regionprops["include"] = (
                     regionprops["area"] >= params.cell_size_range[0]

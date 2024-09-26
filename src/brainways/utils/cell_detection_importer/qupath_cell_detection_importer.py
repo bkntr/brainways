@@ -1,3 +1,5 @@
+import logging
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -52,11 +54,39 @@ class QupathCellDetectionsImporter(CellDetectionImporter):
         root: Path,
         document: SliceInfo,
     ) -> Optional[Path]:
-        csv_filename = f"{Path(document.path.filename).name} Detections.txt"
-        csv_path = root / csv_filename
-        if csv_path.exists():
-            return csv_path
+        image_filename = Path(document.path.filename).name
+        image_pattern = re.compile(f"{re.escape(image_filename)}.*")
+        candidates = [
+            candidate
+            for candidate in root.rglob("*")
+            if image_pattern.search(candidate.name)
+        ]
+        if len(candidates) == 1:
+            return candidates[0]
+        elif len(candidates) > 1:
+            scene_number = document.path.scene
+            image_and_scene_pattern = re.compile(
+                f"{re.escape(image_filename)}.*(?<!\\d){scene_number}(?!\\d)"
+            )
+            scene_candidates = [
+                candidate
+                for candidate in candidates
+                if image_and_scene_pattern.search(candidate.name)
+            ]
+            if len(scene_candidates) == 1:
+                return scene_candidates[0]
+            elif len(scene_candidates) > 1:
+                logging.warning(
+                    f"Multiple cell detection files found for {image_filename} scene {document.path.scene}: {candidates}"
+                )
+                return None
+            else:
+                logging.warning(
+                    f"Multiple cell detection files found for {image_filename}: {candidates}"
+                )
+                return None
         else:
+            logging.warning(f"No cell detection file found for {image_filename}")
             return None
 
     def read_cells_file(self, path: Path, document: SliceInfo) -> pd.DataFrame:

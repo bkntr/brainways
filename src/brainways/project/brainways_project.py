@@ -55,7 +55,9 @@ class BrainwaysProject:
             raise ValueError(f"Brainways project must be of .bwp file type, got {path}")
 
         self.path = path
-        self._results_path = self.path.parent / "results.xlsx"
+        self._results_path = self.path.parent / (
+            self.path.stem + "_cell_density_per_area_per_animal.xlsx"
+        )
         self.subjects = subjects
         self.settings = settings
 
@@ -167,7 +169,12 @@ class BrainwaysProject:
         excel_mode: ExcelMode = ExcelMode.ROW_PER_SUBJECT,
     ) -> Iterator:
         if path is None:
-            path = self._results_path
+            if excel_mode == ExcelMode.ROW_PER_SUBJECT:
+                path = self._results_path
+            else:
+                path = self.path.parent / (
+                    self.path.stem + "_cell_density_per_area_per_slice.xlsx"
+                )
         if not path.suffix == ".xlsx":
             path = Path(str(path) + ".xlsx")
 

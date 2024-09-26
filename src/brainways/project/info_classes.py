@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum, auto
+from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
 
 import brainways._version
@@ -16,7 +16,9 @@ from brainways.utils.io_utils.readers import QupathReader
 class ProjectSettings:
     atlas: str
     channel: Union[int, str]
-    default_cell_detector_params: CellDetectorParams = CellDetectorParams()
+    default_cell_detector_params: CellDetectorParams = field(
+        default_factory=CellDetectorParams
+    )
     condition_names: List[str] = field(default_factory=list)
     version: str = brainways._version.version
 
@@ -53,8 +55,8 @@ class SubjectFileFormat:
 
 
 class ExcelMode(Enum):
-    ROW_PER_SUBJECT = auto()
-    ROW_PER_IMAGE = auto()
+    ROW_PER_SUBJECT = "Row per Subject"
+    ROW_PER_IMAGE = "Row per Slice"
 
 
 class SliceSelection(Enum):

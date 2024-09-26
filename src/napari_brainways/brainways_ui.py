@@ -497,9 +497,10 @@ class BrainwaysUI(QWidget):
             **kwargs,
         )
 
-    def prompt_user_slices_have_missing_params(self) -> bool:
+    def prompt_user_slices_have_missing_params(self, check_cells: bool = False) -> bool:
         assert self.project is not None
-        warnings = []
+        missing_param_warnings = []
+        missing_cell_detction_warnings = []
         for subject_idx, subject in enumerate(self.project.subjects):
             for slice_idx, slice_info in subject.valid_documents:
                 missing_params = []
@@ -511,17 +512,40 @@ class BrainwaysUI(QWidget):
                 if params.tps is None:
                     missing_params.append("Non-rigid Registration")
                 if missing_params:
-                    warnings.append(
+                    missing_param_warnings.append(
                         f"Subject #{subject_idx + 1}, Slice #{slice_idx + 1}: {missing_params}"
                     )
+                if (
+                    check_cells
+                    and not subject.cell_detections_path(slice_info.path).exists()
+                ):
+                    missing_cell_detction_warnings.append(
+                        f"Subject #{subject_idx + 1}, Slice #{slice_idx + 1}"
+                    )
 
-        if warnings:
-            warning_text = "\n".join(
-                ["The following slices have missing parameters:", ""]
-                + warnings
-                + ["", "Do you want to continue?"]
+        warning_text = []
+        if missing_param_warnings:
+            warning_text += (
+                [
+                    "The following slices have missing parameters:",
+                ]
+                + [f"  {warning}" for warning in missing_param_warnings]
+                + [""]
             )
-            return show_warning_dialog(warning_text)
+        if missing_cell_detction_warnings:
+            warning_text += (
+                [
+                    "The following slices have missing cell detections:",
+                ]
+                + [f"  {warning}" for warning in missing_cell_detction_warnings]
+                + [""]
+            )
+
+        if warning_text:
+            warning_text += [
+                "These issues may lead to incorrect results. Do you want to continue?",
+            ]
+            return show_warning_dialog("\n".join(warning_text))
         return True
 
     def update_layer_contrast_limits(

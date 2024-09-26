@@ -2,7 +2,7 @@
 
 ## Requirements
 
-* Installed [python](https://www.python.org/downloads/) 3.9.
+* Installed [python](https://www.python.org/downloads/) 3.9-3.12.
 
 !!! tip
     We recommend installing brainways in a separated virtual environment, for example using [anaconda](https://docs.anaconda.com/free/anaconda/install/).

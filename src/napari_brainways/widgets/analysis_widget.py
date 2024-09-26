@@ -5,6 +5,7 @@ from magicgui.widgets import request_values
 from qtpy.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
 from brainways.project.info_classes import (
+    ExcelMode,
     RegisteredAnnotationFileFormat,
     SliceSelection,
 )
@@ -57,7 +58,9 @@ class AnalysisWidget(QWidget):
         self.layout().addWidget(export_registration_masks_button)
 
     def on_run_calculate_results_clicked(self, _=None):
-        if not self.controller.ui.prompt_user_slices_have_missing_params():
+        if not self.controller.ui.prompt_user_slices_have_missing_params(
+            check_cells=True
+        ):
             return
 
         values = request_values(
@@ -96,6 +99,16 @@ class AnalysisWidget(QWidget):
                     tooltip="Filter out detected cells with area larger than this value"
                 ),
             ),
+            excel_mode=dict(
+                value=ExcelMode.ROW_PER_SUBJECT.value,
+                widget_type="ComboBox",
+                options=dict(
+                    choices=[e.value for e in ExcelMode],
+                    tooltip="How to format the excel file",
+                ),
+                annotation=str,
+                label="Detail Level",
+            ),
         )
         if values is None:
             return
@@ -105,6 +118,7 @@ class AnalysisWidget(QWidget):
             cells_per_area_um2=values["cells_per_area_um2"],
             min_cell_size_um=values["min_cell_size_um"],
             max_cell_size_um=values["max_cell_size_um"],
+            excel_mode=ExcelMode(values["excel_mode"]),
         )
 
     def on_run_contrast_analysis_clicked(self, _=None):

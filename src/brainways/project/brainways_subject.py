@@ -305,7 +305,6 @@ class BrainwaysSubject:
         all_cells_on_atlas = []
         image_dfs = []
         for _, document in self.valid_documents:
-            document: SliceInfo
             if (
                 slice_info_predicate is not None
                 and slice_info_predicate(document) is False
@@ -315,17 +314,6 @@ class BrainwaysSubject:
                 logging.warning(
                     f"{document.path}: missing cells, please run cell detection."
                 )
-                continue
-                # raise RuntimeError(
-                #     f"{document.path}: missing cells, please run cell detection."
-                # )
-            if (
-                document.params is None
-                or document.params.atlas is None
-                or document.params.affine is None
-                or document.params.tps is None
-            ):
-                logging.warning(f"{document.path}: missing params.")
                 continue
             image = self.read_lowres_image(document)
             image_to_atlas_transform = self.pipeline.get_image_to_atlas_transform(
@@ -371,22 +359,30 @@ class BrainwaysSubject:
             ]
 
             if excel_mode == ExcelMode.ROW_PER_IMAGE:
-                image_dfs.append(
-                    cell_count_summary(
-                        animal_id=str(document.path),
-                        cells=cells,
-                        region_areas_um=region_areas,
-                        atlas=self.atlas,
-                        min_region_area_um2=min_region_area_um2,
-                        cells_per_area_um2=cells_per_area_um2,
-                        conditions=self.subject_info.conditions,
-                    )
+                image_df = cell_count_summary(
+                    animal_id=self.subject_info.name,
+                    cells=cells,
+                    region_areas_um=region_areas,
+                    atlas=self.atlas,
+                    min_region_area_um2=min_region_area_um2,
+                    cells_per_area_um2=cells_per_area_um2,
+                    conditions=self.subject_info.conditions,
                 )
+                image_df["image_path"] = str(document.path)
+                image_df["ap (µm)"] = (
+                    document.params.atlas.ap
+                    * self.pipeline.atlas.brainglobe_atlas.resolution[0]
+                )
+                image_dfs.append(image_df)
             else:
                 all_cells_on_atlas.append(cells)
                 all_region_areas.update(region_areas)
 
         if excel_mode == ExcelMode.ROW_PER_IMAGE:
+            if len(image_dfs) == 0:
+                logging.warning(f"{self.subject_info.name}: not found cells on atlas")
+                return
+
             df = pd.concat(image_dfs, axis=0)
         else:
             if len(all_cells_on_atlas) == 0:

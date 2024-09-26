@@ -68,7 +68,7 @@ class CellDetectorController(Controller):
 
         if image is not None:
             self.input_layer.data = image
-            update_layer_contrast_limits(self.input_layer)
+            self.ui.update_layer_contrast_limits(self.input_layer)
 
             x0, y0, w, h = self.selected_bounding_box(
                 image, point=(0.5 * image.shape[0], 0.5 * image.shape[1])
@@ -107,6 +107,7 @@ class CellDetectorController(Controller):
             np.zeros((512, 512), np.uint8),
             name="Input",
         )
+        self.input_layer.events.contrast_limits.connect(self.ui.set_contrast_limits)
         self.input_layer.translate = (0, 0)
 
         self.preview_box_layer = self.ui.viewer.add_shapes(
@@ -120,10 +121,14 @@ class CellDetectorController(Controller):
             np.zeros((100, 100), np.uint8),
             name="Preview",
         )
+        self.crop_layer.events.contrast_limits.connect(self.ui.set_contrast_limits)
         self.normalized_crop_layer = self.ui.viewer.add_image(
             np.zeros((100, 100), np.uint8),
             name="Preview (Normalized)",
             visible=False,
+        )
+        self.normalized_crop_layer.events.contrast_limits.connect(
+            self.ui.set_contrast_limits
         )
         self.cell_mask_layer = self.ui.viewer.add_labels(
             np.zeros((10, 10), np.uint8), name="Cells"
@@ -343,6 +348,6 @@ class CellDetectorController(Controller):
         self.crop_layer.data = self._crop
         self.crop_layer.visible = True
         self.normalized_crop_layer.visible = False
-        update_layer_contrast_limits(self.crop_layer)
+        self.ui.update_layer_contrast_limits(self.crop_layer)
         self.cell_mask_layer.data = np.zeros_like(self._crop, dtype=np.uint8)
         self.set_preview_affine()

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from dataclasses import replace
 from pathlib import Path
-from typing import Callable, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import napari
 import numpy as np
+from napari.layers import Image
 from napari.qt.threading import FunctionWorker, create_worker
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QProgressDialog, QVBoxLayout, QWidget
@@ -67,6 +68,9 @@ class BrainwaysUI(QWidget):
         self._current_valid_subject_index: Optional[int] = None
         self._current_valid_document_index: Optional[int] = None
         self._current_step_index: int = 0
+
+        self._auto_contrast = True
+        self._layer_contrast_limits: Dict[str, Tuple[float, float]] = {}
 
         self.widget = WorkflowView(self, steps=self.steps)
 
@@ -543,6 +547,40 @@ class BrainwaysUI(QWidget):
             ]
             return show_warning_dialog("\n".join(warning_text))
         return True
+
+    def update_layer_contrast_limits(
+        self,
+        layer: Image,
+        contrast_limits_quantiles: Tuple[float, float] = (0.01, 0.98),
+        contrast_limits_range_quantiles: Tuple[float, float] = (0.0, 1.0),
+    ) -> None:
+        if layer.data.dtype == np.bool_:
+            return
+
+        nonzero_mask = layer.data > 0
+        if (~nonzero_mask).all():
+            return
+
+        limit_0, limit_1, limit_range_0, limit_range_1 = np.quantile(
+            layer.data[nonzero_mask],
+            (*contrast_limits_quantiles, *contrast_limits_range_quantiles),
+        )
+        with layer.events.contrast_limits.blocker():
+            layer.contrast_limits_range = (limit_range_0, limit_range_1 + 1e-8)
+
+        if self._auto_contrast:
+            layer.contrast_limits = (limit_0, limit_1 + 1e-8)
+        else:
+            if layer.name not in self._layer_contrast_limits:
+                self._layer_contrast_limits[layer.name] = layer.contrast_limits
+            layer.contrast_limits = self._layer_contrast_limits[layer.name]
+
+    def set_contrast_limits(self, event):
+        layer = event.source
+        self._layer_contrast_limits[layer.name] = layer.contrast_limits
+
+    def set_auto_contrast(self, value: bool):
+        self._auto_contrast = bool(value)
 
     @staticmethod
     def _merge_callbacks(

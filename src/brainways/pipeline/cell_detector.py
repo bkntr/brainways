@@ -6,16 +6,12 @@ import cv2
 import dask.array as da
 import numpy as np
 import pandas as pd
+from csbdeep.data import Normalizer
 from skimage.measure import regionprops_table
 
 from brainways.pipeline.brainways_params import CellDetectorParams
 from brainways.utils._imports import STARDIST_AVAILABLE
 from brainways.utils.image import normalize_contrast
-
-if STARDIST_AVAILABLE:
-    from csbdeep.data import Normalizer
-else:
-    Normalizer = None
 
 
 class ClaheNormalizer(Normalizer):
@@ -78,17 +74,6 @@ class QuantileNormalizer(Normalizer):
     @property
     def do_after(self):
         return False
-
-
-def predict_cells(self, image: np.ndarray, normalizer: Normalizer, **kwargs):
-    return self.stardist.predict_instances_big(
-        image,
-        axes="YX",
-        block_size=2048,
-        min_overlap=128,
-        normalizer=normalizer,
-        **kwargs,
-    )
 
 
 def filter_by_cell_size(
@@ -160,10 +145,11 @@ class CellDetector:
         image,
         params: CellDetectorParams,
         physical_pixel_sizes: Tuple[float, float],
+        block_size: int = 2048,
         **kwargs,
     ) -> np.ndarray:
         normalizer = self.get_normalizer(params)
-        labels = predict_cells(image, normalizer, **kwargs)
+        labels, _ = self.predict_cells(image, normalizer, block_size, **kwargs)
 
         if params.cell_size_range != (0, 0):
             labels = filter_by_cell_size(
@@ -216,3 +202,24 @@ class CellDetector:
             raise ValueError(f"Unknown normalizer {params.normalizer}.")
 
         return normalizer
+
+    def predict_cells(
+        self, image: np.ndarray, normalizer: Normalizer, block_size: int, **kwargs
+    ):
+        image_size = min(image.shape[:2])
+        if image_size > block_size:
+            return self.stardist.predict_instances_big(
+                image,
+                axes="YX",
+                block_size=block_size,
+                min_overlap=block_size // 16,
+                normalizer=normalizer,
+                **kwargs,
+            )
+        else:
+            return self.stardist.predict_instances(
+                image,
+                axes="YX",
+                normalizer=normalizer,
+                **kwargs,
+            )

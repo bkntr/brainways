@@ -85,12 +85,26 @@ def test_filter_by_cell_size_actual_filtering_pixels(test_data):
 
 def test_cell_detector_on_small_image():
     cell_detector = CellDetector()
-    labels, _ = cell_detector.run_cell_detector(
-        image=np.random.random((10, 10)),
-        params=CellDetectorParams(normalizer="none"),
-        physical_pixel_sizes=(1, 1),
-    )
-    assert labels.shape == (10, 10)
+
+    image = np.random.random((20, 20))
+    block_size = 2048
+
+    with patch.object(
+        cell_detector.stardist,
+        "predict_instances",
+        return_value=(np.zeros_like(image), None),
+    ) as mock_predict:
+        cell_detector.run_cell_detector(
+            image=image,
+            params=CellDetectorParams(normalizer="none"),
+            physical_pixel_sizes=(1, 1),
+            block_size=block_size,
+        )
+        mock_predict.assert_called_once_with(
+            image,
+            axes="YX",
+            normalizer=None,
+        )
 
 
 def test_predict_cells_large_image():

@@ -107,7 +107,7 @@ def test_cell_detector_on_small_image():
         )
 
 
-def test_predict_cells_large_image():
+def test_cell_detector_on_large_image():
     cell_detector = CellDetector()
     image = np.random.random((20, 20))
     block_size = 10

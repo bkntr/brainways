@@ -4,7 +4,7 @@ import functools
 import os
 from dataclasses import replace
 from pathlib import Path
-from typing import Callable, List, Union
+from typing import TYPE_CHECKING, Callable, List, Union
 
 import importlib_resources
 import PIL.Image
@@ -38,9 +38,12 @@ from brainways.utils.cell_detection_importer.utils import (
 from napari_brainways.controllers.base import Controller
 from napari_brainways.widgets.create_subject_dialog import CreateSubjectDialog
 
+if TYPE_CHECKING:
+    from napari_brainways.brainways_ui import BrainwaysUI
+
 
 class WorkflowView(QWidget):
-    def __init__(self, controller, steps: List[Controller]):
+    def __init__(self, controller: BrainwaysUI, steps: List[Controller]):
         super().__init__(controller)
         self.controller = controller
         self.steps = steps
@@ -135,7 +138,11 @@ class WorkflowView(QWidget):
 
         self._prev_path = str(Path(path).parent)
 
-        available_atlases = list(get_all_atlases_lastversions().keys())
+        available_atlases = [
+            "whs_sd_rat_39um",
+            "allen_mouse_25um",
+            "=============",
+        ] + list(get_all_atlases_lastversions().keys())
         user_values = request_values(
             title="New Brainways Project",
             atlas=dict(
@@ -150,6 +157,15 @@ class WorkflowView(QWidget):
                 annotation=str,
                 label="Condition names",
             ),
+            cell_detector_custom_model_dir=dict(
+                value="",
+                annotation=Path,
+                label="Custom StarDist Model",
+                options=dict(
+                    mode="d",
+                    tooltip="Directory containing a custom trained StarDist cell detection model",
+                ),
+            ),
         )
         if user_values is None:
             return
@@ -158,12 +174,16 @@ class WorkflowView(QWidget):
             atlas=user_values["atlas"],
             channel=0,
             condition_names=user_values["condition_names"].split(";"),
+            cell_detector_custom_model_dir=str(
+                user_values["cell_detector_custom_model_dir"]
+            ),
         )
         project = BrainwaysProject.create(path=path, settings=settings, lazy_init=True)
         self.controller.open_project_async(project.path)
 
-    def on_edit_project_clicked(self, _=None):
-        settings: ProjectSettings = self.controller.project.settings
+    def on_edit_project_clicked(self, _=None) -> None:
+        assert self.controller.project is not None
+        settings = self.controller.project.settings
         user_values = request_values(
             title="Edit Brainways Project",
             condition_names=dict(
@@ -171,12 +191,25 @@ class WorkflowView(QWidget):
                 annotation=str,
                 label="Condition names",
             ),
+            cell_detector_custom_model_dir=dict(
+                value=settings.cell_detector_custom_model_dir,
+                annotation=Path,
+                label="Custom StarDist Model",
+                options=dict(
+                    mode="d",
+                    tooltip="Directory containing a custom trained StarDist cell detection model",
+                ),
+            ),
         )
         if user_values is None:
             return
 
         self.controller.project.settings = replace(
-            settings, condition_names=user_values["condition_names"].split(";")
+            settings,
+            condition_names=user_values["condition_names"].split(";"),
+            cell_detector_custom_model_dir=str(
+                user_values["cell_detector_custom_model_dir"]
+            ),
         )
         self.controller.project.save()
 

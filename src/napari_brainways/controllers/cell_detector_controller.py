@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Tuple, Union
 
 import napari
 import napari.layers
@@ -9,6 +9,7 @@ import numpy as np
 from PyQt5.QtWidgets import QApplication
 
 from brainways.pipeline.brainways_params import BrainwaysParams, CellDetectorParams
+from brainways.pipeline.cell_detector import CellDetector
 from napari_brainways.controllers.base import Controller
 from napari_brainways.utils.general_utils import update_layer_contrast_limits
 from napari_brainways.widgets.cell_detector_widget import CellDetectorWidget
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
 class CellDetectorController(Controller):
     def __init__(self, ui: BrainwaysUI):
         super().__init__(ui)
-        self.model = None
+        self.model: CellDetector | None = None
         self.widget = CellDetectorWidget(self)
         self.widget.hide()
 
@@ -30,7 +31,7 @@ class CellDetectorController(Controller):
         self.normalized_crop_layer: napari.layers.Image | None = None
         self.cell_mask_layer: napari.layers.Image | None = None
         self._run_lock = False
-        self._params = None
+        self._params: BrainwaysParams | None = None
         self._crop = None
 
     @property
@@ -59,6 +60,7 @@ class CellDetectorController(Controller):
         image: np.ndarray | None = None,
         from_ui: bool = False,
     ) -> None:
+        assert self.ui.project is not None
         self._params = params
 
         if self._params.cell is not None:
@@ -94,10 +96,13 @@ class CellDetectorController(Controller):
         self.ui.viewer.reset_view()
 
     def load_model(self) -> None:
-        from brainways.pipeline.cell_detector import CellDetector
-
-        if self.model is None:
-            self.model = CellDetector()
+        assert self.ui.project is not None
+        if (
+            self.model is None
+            or self.model.custom_model_dir
+            != self.ui.project.settings.cell_detector_custom_model_dir
+        ):
+            self.model = self.ui.project.get_cell_detector()
 
     def open(self) -> None:
         if self._is_open:
@@ -183,6 +188,7 @@ class CellDetectorController(Controller):
         self.cell_mask_layer.scale = self._preview_scale
 
     def _on_cell_detector_returned(self, mask: np.ndarray):
+        assert self.model is not None
         if self._params.cell is not None:
             cell_detector_params = self._params.cell
         else:
@@ -204,12 +210,15 @@ class CellDetectorController(Controller):
     def on_params_changed(
         self,
         normalizer: str,
-        min_value: float,
-        max_value: float,
+        min_value: Union[float, str],
+        max_value: Union[float, str],
         min_cell_size_value: float,
         max_cell_size_value: float,
         unique: bool = False,
     ):
+        min_value = float(min_value)
+        max_value = float(max_value)
+
         if max_value <= min_value:
             max_value = min_value + 0.001
         normalizer_range = (min_value, max_value)

@@ -1,5 +1,6 @@
 import logging
 from functools import cached_property
+from pathlib import Path
 from typing import Tuple
 
 import cv2
@@ -111,6 +112,9 @@ def filter_by_cell_size(
 
 
 class CellDetector:
+    def __init__(self, custom_model_dir: str = ""):
+        self.custom_model_dir = custom_model_dir
+
     @cached_property
     def stardist(self):
         if STARDIST_AVAILABLE:
@@ -119,10 +123,19 @@ class CellDetector:
             raise ImportError(
                 "Tried to run cell detector model but stardist is not installed, "
                 "please install by running `pip install stardist` or `pip install "
-                "brainways[all]`"
+                "stardist`"
             )
 
-        return StarDist2D.from_pretrained("2D_versatile_fluo")
+        if self.custom_model_dir:
+            logging.info(f"Using custom StarDist model from {self.custom_model_dir}")
+            return StarDist2D(
+                None,
+                name=Path(self.custom_model_dir).name,
+                basedir=Path(self.custom_model_dir).parent,
+            )
+        else:
+            logging.info("Using default StarDist model")
+            return StarDist2D.from_pretrained("2D_versatile_fluo")
 
     def _filter_detections_by_area(self, labels: np.ndarray):
         regionprops_df = pd.DataFrame(

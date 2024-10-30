@@ -172,9 +172,7 @@ def mock_subject_documents(
             points_src=tps_points,
             points_dst=tps_points,
         ),
-        cell=CellDetectorParams(
-            normalizer="clahe",
-        ),
+        cell=CellDetectorParams(normalizer="clahe", normalizer_range=(0.98, 0.997)),
     )
     documents = []
     for i in range(3):

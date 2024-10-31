@@ -241,18 +241,19 @@ class BrainwaysProject:
             )
 
     def run_cell_detector_iter(self) -> Iterator:
-        cell_detector = CellDetector()
+        cell_detector = self.get_cell_detector()
         for subject in self.subjects:
             yield from subject.run_cell_detector_iter(
                 cell_detector, default_params=self.settings.default_cell_detector_params
             )
 
     def run_cell_detector(self) -> None:
-        cell_detector = CellDetector()
-        for subject in self.subjects:
-            subject.run_cell_detector(
-                cell_detector, default_params=self.settings.default_cell_detector_params
-            )
+        for _ in self.run_cell_detector_iter():
+            pass
+
+    def get_cell_detector(self) -> CellDetector:
+        model_path = self.settings.cell_detector_custom_model_dir
+        return CellDetector(model_path)
 
     def view_brain_structure(
         self,

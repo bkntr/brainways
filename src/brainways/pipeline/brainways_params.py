@@ -17,7 +17,7 @@ class BrainwaysParams:
 @dataclass
 class CellDetectorParams:
     normalizer: str = "quantile"
-    normalizer_range: Tuple[float, float] = (0.98, 0.997)
+    normalizer_range: Tuple[float, float] = (0.01, 0.998)
     cell_size_range: Tuple[float, float] = (0, 0)
 
 

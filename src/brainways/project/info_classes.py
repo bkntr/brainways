@@ -20,6 +20,7 @@ class ProjectSettings:
         default_factory=CellDetectorParams
     )
     condition_names: List[str] = field(default_factory=list)
+    cell_detector_custom_model_dir: str = ""
     version: str = brainways._version.version
 
 

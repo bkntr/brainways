@@ -33,8 +33,8 @@ class CellDetectorWidget(QWidget):
             #     "max": 1000,
             #     "step": 1,
             # },
-            min_value={"label": "Normalizer Low Value"},
-            max_value={"label": "Normalizer High Value"},
+            min_value={"label": "Normalizer Low Value", "widget_type": "LineEdit"},
+            max_value={"label": "Normalizer High Value", "widget_type": "LineEdit"},
             min_cell_size_value={"label": "Min Cell Size (um)"},
             max_cell_size_value={"label": "Max Cell Size (um)"},
             auto_call=True,
@@ -61,8 +61,8 @@ class CellDetectorWidget(QWidget):
         widget = self.cell_detector_params_widget
         widget._auto_call = False
         widget.normalizer.value = normalizer
-        widget.min_value.value = normalizer_range[0]
-        widget.max_value.value = normalizer_range[1]
+        widget.min_value.value = str(normalizer_range[0])
+        widget.max_value.value = str(normalizer_range[1])
         widget.min_cell_size_value.value = cell_size_range[0]
         widget.max_cell_size_value.value = cell_size_range[1]
         widget.unique.value = unique

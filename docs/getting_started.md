@@ -8,7 +8,7 @@
     We recommend installing brainways in a separated virtual environment, for example using [anaconda](https://docs.anaconda.com/free/anaconda/install/).
 
 !!! tip
-    If you are installing Brainways on Windows and need GPU support, you need to first install PyTorch and TensorBoard with GPU support. Please refer to the [PyTorch](https://pytorch.org/get-started/locally/) and [TensorBoard](https://www.tensorflow.org/install/pip) websites for detailed instructions. After installing these dependencies, you can proceed with the Brainways installation.
+    If you intend to use Cell Detection features in Brainways, it is highly recommended to install StarDist with GPU support. To do this, first install TensorFlow with GPU support before installing brainways (brainways install StarDist as a dependency). Please refer to the [TensorFlow](https://www.tensorflow.org/install/pip) website for detailed instructions, then proceed with brainways installation.
 
 ## 1. Install Brainways
 
@@ -99,11 +99,19 @@ To accomodate subtle differences between different brains, the images can be ela
 
 ### Cell detection
 
-Active cells can be detected for each image using the [StarDist](https://github.com/stardist/stardist) cell detection algorithm. Because cell detection is performed on the full resolution images and can take a significant amount of time, detections can be run on a small preview crop to make sure that it works properly. To run cell detection on a preview crop, double-click on the relevant area in your image, and then click on the "Run on preview" button. If the detections are not satisfactory, the image normalization parameters can be adjusted to achieve better results.
+!!! tip
+    To get satisfactory cell detection results, it is highly recommended to train a custom StarDist model on data from your experiment. Instructions detailing how to do it can be [found here](./cell_detection.md).
+
+!!! tip
+    If you intend to use Cell Detection features in Brainways, it is highly recommended to install brainways with GPU support. To do this, first install TensorFlow with GPU support before installing brainways. Please refer to the [TensorFlow](https://www.tensorflow.org/install/pip) website for detailed instructions, then proceed with brainways installation.
+
+Active cells can be detected for each image using the [StarDist](https://github.com/stardist/stardist) cell detection algorithm. Because cell detection is performed on the full resolution images and can take a significant amount of time, detections can be run on a small preview crop to make sure that it works properly. To run cell detection on a preview crop, double-click on the relevant area in your image, and then click on the "Run on preview" button. If the detections are not satisfactory, it is recommended to train your own model following [these instructions](./cell_detection.md). Image normalization parameters can be adjusted to try and achieve better results with the default StarDist pretrained model, but in our experience, it is very difficult to achieve good results without training a custom model on our data.
 
 The "unique" check box can be used to determine whether the adjusted normalization parameters will be used only for this image or for the whole project:
 * If the "unique" checkbox is ticked, the parameters will only be used for this image.
 * If the "unique" checkbox is not ticked, the parameters will be used for the whole project.
+
+After verifying the cell detection algorithm works well, run the cell detector for the entire project by clicking the "Run Cell Detector" button. Note that it may take a few hours for a big project.
 
 ![Cell detection](./assets/cell-detection.jpg)
 
@@ -123,8 +131,8 @@ Brainways allows you to export cell density data for each brain region and anima
      - **Min Cell Area (μm):** Filter out detected cells with area smaller than this value.
      - **Max Cell Area (μm):** Filter out detected cells with area larger than this value.
      - **Excel Mode:** Select the mode for the Excel output. Options include:
-       - `ROW_PER_SUBJECT`: One row per subject.
-       - `ROW_PER_IMAGE`: One row per slice image.
+       - `Row per Subject`: One row per subject.
+       - `Row per Slice`: One row per slice image.
 
 3. **Calculate Results:**
    - After configuring the options, click the `OK` button to start the calculation process. A progress bar will indicate the status of the calculation.

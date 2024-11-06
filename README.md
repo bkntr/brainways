@@ -6,7 +6,7 @@
 [![Python Version](https://img.shields.io/pypi/pyversions/napari-brainways.svg?color=green)](https://python.org)
 [![tests](https://github.com/bkntr/brainways/workflows/tests/badge.svg)](https://github.com/bkntr/brainways/actions)
 [![codecov](https://codecov.io/gh/bkntr/brainways/branch/main/graph/badge.svg)](https://codecov.io/gh/bkntr/brainways)
-[![Documentation Status](https://readthedocs.org/projects/napari-brainways/badge/?version=latest)](https://napari-brainways.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/brainways/badge/?version=latest)](https://brainways.readthedocs.io/en/latest/?badge=latest)
 [![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/napari-brainways)](https://napari-hub.org/plugins/napari-brainways)
 
 <!-- markdownlint-disable MD026 -->
@@ -33,7 +33,7 @@ pip install napari-brainways
 brainways ui
 ```
 
-Follow our [getting started guide](https://napari-brainways.readthedocs.io/en/latest/getting_started/) for more details.
+Follow our [getting started guide](https://brainways.readthedocs.io/en/latest/getting_started/) for more details.
 
 ## How it works
 
@@ -59,7 +59,7 @@ Brainways is implemented as three modules. `napari-brainways` contains the GUI i
 
 ## Development Status
 
-Brainways is being actively developed by Ben Kantor of Bartal lab, Tel Aviv University, Israel. Our releases can be found [here](https://github.com/bkntr/napari-brainways/releases).
+Brainways is being actively developed by Ben Kantor of Bartal lab, Tel Aviv University, Israel. Our releases can be found [here](https://github.com/bkntr/brainways/releases).
 
 ## Citation
 
@@ -94,7 +94,7 @@ If you encounter any problems, please [file an issue] along with a detailed desc
 [Mozilla Public License 2.0]: https://www.mozilla.org/media/MPL/2.0/index.txt
 [cookiecutter-napari-plugin]: https://github.com/napari/cookiecutter-napari-plugin
 
-[file an issue]: https://github.com/bkntr/napari-brainways/issues
+[file an issue]: https://github.com/bkntr/brainways/issues
 
 [napari]: https://github.com/napari/napari
 [tox]: https://tox.readthedocs.io/en/latest/

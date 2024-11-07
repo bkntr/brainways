@@ -47,6 +47,11 @@ class AnalysisWidget(QWidget):
             self.on_export_registration_masks_clicked
         )
 
+        export_slice_locations_button = QPushButton("Export Slice Locations")
+        export_slice_locations_button.clicked.connect(
+            self.on_export_slice_locations_clicked
+        )
+
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(self.label)
         self.layout().addWidget(calculate_results_button)
@@ -56,6 +61,7 @@ class AnalysisWidget(QWidget):
         self.layout().addWidget(show_anova_button)
         self.layout().addWidget(show_posthoc_button)
         self.layout().addWidget(export_registration_masks_button)
+        self.layout().addWidget(export_slice_locations_button)
 
     def on_run_calculate_results_clicked(self, _=None):
         if not self.controller.ui.prompt_user_slices_have_missing_params(
@@ -341,6 +347,44 @@ class AnalysisWidget(QWidget):
             output_path=values["output_path"],
             slice_selection=SliceSelection(values["slice_selection"]),
             file_format=RegisteredAnnotationFileFormat(values["file_format"]),
+        )
+
+    def on_export_slice_locations_clicked(self, _=None):
+        if not self.controller.ui.prompt_user_slices_have_missing_params():
+            return
+
+        values = request_values(
+            title="Export Slice Locations",
+            output_path=dict(
+                value="",
+                annotation=Path,
+                label="Output Path",
+                options=dict(
+                    mode="w",
+                    tooltip="Path to save the slice locations to",
+                    filter="CSV files (*.csv)",
+                ),
+            ),
+            slice_selection=dict(
+                value=SliceSelection.CURRENT_SLICE.value,
+                widget_type="ComboBox",
+                options=dict(
+                    choices=[e.value for e in SliceSelection][::-1],
+                    tooltip="Which slices to export",
+                ),
+                annotation=str,
+                label="Slice Selection",
+            ),
+        )
+        if values is None:
+            return
+
+        if values["output_path"].suffix != ".csv":
+            values["output_path"] = values["output_path"].with_suffix(".csv")
+
+        self.controller.export_slice_locations(
+            output_path=values["output_path"],
+            slice_selection=SliceSelection(values["slice_selection"]),
         )
 
     def set_label(self):

@@ -88,7 +88,7 @@ def mock_atlas(test_data: Tuple[np.ndarray, AtlasSlice]) -> BrainwaysAtlas:
 
     mock_brainglobe_atlas = Mock()
     mock_brainglobe_atlas.structure_from_coords = Mock(return_value=10)
-    mock_brainglobe_atlas.resolution = (1, 2, 3)
+    mock_brainglobe_atlas.resolution = (10, 20, 30)
     mock_brainglobe_atlas.atlas_name = "MOCK_ATLAS"
     mock_brainglobe_atlas.reference = np.random.rand(
         ATLAS_DEPTH, ATLAS_SIZE, ATLAS_SIZE

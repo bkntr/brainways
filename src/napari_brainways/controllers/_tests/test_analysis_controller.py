@@ -129,29 +129,7 @@ def test_analysis_controller_run_network_analysis(
     assert graph_path.exists()
 
 
-def test_export_registration_masks_async_current_slice(
-    app_on_analysis: Tuple[BrainwaysUI, AnalysisController]
-):
-    app, controller = app_on_analysis
-    output_dir = Path("/fake/path")
-    slice_selection = SliceSelection.CURRENT_SLICE
-    file_format = RegisteredAnnotationFileFormat.CSV
-
-    with patch.object(
-        controller.ui.project, "export_registration_masks_async"
-    ) as mock_export:
-        controller.export_registration_masks_async(
-            output_dir, slice_selection, file_format
-        )
-        mock_export.assert_called_once()
-        assert mock_export.call_args[1]["output_dir"] == output_dir
-        assert mock_export.call_args[1]["slice_infos"] == [
-            controller.ui.current_document
-        ]
-        assert mock_export.call_args[1]["file_format"] == file_format
-
-
-def test_export_registration_masks_async_current_subject(
+def test_export_registration_masks_async(
     app_on_analysis: Tuple[BrainwaysUI, AnalysisController]
 ):
     app, controller = app_on_analysis
@@ -159,42 +137,75 @@ def test_export_registration_masks_async_current_subject(
     slice_selection = SliceSelection.CURRENT_SUBJECT
     file_format = RegisteredAnnotationFileFormat.NPZ
 
-    with patch.object(
-        controller.ui.project, "export_registration_masks_async"
-    ) as mock_export:
+    with (
+        patch.object(
+            controller.ui.project, "export_registration_masks_async"
+        ) as mock_export,
+        patch.object(controller, "_get_slice_infos", return_value="mock_slice_infos"),
+    ):
         controller.export_registration_masks_async(
             output_dir, slice_selection, file_format
         )
         mock_export.assert_called_once()
-        expected_slice_infos = [
-            slice_info for _, slice_info in app.current_subject.valid_documents
-        ]
         assert mock_export.call_args[1]["output_dir"] == output_dir
-        assert mock_export.call_args[1]["slice_infos"] == expected_slice_infos
+        assert mock_export.call_args[1]["slice_infos"] == "mock_slice_infos"
         assert mock_export.call_args[1]["file_format"] == file_format
 
 
-def test_export_registration_masks_async_all_subjects(
+def test_export_slice_locations(
     app_on_analysis: Tuple[BrainwaysUI, AnalysisController]
 ):
     app, controller = app_on_analysis
-    assert app.project is not None
-    output_dir = Path("/fake/path")
-    slice_selection = SliceSelection.ALL_SUBJECTS
-    file_format = RegisteredAnnotationFileFormat.CSV
+    output_path = Path("/fake/path")
+    slice_selection = SliceSelection.CURRENT_SUBJECT
 
-    with patch.object(
-        controller.ui.project, "export_registration_masks_async"
-    ) as mock_export:
-        controller.export_registration_masks_async(
-            output_dir, slice_selection, file_format
-        )
+    with (
+        patch.object(controller.ui.project, "export_slice_locations") as mock_export,
+        patch.object(controller, "_get_slice_infos", return_value="mock_slice_infos"),
+    ):
+        controller.export_slice_locations(output_path, slice_selection)
         mock_export.assert_called_once()
-        expected_slice_infos = [
-            slice_info
-            for subject in app.project.subjects
-            for _, slice_info in subject.valid_documents
-        ]
-        assert mock_export.call_args[1]["output_dir"] == output_dir
-        assert mock_export.call_args[1]["slice_infos"] == expected_slice_infos
-        assert mock_export.call_args[1]["file_format"] == file_format
+        assert mock_export.call_args[0][0] == output_path
+        assert mock_export.call_args[0][1] == "mock_slice_infos"
+
+
+def test_get_slice_infos_current_slice(
+    app_on_analysis: Tuple[BrainwaysUI, AnalysisController]
+):
+    app, controller = app_on_analysis
+    slice_selection = SliceSelection.CURRENT_SLICE
+    expected_slice_infos = [controller.ui.current_document]
+
+    slice_infos = controller._get_slice_infos(slice_selection)
+
+    assert slice_infos == expected_slice_infos
+
+
+def test_get_slice_infos_current_subject(
+    app_on_analysis: Tuple[BrainwaysUI, AnalysisController]
+):
+    app, controller = app_on_analysis
+    slice_selection = SliceSelection.CURRENT_SUBJECT
+    expected_slice_infos = [
+        slice_info for _, slice_info in app.current_subject.valid_documents
+    ]
+
+    slice_infos = controller._get_slice_infos(slice_selection)
+
+    assert slice_infos == expected_slice_infos
+
+
+def test_get_slice_infos_all_subjects(
+    app_on_analysis: Tuple[BrainwaysUI, AnalysisController]
+):
+    app, controller = app_on_analysis
+    slice_selection = SliceSelection.ALL_SUBJECTS
+    expected_slice_infos = [
+        slice_info
+        for subject in app.project.subjects
+        for _, slice_info in subject.valid_documents
+    ]
+
+    slice_infos = controller._get_slice_infos(slice_selection)
+
+    assert slice_infos == expected_slice_infos

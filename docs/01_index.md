@@ -1,11 +1,11 @@
 # Overview
 
 [![DOI](https://img.shields.io/badge/DOI-10.1101/2023.05.25.542252-green.svg)](https://doi.org/10.1101/2023.05.25.542252)
-[![License GNU GPL v3.0](https://img.shields.io/pypi/l/brainways.svg?color=green)](https://github.com/bkntr/napari-brainways/raw/main/LICENSE)
+[![License GNU GPL v3.0](https://img.shields.io/pypi/l/brainways.svg?color=green)](https://github.com/bkntr/brainways/raw/main/LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/napari-brainways.svg?color=green)](https://pypi.org/project/napari-brainways)
 [![Python Version](https://img.shields.io/pypi/pyversions/napari-brainways.svg?color=green)](https://python.org)
-[![tests](https://github.com/bkntr/brainways/workflows/tests/badge.svg)](https://github.com/bkntr/napari-brainways/actions)
-[![codecov](https://codecov.io/gh/bkntr/brainways/branch/main/graph/badge.svg)](https://codecov.io/gh/bkntr/napari-brainways)
+[![tests](https://github.com/bkntr/brainways/workflows/tests/badge.svg)](https://github.com/bkntr/brainways/actions)
+[![codecov](https://codecov.io/gh/bkntr/brainways/branch/main/graph/badge.svg)](https://codecov.io/gh/bkntr/brainways)
 [![Documentation Status](https://readthedocs.org/projects/brainways/badge/?version=latest)](https://brainways.readthedocs.io/en/latest/?badge=latest)
 [![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/napari-brainways)](https://napari-hub.org/plugins/napari-brainways)
 
@@ -36,7 +36,7 @@ pip install napari-brainways
 brainways ui
 ```
 
-Follow our [getting started guide](getting_started.md) for more details.
+Follow our [getting started guide](02_getting_started.md) for more details.
 
 ## How it works
 

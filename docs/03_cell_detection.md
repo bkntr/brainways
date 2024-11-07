@@ -6,7 +6,7 @@ Welcome to the cell detection guide! This document will walk you through the ste
 
 Before you begin, ensure you have the following:
 - A computer with GPU support (recommended for faster processing).
-- Optional: The Brainways software [installed](./getting_started.md) (which includes StarDist).
+- Optional: The Brainways software [installed](02_getting_started.md) (which includes StarDist).
 
 ## Step-by-Step Instructions
 

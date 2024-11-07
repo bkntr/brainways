@@ -1,6 +1,6 @@
 site_name: Brainways
-repo_url: https://github.com/bkntr/napari-brainways
-repo_name: bkntr/napari-brainways
+repo_url: https://github.com/bkntr/brainways
+repo_name: bkntr/brainways
 edit_uri: edit/main/docs/
 theme:
   name: material

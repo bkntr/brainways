@@ -1,0 +1,31 @@
+name: brainways
+display_name: Brainways
+contributions:
+  commands:
+    - id: brainways.load_sample_project
+      python_name: brainways.ui._sample_project:load_sample_project
+      title: Load Brainways sample project
+    - id: brainways.load_sample_project_annotated
+      python_name: brainways.ui._sample_project:load_sample_project_annotated
+      title: Load Brainways sample annotated project
+    - id: brainways.make_qwidget
+      python_name: brainways.ui.brainways_ui:BrainwaysUI
+      title: Make Brainways widget
+    - id: brainways.read_bwp
+      title: Read ".bwp" files
+      python_name: brainways.ui.napari_reader:get_reader
+  widgets:
+    - command: brainways.make_qwidget
+      display_name: Brainways
+  readers:
+    - command: brainways.read_bwp
+      filename_patterns:
+        - '*.bwp'
+      accepts_directories: true
+  sample_data:
+    - command: brainways.load_sample_project
+      key: sample_project
+      display_name: Sample project
+    - command: brainways.load_sample_project_annotated
+      key: sample_project_annotated
+      display_name: Annotated sample project

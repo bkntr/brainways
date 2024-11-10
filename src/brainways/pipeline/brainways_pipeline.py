@@ -11,11 +11,12 @@ from brainways.pipeline.affine_2d import Affine2D
 from brainways.pipeline.atlas_registration import AtlasRegistration
 from brainways.pipeline.brainways_params import AffineTransform2DParams, BrainwaysParams
 from brainways.pipeline.tps import TPS
-from brainways.project.info_classes import SliceInfo
+from brainways.project.info_classes import RegisteredPixelValues, SliceInfo
 from brainways.transforms.base import BrainwaysTransform
 from brainways.transforms.compose import Compose
 from brainways.transforms.identity_transform import IdentityTransform
 from brainways.utils.atlas.brainways_atlas import AtlasSlice, BrainwaysAtlas
+from brainways.utils.atlas.slice_atlas import get_slice_coordinates
 from brainways.utils.image import ImageSizeHW, convert_to_uint8
 
 
@@ -118,21 +119,48 @@ class BrainwaysPipeline:
 
         return transformed_image.astype(image.dtype)
 
-    def get_registered_annotation_on_image(self, slice_info: SliceInfo):
-        annotation = np.array(
-            self.get_atlas_slice(slice_info.params).annotation
-        ).astype(np.float32)
+    def get_registered_values_on_image(
+        self, slice_info: SliceInfo, pixel_value_mode: RegisteredPixelValues
+    ):
+        assert slice_info.params.atlas is not None
+
+        if pixel_value_mode == RegisteredPixelValues.STRUCTURE_IDS:
+            values = np.array(self.get_atlas_slice(slice_info.params).annotation)
+        elif pixel_value_mode in (
+            RegisteredPixelValues.PIXEL_COORDINATES,
+            RegisteredPixelValues.MICRON_COORDINATES,
+        ):
+            values = get_slice_coordinates(
+                shape=self.atlas.shape[1:],
+                ap=slice_info.params.atlas.ap,
+                si=self.atlas.shape[1] // 2,
+                lr=self.atlas.shape[2] // 2,
+                rot_frontal=slice_info.params.atlas.rot_frontal,
+                rot_horizontal=slice_info.params.atlas.rot_horizontal,
+                rot_sagittal=slice_info.params.atlas.rot_sagittal,
+            )
+
+            if pixel_value_mode == RegisteredPixelValues.MICRON_COORDINATES:
+                values = values * self.atlas.brainglobe_atlas.resolution
+        else:
+            raise ValueError(f"Unsupported pixel_value_mode: {pixel_value_mode}")
+
         transform = self.get_image_to_atlas_transform(
             brainways_params=slice_info.params,
             lowres_image_size=slice_info.lowres_image_size,
         ).inv()
-        # transformed_annotation = transform.transform_image(annotation, output_size=slice_info.image_size, mode="nearest")
-        transformed_annotation = transform.transform_image(
-            annotation, output_size=slice_info.lowres_image_size, mode="nearest"
+        transformed_values = transform.transform_image(
+            values.astype(np.float32),
+            output_size=slice_info.lowres_image_size,
+            mode="nearest",
         )
-        transformed_annotation = cv2.resize(
-            transformed_annotation,
-            (slice_info.image_size[1], slice_info.image_size[0]),
-            interpolation=cv2.INTER_NEAREST,
-        ).astype(np.int64)
-        return transformed_annotation
+        transformed_values = (
+            cv2.resize(
+                transformed_values,
+                (slice_info.image_size[1], slice_info.image_size[0]),
+                interpolation=cv2.INTER_NEAREST,
+            )
+            .round()
+            .astype(np.int64)
+        )
+        return transformed_values

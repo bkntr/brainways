@@ -14,7 +14,7 @@ from brainways.utils.cells import (
 def test_region_areas(mock_atlas):
     registered_image = np.array([[0, 1], [1, 1]])
     annotation = np.array([[1, 1], [2, 3]])
-    expected = {0: 6, 1: 1 * 6, 2: 1 * 6, 3: 1 * 6}
+    expected = {0: 600, 1: 1 * 600, 2: 1 * 600, 3: 1 * 600}
     result = get_region_areas(
         annotation=annotation,
         atlas=mock_atlas,
@@ -26,7 +26,7 @@ def test_region_areas(mock_atlas):
 def test_region_areas_mask(mock_atlas):
     registered_image = np.array([[1, 1], [1, 0]])
     annotation = np.array([[1, 1], [2, 3]])
-    expected = {1: 2 * 6, 2: 1 * 6, 0: 1 * 6}
+    expected = {1: 2 * 600, 2: 1 * 600, 0: 1 * 600}
     result = get_region_areas(
         annotation=annotation,
         atlas=mock_atlas,

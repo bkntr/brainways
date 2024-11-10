@@ -478,6 +478,14 @@ class BrainwaysProject:
     ):
         assert self.pipeline is not None
 
+        if (
+            file_format == RegisteredAnnotationFileFormat.CSV
+            and pixel_value_mode != RegisteredPixelValues.STRUCTURE_IDS
+        ):
+            raise ValueError(
+                "CSV format is only supported for structure IDs pixel values"
+            )
+
         for slice_info in slice_infos:
             registered_values = self.pipeline.get_registered_values_on_image(
                 slice_info, pixel_value_mode=pixel_value_mode
@@ -553,6 +561,8 @@ class BrainwaysProject:
 
         slice_locations_df = pd.DataFrame(slice_locations)
         slice_locations_df.to_csv(output_path, index=False)
+
+        open_directory(output_path.parent)
 
     @property
     def n_valid_images(self):

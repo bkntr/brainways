@@ -8,6 +8,7 @@ from pytest import fixture
 
 from brainways.project.info_classes import (
     RegisteredAnnotationFileFormat,
+    RegisteredPixelValues,
     SliceSelection,
 )
 from brainways.ui.brainways_ui import BrainwaysUI
@@ -134,6 +135,7 @@ def test_export_registration_masks_async(
 ):
     app, controller = app_on_analysis
     output_dir = Path("/fake/path")
+    pixel_value_mode = RegisteredPixelValues.PIXEL_COORDINATES
     slice_selection = SliceSelection.CURRENT_SUBJECT
     file_format = RegisteredAnnotationFileFormat.NPZ
 
@@ -144,10 +146,11 @@ def test_export_registration_masks_async(
         patch.object(controller, "_get_slice_infos", return_value="mock_slice_infos"),
     ):
         controller.export_registration_masks_async(
-            output_dir, slice_selection, file_format
+            output_dir, pixel_value_mode, slice_selection, file_format
         )
         mock_export.assert_called_once()
         assert mock_export.call_args[1]["output_dir"] == output_dir
+        assert mock_export.call_args[1]["pixel_value_mode"] == pixel_value_mode
         assert mock_export.call_args[1]["slice_infos"] == "mock_slice_infos"
         assert mock_export.call_args[1]["file_format"] == file_format
 

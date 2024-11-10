@@ -1,13 +1,13 @@
 # Brainways
 
 [![DOI](https://img.shields.io/badge/DOI-10.1101/2023.05.25.542252-green.svg)](https://doi.org/10.1101/2023.05.25.542252)
-[![License GNU GPL v3.0](https://img.shields.io/pypi/l/napari-brainways.svg?color=green)](https://github.com/bkntr/brainways/raw/main/LICENSE)
-[![PyPI](https://img.shields.io/pypi/v/napari-brainways.svg?color=green)](https://pypi.org/project/napari-brainways)
-[![Python Version](https://img.shields.io/pypi/pyversions/napari-brainways.svg?color=green)](https://python.org)
+[![License GNU GPL v3.0](https://img.shields.io/pypi/l/brainways.svg?color=green)](https://github.com/bkntr/brainways/raw/main/LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/brainways.svg?color=green)](https://pypi.org/project/brainways)
+[![Python Version](https://img.shields.io/pypi/pyversions/brainways.svg?color=green)](https://python.org)
 [![tests](https://github.com/bkntr/brainways/workflows/tests/badge.svg)](https://github.com/bkntr/brainways/actions)
 [![codecov](https://codecov.io/gh/bkntr/brainways/branch/main/graph/badge.svg)](https://codecov.io/gh/bkntr/brainways)
 [![Documentation Status](https://readthedocs.org/projects/brainways/badge/?version=latest)](https://brainways.readthedocs.io/en/latest/?badge=latest)
-[![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/napari-brainways)](https://napari-hub.org/plugins/napari-brainways)
+[![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/brainways)](https://napari-hub.org/plugins/brainways)
 
 <!-- markdownlint-disable MD026 -->
 ## What Is Brainways?
@@ -29,7 +29,7 @@ Customization should be made easy by having a highly flexible pythonic backend.
 To install and run brainways, run the following in your python environment:
 
 ```bash
-pip install napari-brainways
+pip install brainways
 brainways ui
 ```
 
@@ -55,7 +55,7 @@ meeting:
 
 ## Architecture
 
-Brainways is implemented as three modules. `napari-brainways` contains the GUI implementation as a [napari](https://napari.org/stable/) plugin. napari-brainways is using `brainways` as its backend. All of the functionality is implemented in the brainways package. This separation was done to guarantee that brainways is a GUI-agnostic software, and can be fully accessed and manipulated through python code to allow custom complex usage scenarios. The code that was used to train, evaluate and run the automatic registration model resides in `brainways-reg-model`.
+Brainways is implemented as three modules. `brainways.ui` contains the GUI implementation as a [napari](https://napari.org/stable/) plugin. `brainways.ui` is using `brainways` as its backend. All of the functionality is implemented in the brainways package. This separation was done to guarantee that brainways is a GUI-agnostic software, and can be fully accessed and manipulated through python code to allow custom complex usage scenarios. The code that was used to train, evaluate and run the automatic registration model resides in `brainways-reg-model`.
 
 ## Development Status
 
@@ -77,7 +77,7 @@ If you use brainways, please cite [Kantor and Bartal (2023)](https://doi.org/10.
 ## License
 
 Distributed under the terms of the [GNU GPL v3.0] license,
-"napari-brainways" is free and open source software
+"brainways" is free and open source software
 
 ## Issues
 

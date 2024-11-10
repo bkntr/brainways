@@ -15,7 +15,7 @@
 Run the following command (if you created a virtual environment, run this command inside the virtual environment):
 
 ```bash
-pip install napari-brainways
+pip install brainways
 ```
 
 This will install the brainways GUI along with all of its dependencies. After this command successfully finished, you are ready to use brainways.

@@ -6,7 +6,7 @@ def run_ui():
     import napari
 
     viewer = napari.Viewer()
-    viewer.window.add_plugin_dock_widget("napari-brainways")
+    viewer.window.add_plugin_dock_widget("brainways")
     napari.run()
 
 

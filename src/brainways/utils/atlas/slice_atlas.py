@@ -70,6 +70,7 @@ def get_slice_coordinates(
     rot_frontal: float,
     rot_horizontal: float,
     rot_sagittal: float,
+    as_image: bool = True,
 ) -> NDArray:
     """
     Calculate the coordinates of a slice in a 3D space after applying rotations and translations.
@@ -82,15 +83,19 @@ def get_slice_coordinates(
         rot_frontal (float): The rotation angle around the frontal axis (in radians).
         rot_horizontal (float): The rotation angle around the horizontal axis (in radians).
         rot_sagittal (float): The rotation angle around the sagittal axis (in radians).
+        as_image (bool): If True, the output will be a numpy array of shape (height, width, 3) containing the coordinates of the
+            slice. If False, the output will be a numpy array of shape (3, height * width) containing the coordinates of the slice.
 
     Returns:
-        NDArray: A numpy array of shape (height, width, 3) containing the coordinates of the slice.
+        NDArray: The coordinates of the slice. See `as_image` parameter for the shape of the output.
     """
     idxs = homog_indices(1, shape[0], shape[1])
     idxs = homog_center_at_zero(idxs)
     idxs = rotate(idxs, rot_frontal, rot_horizontal, rot_sagittal)
     idxs = translate(idxs, t0=ap, t1=si, t2=lr)
-    idxs = idxs[:3].astype(np.float32).reshape(shape[0], shape[1], 3)
+    idxs = idxs[:3].astype(np.float32)
+    if as_image:
+        idxs = idxs.transpose().reshape(shape[0], shape[1], 3)
     return idxs
 
 
@@ -106,8 +111,15 @@ def slice_atlas(
     interpolation: str = "bilinear",
 ):
     idxs = get_slice_coordinates(
-        shape, ap, si, lr, rot_frontal, rot_horizontal, rot_sagittal
-    ).reshape(-1, 3)
+        shape=shape,
+        ap=ap,
+        si=si,
+        lr=lr,
+        rot_frontal=rot_frontal,
+        rot_horizontal=rot_horizontal,
+        rot_sagittal=rot_sagittal,
+        as_image=False,
+    )
     slice = remap(volume, idxs[:3], interpolation)
     slice = slice.reshape(shape[0], shape[1])
     return slice

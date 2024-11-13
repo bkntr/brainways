@@ -3,6 +3,7 @@ import numpy.testing as npt
 import torch
 
 from brainways.utils.atlas.slice_atlas import (
+    get_slice_coordinates,
     homog_center_at_zero,
     homog_indices,
     rotate,
@@ -102,33 +103,16 @@ def test_slice_rot_frontal_90():
     npt.assert_allclose(slice, np.rot90(volume[1, :, :], k=-1))
 
 
-# def test_slice_remap_bilinear(atlas):
-#     slice = slice_atlas(
-#         shape=atlas.shape[1:],
-#         volume=torch.tensor(atlas.reference.astype(np.float32)),
-#         ap=atlas.reference.shape[0] * 29 / 50,
-#         si=atlas.reference.shape[1] / 2,
-#         lr=atlas.reference.shape[2] / 2,
-#         rot_frontal=0,
-#         rot_horizontal=0,
-#         rot_sagittal=-6,
-#         interpolation="nearest",
-#     )
-#     Image.fromarray((slice / slice.max() * 255).astype(np.uint8)).save(
-#         Path(__file__).resolve().parent / "slice_remap_nearest.jpg"
-#     )
-#
-#     slice = slice_atlas(
-#         shape=atlas.shape[1:],
-#         volume=torch.tensor(atlas.reference.astype(np.float32)),
-#         ap=atlas.reference.shape[0] * 29 / 50,
-#         si=atlas.reference.shape[1] / 2,
-#         lr=atlas.reference.shape[2] / 2,
-#         rot_frontal=0,
-#         rot_horizontal=0,
-#         rot_sagittal=-6,
-#         interpolation="bilinear",
-#     )
-#     Image.fromarray((slice / slice.max() * 255).astype(np.uint8)).save(
-#         Path(__file__).resolve().parent / "slice_remap_bilinear.jpg"
-#     )
+def test_get_slice_coordinates_no_rotation_no_translation():
+    coords = get_slice_coordinates(
+        shape=(3, 3), ap=0, si=1, lr=1, rot_frontal=0, rot_horizontal=0, rot_sagittal=0
+    )
+    expected = np.array(
+        [
+            [[0, 0, 0], [0, 0, 1], [0, 0, 2]],
+            [[0, 1, 0], [0, 1, 1], [0, 1, 2]],
+            [[0, 2, 0], [0, 2, 1], [0, 2, 2]],
+        ],
+        dtype=np.float32,
+    )
+    npt.assert_allclose(coords, expected)

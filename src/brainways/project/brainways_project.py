@@ -21,6 +21,7 @@ from brainways.project.info_classes import (
     ExcelMode,
     ProjectSettings,
     RegisteredAnnotationFileFormat,
+    RegisteredPixelValues,
     SliceInfo,
     SubjectInfo,
 )
@@ -471,34 +472,46 @@ class BrainwaysProject:
     def export_registration_masks_async(
         self,
         output_dir: Path,
+        pixel_value_mode: RegisteredPixelValues,
         slice_infos: List[SliceInfo],
         file_format: RegisteredAnnotationFileFormat,
     ):
         assert self.pipeline is not None
 
+        if (
+            file_format == RegisteredAnnotationFileFormat.CSV
+            and pixel_value_mode != RegisteredPixelValues.STRUCTURE_IDS
+        ):
+            raise ValueError(
+                "CSV format is only supported for structure IDs pixel values"
+            )
+
         for slice_info in slice_infos:
-            registered_annotation = self.pipeline.get_registered_annotation_on_image(
-                slice_info
+            registered_values = self.pipeline.get_registered_values_on_image(
+                slice_info, pixel_value_mode=pixel_value_mode
             )
             output_dir.mkdir(parents=True, exist_ok=True)
-            file_name = Path(str(slice_info.path)).name + f".{file_format.value}"
+            file_name = (
+                Path(str(slice_info.path)).name
+                + f"_{pixel_value_mode.name.lower()}.{file_format.value}"
+            )
             output_path = output_dir / file_name
-            print(f"Saving {file_format.value} file to {output_path}")
+            logging.info(f"Saving {file_format.value} file to {output_path}")
             if file_format == RegisteredAnnotationFileFormat.NPZ:
                 np.savez_compressed(
                     output_path,
-                    annotation=registered_annotation,
+                    values=registered_values,
                 )
             elif file_format == RegisteredAnnotationFileFormat.MAT:
                 scipy.io.savemat(
                     output_path,
-                    {"annotation": registered_annotation},
+                    {"values": registered_values},
                     do_compression=True,
                 )
             elif file_format == RegisteredAnnotationFileFormat.CSV:
                 np.savetxt(
                     output_path,
-                    registered_annotation,
+                    registered_values,
                     fmt="%d",
                     delimiter=",",
                 )
@@ -548,6 +561,8 @@ class BrainwaysProject:
 
         slice_locations_df = pd.DataFrame(slice_locations)
         slice_locations_df.to_csv(output_path, index=False)
+
+        open_directory(output_path.parent)
 
     @property
     def n_valid_images(self):

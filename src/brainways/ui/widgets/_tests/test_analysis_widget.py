@@ -5,6 +5,7 @@ import pytest
 
 from brainways.project.info_classes import (
     RegisteredAnnotationFileFormat,
+    RegisteredPixelValues,
     SliceSelection,
 )
 from brainways.ui.widgets.analysis_widget import AnalysisWidget
@@ -27,6 +28,7 @@ def test_on_export_registration_masks_clicked_current_slice(analysis_widget):
         "brainways.ui.widgets.analysis_widget.request_values"
     ) as mock_request_values:
         mock_request_values.return_value = {
+            "pixel_value_mode": "Micron Coordinates",
             "output_path": Path("/fake/path"),
             "slice_selection": "Current Slice",
             "file_format": "csv",
@@ -34,6 +36,7 @@ def test_on_export_registration_masks_clicked_current_slice(analysis_widget):
         analysis_widget.on_export_registration_masks_clicked()
         analysis_widget.controller.export_registration_masks_async.assert_called_once_with(
             output_path=Path("/fake/path"),
+            pixel_value_mode=RegisteredPixelValues.MICRON_COORDINATES,
             slice_selection=SliceSelection.CURRENT_SLICE,
             file_format=RegisteredAnnotationFileFormat.CSV,
         )
@@ -44,6 +47,7 @@ def test_on_export_registration_masks_clicked_current_subject(analysis_widget):
         "brainways.ui.widgets.analysis_widget.request_values"
     ) as mock_request_values:
         mock_request_values.return_value = {
+            "pixel_value_mode": "Pixel Coordinates",
             "output_path": Path("/fake/path"),
             "slice_selection": "Current Subject",
             "file_format": "csv",
@@ -51,6 +55,7 @@ def test_on_export_registration_masks_clicked_current_subject(analysis_widget):
         analysis_widget.on_export_registration_masks_clicked()
         analysis_widget.controller.export_registration_masks_async.assert_called_once_with(
             output_path=Path("/fake/path"),
+            pixel_value_mode=RegisteredPixelValues.PIXEL_COORDINATES,
             slice_selection=SliceSelection.CURRENT_SUBJECT,
             file_format=RegisteredAnnotationFileFormat.CSV,
         )
@@ -61,6 +66,7 @@ def test_on_export_registration_masks_clicked_all_subjects(analysis_widget):
         "brainways.ui.widgets.analysis_widget.request_values"
     ) as mock_request_values:
         mock_request_values.return_value = {
+            "pixel_value_mode": "Structure IDs",
             "output_path": Path("/fake/path"),
             "slice_selection": "All Subjects",
             "file_format": "csv",
@@ -68,6 +74,7 @@ def test_on_export_registration_masks_clicked_all_subjects(analysis_widget):
         analysis_widget.on_export_registration_masks_clicked()
         analysis_widget.controller.export_registration_masks_async.assert_called_once_with(
             output_path=Path("/fake/path"),
+            pixel_value_mode=RegisteredPixelValues.STRUCTURE_IDS,
             slice_selection=SliceSelection.ALL_SUBJECTS,
             file_format=RegisteredAnnotationFileFormat.CSV,
         )
@@ -78,6 +85,7 @@ def test_on_export_registration_masks_clicked_different_format(analysis_widget):
         "brainways.ui.widgets.analysis_widget.request_values"
     ) as mock_request_values:
         mock_request_values.return_value = {
+            "pixel_value_mode": "Structure IDs",
             "output_path": Path("/fake/path"),
             "slice_selection": "Current Slice",
             "file_format": "npz",
@@ -85,6 +93,7 @@ def test_on_export_registration_masks_clicked_different_format(analysis_widget):
         analysis_widget.on_export_registration_masks_clicked()
         analysis_widget.controller.export_registration_masks_async.assert_called_once_with(
             output_path=Path("/fake/path"),
+            pixel_value_mode=RegisteredPixelValues.STRUCTURE_IDS,
             slice_selection=SliceSelection.CURRENT_SLICE,
             file_format=RegisteredAnnotationFileFormat.NPZ,
         )

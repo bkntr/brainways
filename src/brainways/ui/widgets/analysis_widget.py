@@ -7,6 +7,7 @@ from qtpy.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 from brainways.project.info_classes import (
     ExcelMode,
     RegisteredAnnotationFileFormat,
+    RegisteredPixelValues,
     SliceSelection,
 )
 
@@ -310,6 +311,16 @@ class AnalysisWidget(QWidget):
 
         values = request_values(
             title="Export Registered Annotation Masks",
+            pixel_value_mode=dict(
+                value=RegisteredPixelValues.STRUCTURE_IDS.value,
+                widget_type="ComboBox",
+                options=dict(
+                    choices=[e.value for e in RegisteredPixelValues],
+                    tooltip="What to export to each pixel in the masks",
+                ),
+                annotation=str,
+                label="Pixel Values",
+            ),
             output_path=dict(
                 value="",
                 annotation=Path,
@@ -345,6 +356,7 @@ class AnalysisWidget(QWidget):
 
         self.controller.export_registration_masks_async(
             output_path=values["output_path"],
+            pixel_value_mode=RegisteredPixelValues(values["pixel_value_mode"]),
             slice_selection=SliceSelection(values["slice_selection"]),
             file_format=RegisteredAnnotationFileFormat(values["file_format"]),
         )

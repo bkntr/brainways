@@ -13,6 +13,7 @@ from brainways.project.brainways_project import BrainwaysProject
 from brainways.project.info_classes import (
     ProjectSettings,
     RegisteredAnnotationFileFormat,
+    RegisteredPixelValues,
     SliceInfo,
     SubjectInfo,
 )
@@ -271,7 +272,7 @@ def test_network_analysis(
         pytest.param(
             RegisteredAnnotationFileFormat.NPZ,
             "npz",
-            lambda x: np.load(x)["annotation"],
+            lambda x: np.load(x)["values"],
             id="npz",
         ),
         pytest.param(
@@ -283,51 +284,82 @@ def test_network_analysis(
         pytest.param(
             RegisteredAnnotationFileFormat.MAT,
             "mat",
-            lambda x: scipy.io.loadmat(x)["annotation"],
+            lambda x: scipy.io.loadmat(x)["values"],
             id="mat",
         ),
+    ],
+)
+@pytest.mark.parametrize(
+    "pixel_value_mode",
+    [
+        pytest.param(RegisteredPixelValues.STRUCTURE_IDS, id="struct_ids"),
+        pytest.param(RegisteredPixelValues.PIXEL_COORDINATES, id="pixel_coords"),
+        pytest.param(RegisteredPixelValues.MICRON_COORDINATES, id="micron_coords"),
     ],
 )
 @patch("brainways.project.brainways_project.open_directory")
 def test_export_registration_masks_async(
     open_directory_mock,
     brainways_project: BrainwaysProject,
+    pixel_value_mode: RegisteredPixelValues,
     file_format: RegisteredAnnotationFileFormat,
     extension: str,
     loader: Callable[[Path], np.ndarray],
     tmp_path,
 ):
     brainways_project.pipeline = Mock()
-    brainways_project.pipeline.get_registered_annotation_on_image = Mock(
-        return_value=np.array([[1, 2], [3, 4]])
+    if pixel_value_mode == RegisteredPixelValues.STRUCTURE_IDS:
+        values = np.array([[1, 2], [3, 4]])
+    else:
+        values = np.array([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]])
+    brainways_project.pipeline.get_registered_values_on_image = Mock(
+        return_value=values
     )
     slice_infos = brainways_project.subjects[0].documents
     assert len(slice_infos) > 0
-    output_path = tmp_path / "output"
+    output_dir = tmp_path / "output"
+
     generator = brainways_project.export_registration_masks_async(
-        output_path, slice_infos, file_format
+        output_dir=output_dir,
+        pixel_value_mode=pixel_value_mode,
+        slice_infos=slice_infos,
+        file_format=file_format,
     )
 
-    for _ in generator:
-        pass
+    if (
+        file_format == RegisteredAnnotationFileFormat.CSV
+        and pixel_value_mode != RegisteredPixelValues.STRUCTURE_IDS
+    ):
+        with pytest.raises(ValueError):
+            for _ in generator:
+                pass
+        return
+    else:
+        for _ in generator:
+            pass
 
-    assert (
-        brainways_project.pipeline.get_registered_annotation_on_image.call_count
-        == len(slice_infos)
+    assert brainways_project.pipeline.get_registered_values_on_image.call_count == len(
+        slice_infos
     )
     for slice_info in slice_infos:
-        brainways_project.pipeline.get_registered_annotation_on_image.assert_any_call(
-            slice_info
+        brainways_project.pipeline.get_registered_values_on_image.assert_any_call(
+            slice_info, pixel_value_mode=pixel_value_mode
         )
 
     for slice_info in slice_infos:
-        output_file = output_path / f"{Path(str(slice_info.path)).name}.{extension}"
+        output_file = (
+            output_dir
+            / f"{Path(str(slice_info.path)).name}_{pixel_value_mode.name.lower()}.{extension}"
+        )
         assert output_file.exists()
         data = loader(output_file)
-        assert np.array_equal(data, np.array([[1, 2], [3, 4]]))
+        assert np.array_equal(data, values)
 
 
-def test_export_slice_locations(brainways_project: BrainwaysProject, tmp_path):
+@patch("brainways.project.brainways_project.open_directory")
+def test_export_slice_locations(
+    open_directory_mock, brainways_project: BrainwaysProject, tmp_path
+):
     # Create mock slice_infos and subject_infos
     slice_infos = [
         SliceInfo(

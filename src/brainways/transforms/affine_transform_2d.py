@@ -84,12 +84,18 @@ class BrainwaysAffineTransform2D(BrainwaysTransform):
         mode: str = "bilinear",
     ) -> np.ndarray:
         output_size = output_size or self.input_size
-        return KG.warp_affine(
+        warped = KG.warp_affine(
             to_tensor(image)[None],
             self.mat[:, :2],
             output_size,
             mode=mode,
-        )[0, 0].numpy()
+        )
+
+        channels = warped.shape[1]
+        if channels == 1:
+            return warped[0, 0].numpy()
+        else:
+            return warped[0].permute(1, 2, 0).numpy()
 
     def transform_points(self, points: np.ndarray) -> np.ndarray:
         """

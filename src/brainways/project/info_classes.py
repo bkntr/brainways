@@ -70,3 +70,9 @@ class RegisteredAnnotationFileFormat(Enum):
     NPZ = "npz"
     MAT = "mat"
     CSV = "csv"
+
+
+class RegisteredPixelValues(Enum):
+    STRUCTURE_IDS = "Structure IDs"
+    MICRON_COORDINATES = "Micron Coordinates"
+    PIXEL_COORDINATES = "Pixel Coordinates"

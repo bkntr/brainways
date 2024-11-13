@@ -17,6 +17,7 @@ from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.project.info_classes import (
     ExcelMode,
     RegisteredAnnotationFileFormat,
+    RegisteredPixelValues,
     SliceInfo,
     SliceSelection,
 )
@@ -309,6 +310,7 @@ class AnalysisController(Controller):
     def export_registration_masks_async(
         self,
         output_path: Path,
+        pixel_value_mode: RegisteredPixelValues,
         slice_selection: SliceSelection,
         file_format: RegisteredAnnotationFileFormat,
     ):
@@ -320,6 +322,7 @@ class AnalysisController(Controller):
             progress_label="Exporting Registered Annotation Masks...",
             progress_max_value=len(slice_infos),
             output_dir=output_path,
+            pixel_value_mode=pixel_value_mode,
             slice_infos=slice_infos,
             file_format=file_format,
         )

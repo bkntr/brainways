@@ -24,6 +24,16 @@ def test_affine_transform_image():
     np.testing.assert_allclose(image_transformed, expected)
 
 
+def test_affine_transform_multichannel_image():
+    params = AffineTransform2DParams(angle=0, tx=1, ty=0, sx=1, sy=1)
+    transform = BrainwaysAffineTransform2D(params=params, input_size=(3, 3))
+    image = np.random.rand(3, 3, 5).astype(np.float32)
+    image_transformed = transform.transform_image(image)
+    expected = np.zeros_like(image)
+    expected[:, 1:] = image[:, :-1]
+    np.testing.assert_allclose(image_transformed, expected)
+
+
 def test_affine_transform_scale_center():
     params = AffineTransform2DParams(angle=0, tx=0, ty=0, sx=0.5, sy=1.0, cx=1, cy=2)
     transform = BrainwaysAffineTransform2D(params=params, input_size=(5, 5))

@@ -14,7 +14,7 @@ from qtpy.QtWidgets import QProgressDialog, QVBoxLayout, QWidget
 from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.project.brainways_project import BrainwaysProject
 from brainways.project.brainways_subject import BrainwaysSubject
-from brainways.project.info_classes import SliceInfo
+from brainways.project.info_classes import SliceInfo, SliceSelection
 from brainways.ui.controllers.affine_2d_controller import Affine2DController
 from brainways.ui.controllers.analysis_controller import AnalysisController
 from brainways.ui.controllers.annotation_viewer_controller import (
@@ -422,13 +422,6 @@ class BrainwaysUI(QWidget):
             progress_max_value=self.project.n_valid_images,
         )
 
-    def run_cell_detector_async(self) -> FunctionWorker:
-        return self.do_work_async(
-            self.project.run_cell_detector_iter,
-            progress_label="Running Cell Detector...",
-            progress_max_value=self.project.n_valid_images,
-        )
-
     def view_brain_structure_async(
         self,
         structure_names: List[str],
@@ -602,6 +595,22 @@ class BrainwaysUI(QWidget):
 
     def _on_work_error(self, *args, **kwargs):
         self.widget.hide_progress_bar()
+    
+    def get_slice_selection(self, slice_selection: SliceSelection) -> List[SliceInfo]:
+        assert self.project is not None
+
+        if slice_selection == SliceSelection.CURRENT_SLICE:
+            return [self.current_document]
+        elif slice_selection == SliceSelection.CURRENT_SUBJECT:
+            return [
+                slice_info for _, slice_info in self.current_subject.valid_documents
+            ]
+        else:
+            return [
+                slice_info
+                for subject in self.project.subjects
+                for _, slice_info in subject.valid_documents
+            ]
 
     @property
     def _current_document_index(self):

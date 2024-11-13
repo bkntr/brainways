@@ -12,7 +12,7 @@ from pytest import fixture
 from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.project.brainways_project import BrainwaysProject
 from brainways.project.brainways_subject import BrainwaysSubject
-from brainways.project.info_classes import SliceInfo
+from brainways.project.info_classes import SliceInfo, SliceSelection
 from brainways.ui.brainways_ui import BrainwaysUI
 from brainways.ui.controllers.base import Controller
 from brainways.ui.utils.test_utils import randomly_modified_params
@@ -338,3 +338,37 @@ def test_all_params_missing_user_rejects(mock_show_warning_dialog, brainways_ui)
     brainways_ui.project = MagicMock(subjects=[subject])
     assert not brainways_ui.prompt_user_slices_have_missing_params()
     mock_show_warning_dialog.assert_called_once()
+
+
+def test_get_slice_selection_current_slice(opened_app: BrainwaysUI):
+    slice_selection = SliceSelection.CURRENT_SLICE
+    expected_slice_infos = [opened_app.current_document]
+
+    slice_infos = opened_app.get_slice_selection(slice_selection)
+
+    assert slice_infos == expected_slice_infos
+
+
+def test_get_slice_selection_current_subject(opened_app: BrainwaysUI):
+    slice_selection = SliceSelection.CURRENT_SUBJECT
+    expected_slice_infos = [
+        slice_info for _, slice_info in opened_app.current_subject.valid_documents
+    ]
+
+    slice_infos = opened_app.get_slice_selection(slice_selection)
+
+    assert slice_infos == expected_slice_infos
+
+
+def test_get_slice_selection_all_subjects(opened_app: BrainwaysUI):
+    assert opened_app.project is not None
+    slice_selection = SliceSelection.ALL_SUBJECTS
+    expected_slice_infos = [
+        slice_info
+        for subject in opened_app.project.subjects
+        for _, slice_info in subject.valid_documents
+    ]
+
+    slice_infos = opened_app.get_slice_selection(slice_selection)
+
+    assert slice_infos == expected_slice_infos

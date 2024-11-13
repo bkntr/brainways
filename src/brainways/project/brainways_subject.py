@@ -198,47 +198,38 @@ class BrainwaysSubject:
         ):
             pass
 
-    def run_cell_detector_iter(
-        self, cell_detector: CellDetector, default_params: CellDetectorParams
-    ) -> Iterator:
-        for i, document in self.valid_documents:
-            try:
-                cell_detections_path = self.cell_detections_path(document.path)
-                cell_detections_path.parent.mkdir(parents=True, exist_ok=True)
-                if cell_detections_path.exists():
-                    yield
-                    continue
-
-                reader = document.image_reader()
-                image = reader.get_image_dask_data(
-                    "YX", C=self.project.settings.channel
-                ).compute()
-                if document.params.cell is not None:
-                    cell_detector_params = document.params.cell
-                else:
-                    cell_detector_params = default_params
-                labels = cell_detector.run_cell_detector(
-                    image,
-                    params=cell_detector_params,
-                    physical_pixel_sizes=document.physical_pixel_sizes,
-                )
-                cells = cell_detector.cells(
-                    labels=labels,
-                    image=image,
-                    physical_pixel_sizes=document.physical_pixel_sizes,
-                )
-                cells.to_csv(cell_detections_path, index=False)
-            except Exception:
-                logging.exception(f"Cell detector on {document.path}")
-            yield
-
     def run_cell_detector(
-        self, cell_detector: CellDetector, default_params: CellDetectorParams
+        self,
+        slice_info: SliceInfo,
+        cell_detector: CellDetector,
+        default_params: CellDetectorParams,
     ) -> None:
-        for _ in self.run_cell_detector_iter(
-            cell_detector=cell_detector, default_params=default_params
-        ):
-            pass
+        cell_detections_path = self.cell_detections_path(slice_info.path)
+        cell_detections_path.parent.mkdir(parents=True, exist_ok=True)
+        reader = slice_info.image_reader()
+        image = reader.get_image_dask_data(
+            "YX", C=self.project.settings.channel
+        ).compute()
+        if slice_info.params.cell is not None:
+            cell_detector_params = slice_info.params.cell
+        else:
+            cell_detector_params = default_params
+        labels = cell_detector.run_cell_detector(
+            image,
+            params=cell_detector_params,
+            physical_pixel_sizes=slice_info.physical_pixel_sizes,
+        )
+        cells = cell_detector.cells(
+            labels=labels,
+            image=image,
+            physical_pixel_sizes=slice_info.physical_pixel_sizes,
+        )
+        cells.to_csv(cell_detections_path, index=False)
+
+    def clear_cell_detection(self, slice_info: SliceInfo):
+        cell_detections_path = self.cell_detections_path(slice_info.path)
+        if cell_detections_path.exists():
+            cell_detections_path.unlink()
 
     def get_valid_cells(
         self, document: SliceInfo, annotation: Optional[np.ndarray] = None

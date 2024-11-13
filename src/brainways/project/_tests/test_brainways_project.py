@@ -431,12 +431,9 @@ def test_export_slice_locations(
     pd.testing.assert_frame_equal(slice_locations_df, expected_df)
 
 
-def test_export_slice_locations_unknown_slice(
+def test_get_subjects_unknown_slice(
     brainways_project: BrainwaysProject, tmp_path
 ):
-    """Test that exporting unknown slice raises ValueError"""
-    output_path = tmp_path / "slice_locations.csv"
-
     # Create invalid slice info
     invalid_slice = SliceInfo(
         path=ImagePath("nonexistent.jpg"),
@@ -448,7 +445,7 @@ def test_export_slice_locations_unknown_slice(
     with pytest.raises(
         ValueError, match="Slice nonexistent.jpg not found in any subject"
     ):
-        brainways_project.export_slice_locations(output_path, [invalid_slice])
+        brainways_project._get_subjects([invalid_slice])
 
 
 def test_export_slice_locations_missing_params(
@@ -481,3 +478,51 @@ def test_export_slice_locations_empty_list(
 
     with pytest.raises(ValueError, match="No slices to export"):
         brainways_project.export_slice_locations(output_path, [])
+
+
+def test_run_cell_detector_iter_without_resume(brainways_project: BrainwaysProject):
+    slice_infos = [Mock(spec=SliceInfo), Mock(spec=SliceInfo)]
+    subjects = [Mock(), Mock()]
+
+    brainways_project.get_cell_detector = Mock()
+    brainways_project._get_subjects = Mock(return_value=subjects)
+
+    generator = brainways_project.run_cell_detector_iter(slice_infos, resume=False)
+
+    for _ in generator:
+        pass
+
+    brainways_project.get_cell_detector.assert_called_once()
+    brainways_project._get_subjects.assert_called_once_with(slice_infos)
+
+    for subject, slice_info in zip(subjects, slice_infos):
+        subject.clear_cell_detection.assert_called_once_with(slice_info)
+        subject.run_cell_detector.assert_called_once_with(
+            slice_info=slice_info,
+            cell_detector=brainways_project.get_cell_detector(),
+            default_params=brainways_project.settings.default_cell_detector_params,
+        )
+
+
+def test_run_cell_detector_iter_with_resume(brainways_project: BrainwaysProject):
+    slice_infos = [Mock(spec=SliceInfo), Mock(spec=SliceInfo)]
+    subjects = [Mock(), Mock()]
+
+    brainways_project.get_cell_detector = Mock()
+    brainways_project._get_subjects = Mock(return_value=subjects)
+
+    generator = brainways_project.run_cell_detector_iter(slice_infos, resume=True)
+
+    for _ in generator:
+        pass
+
+    brainways_project.get_cell_detector.assert_called_once()
+    brainways_project._get_subjects.assert_called_once_with(slice_infos)
+
+    for subject, slice_info in zip(subjects, slice_infos):
+        subject.clear_cell_detection.assert_not_called()
+        subject.run_cell_detector.assert_called_once_with(
+            slice_info=slice_info,
+            cell_detector=brainways_project.get_cell_detector(),
+            default_params=brainways_project.settings.default_cell_detector_params,
+        )

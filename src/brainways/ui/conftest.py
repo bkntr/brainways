@@ -65,7 +65,7 @@ def app(
     test_data: Tuple[np.ndarray, AtlasSlice],
     mock_atlas: BrainwaysAtlas,
     monkeypatch: MonkeyPatch,
-) -> BrainwaysUI:
+):
     monkeypatch.setattr(BrainwaysAtlas, "load", Mock(return_value=mock_atlas))
     monkeypatch.setattr(
         AtlasRegistration,

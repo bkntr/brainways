@@ -38,7 +38,7 @@ class SliceInfo:
     lowres_image_size: ImageSizeHW
     params: BrainwaysParams = BrainwaysParams()
     ignore: bool = False
-    physical_pixel_sizes: Optional[Tuple[float, float]] = None
+    physical_pixel_sizes: Tuple[float, float] = (float("nan"), float("nan"))
 
     def image_reader(self) -> QupathReader:
         reader = QupathReader(self.path.filename)

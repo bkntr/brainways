@@ -169,13 +169,15 @@ class WorkflowView(QWidget):
         if user_values is None:
             return
 
+        custom_model_dir = user_values["cell_detector_custom_model_dir"]
+        if custom_model_dir == Path():
+            custom_model_dir = ""
+
         settings = ProjectSettings(
             atlas=user_values["atlas"],
             channel=0,
             condition_names=user_values["condition_names"].split(";"),
-            cell_detector_custom_model_dir=str(
-                user_values["cell_detector_custom_model_dir"]
-            ),
+            cell_detector_custom_model_dir=str(custom_model_dir),
         )
         project = BrainwaysProject.create(path=path, settings=settings, lazy_init=True)
         self.controller.open_project_async(project.path)

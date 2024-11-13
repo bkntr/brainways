@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 import scipy
 
+from brainways.pipeline.brainways_params import AtlasRegistrationParams
 from brainways.project.brainways_project import BrainwaysProject
 from brainways.project.info_classes import (
     ProjectSettings,
@@ -15,6 +16,7 @@ from brainways.project.info_classes import (
     SliceInfo,
     SubjectInfo,
 )
+from brainways.utils.io_utils.image_path import ImagePath
 
 
 def test_brainways_project_create_excel(brainways_project: BrainwaysProject):
@@ -323,3 +325,127 @@ def test_export_registration_masks_async(
         assert output_file.exists()
         data = loader(output_file)
         assert np.array_equal(data, np.array([[1, 2], [3, 4]]))
+
+
+def test_export_slice_locations(brainways_project: BrainwaysProject, tmp_path):
+    # Create mock slice_infos and subject_infos
+    slice_infos = [
+        SliceInfo(
+            path=ImagePath("slice1"),
+            params=Mock(
+                atlas=AtlasRegistrationParams(
+                    ap=1.0, rot_frontal=2.0, rot_horizontal=3.0, rot_sagittal=4.0
+                )
+            ),
+            image_size=(0, 0),
+            lowres_image_size=(0, 0),
+        ),
+        SliceInfo(
+            path=ImagePath("slice2"),
+            params=Mock(
+                atlas=AtlasRegistrationParams(
+                    ap=5.0, rot_frontal=6.0, rot_horizontal=7.0, rot_sagittal=8.0
+                )
+            ),
+            image_size=(0, 0),
+            lowres_image_size=(0, 0),
+        ),
+    ]
+    subject_infos = [
+        SubjectInfo(name="subject1", conditions={"condition": "a"}),
+        SubjectInfo(name="subject2", conditions={"condition": "b"}),
+    ]
+
+    # Mock the subjects in the brainways_project
+    brainways_project.subjects = [
+        Mock(documents=[slice_infos[0]], subject_info=subject_infos[0]),
+        Mock(documents=[slice_infos[1]], subject_info=subject_infos[1]),
+    ]
+
+    # Define the output path
+    output_path = tmp_path / "slice_locations.csv"
+
+    # Call the method
+    brainways_project.export_slice_locations(output_path, slice_infos)
+
+    # Read the output CSV
+    slice_locations_df = pd.read_csv(output_path)
+
+    # Define the expected DataFrame
+    expected_df = pd.DataFrame(
+        [
+            {
+                "subject": "subject1",
+                "condition": "a",
+                "slice": "slice1",
+                "AP (μm)": 10.0,
+                "Frontal rotation": 2.0,
+                "Horizontal rotation": 3.0,
+                "Sagittal rotation": 4.0,
+            },
+            {
+                "subject": "subject2",
+                "condition": "b",
+                "slice": "slice2",
+                "AP (μm)": 50.0,
+                "Frontal rotation": 6.0,
+                "Horizontal rotation": 7.0,
+                "Sagittal rotation": 8.0,
+            },
+        ]
+    )
+
+    # Assert the DataFrame is as expected
+    pd.testing.assert_frame_equal(slice_locations_df, expected_df)
+
+
+def test_export_slice_locations_unknown_slice(
+    brainways_project: BrainwaysProject, tmp_path
+):
+    """Test that exporting unknown slice raises ValueError"""
+    output_path = tmp_path / "slice_locations.csv"
+
+    # Create invalid slice info
+    invalid_slice = SliceInfo(
+        path=ImagePath("nonexistent.jpg"),
+        params=Mock(atlas=AtlasRegistrationParams(ap=100)),
+        image_size=(0, 0),
+        lowres_image_size=(0, 0),
+    )
+
+    with pytest.raises(
+        ValueError, match="Slice nonexistent.jpg not found in any subject"
+    ):
+        brainways_project.export_slice_locations(output_path, [invalid_slice])
+
+
+def test_export_slice_locations_missing_params(
+    brainways_project: BrainwaysProject, tmp_path
+):
+    """Test handling of slices with missing atlas parameters"""
+    output_path = tmp_path / "slice_locations.csv"
+    slice_info = brainways_project.subjects[0].documents[0]
+
+    # Create slice with missing atlas params
+    slice_with_missing = replace(
+        slice_info, params=replace(slice_info.params, atlas=None)
+    )
+    brainways_project.subjects[0].documents[0] = slice_with_missing
+
+    brainways_project.export_slice_locations(output_path, [slice_with_missing])
+
+    df = pd.read_csv(output_path)
+    assert pd.isna(df["AP (μm)"].iloc[0])
+    assert pd.isna(df["Frontal rotation"].iloc[0])
+    assert pd.isna(df["Horizontal rotation"].iloc[0])
+    assert pd.isna(df["Sagittal rotation"].iloc[0])
+
+
+def test_export_slice_locations_empty_list(
+    brainways_project: BrainwaysProject, tmp_path
+):
+    """Test that exporting empty list of slices raises ValueError"""
+    output_path = tmp_path / "slice_locations.csv"
+
+    with pytest.raises(ValueError, match="No slices to export"):
+        brainways_project.export_slice_locations(output_path, [])

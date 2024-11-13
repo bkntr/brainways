@@ -12,6 +12,7 @@ import scipy.io
 from natsort import natsorted, ns
 from pandas import ExcelWriter
 
+from brainways.pipeline.brainways_params import AtlasRegistrationParams
 from brainways.pipeline.brainways_pipeline import BrainwaysPipeline
 from brainways.pipeline.cell_detector import CellDetector
 from brainways.project._utils import update_project_from_previous_versions
@@ -504,6 +505,49 @@ class BrainwaysProject:
             yield
 
         open_directory(output_dir)
+
+    def export_slice_locations(
+        self, output_path: Path, slice_infos: List[SliceInfo]
+    ) -> None:
+        assert self.atlas is not None
+
+        if len(slice_infos) == 0:
+            raise ValueError("No slices to export")
+
+        subject_infos = []
+        for slice_info in slice_infos:
+            for subject in self.subjects:
+                if slice_info in subject.documents:
+                    subject_infos.append(subject.subject_info)
+                    break
+            else:
+                raise ValueError(f"Slice {slice_info.path} not found in any subject")
+
+        missing_params = AtlasRegistrationParams(
+            ap=float("nan"),
+            rot_frontal=float("nan"),
+            rot_horizontal=float("nan"),
+            rot_sagittal=float("nan"),
+        )
+
+        slice_locations = []
+        for subject_info, slice_info in zip(subject_infos, slice_infos):
+            atlas_reg_params = slice_info.params.atlas or missing_params
+            slice_locations.append(
+                {
+                    "subject": subject_info.name,
+                    **subject_info.conditions,
+                    "slice": str(slice_info.path),
+                    "AP (μm)": atlas_reg_params.ap
+                    * self.atlas.brainglobe_atlas.resolution[0],
+                    "Frontal rotation": atlas_reg_params.rot_frontal,
+                    "Horizontal rotation": atlas_reg_params.rot_horizontal,
+                    "Sagittal rotation": atlas_reg_params.rot_sagittal,
+                }
+            )
+
+        slice_locations_df = pd.DataFrame(slice_locations)
+        slice_locations_df.to_csv(output_path, index=False)
 
     @property
     def n_valid_images(self):

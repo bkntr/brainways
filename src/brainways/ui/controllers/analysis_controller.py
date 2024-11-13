@@ -17,6 +17,7 @@ from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.project.info_classes import (
     ExcelMode,
     RegisteredAnnotationFileFormat,
+    SliceInfo,
     SliceSelection,
 )
 from brainways.ui.controllers.base import Controller
@@ -313,19 +314,7 @@ class AnalysisController(Controller):
     ):
         assert self.ui.project is not None
 
-        if slice_selection == SliceSelection.CURRENT_SLICE:
-            slice_infos = [self.ui.current_document]
-        elif slice_selection == SliceSelection.CURRENT_SUBJECT:
-            slice_infos = [
-                slice_info for _, slice_info in self.ui.current_subject.valid_documents
-            ]
-        else:
-            slice_infos = [
-                slice_info
-                for subject in self.ui.project.subjects
-                for _, slice_info in subject.valid_documents
-            ]
-
+        slice_infos = self._get_slice_infos(slice_selection)
         self.ui.do_work_async(
             self.ui.project.export_registration_masks_async,
             progress_label="Exporting Registered Annotation Masks...",
@@ -334,6 +323,30 @@ class AnalysisController(Controller):
             slice_infos=slice_infos,
             file_format=file_format,
         )
+
+    def export_slice_locations(
+        self, output_path: Path, slice_selection: SliceSelection
+    ):
+        assert self.ui.project is not None
+
+        slice_infos = self._get_slice_infos(slice_selection)
+        self.ui.project.export_slice_locations(output_path, slice_infos)
+
+    def _get_slice_infos(self, slice_selection: SliceSelection) -> List[SliceInfo]:
+        assert self.ui.project is not None
+
+        if slice_selection == SliceSelection.CURRENT_SLICE:
+            return [self.ui.current_document]
+        elif slice_selection == SliceSelection.CURRENT_SUBJECT:
+            return [
+                slice_info for _, slice_info in self.ui.current_subject.valid_documents
+            ]
+        else:
+            return [
+                slice_info
+                for subject in self.ui.project.subjects
+                for _, slice_info in subject.valid_documents
+            ]
 
     @property
     def current_condition(self) -> str | None:

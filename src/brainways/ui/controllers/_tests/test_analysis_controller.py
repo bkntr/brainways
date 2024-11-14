@@ -141,9 +141,7 @@ def test_export_registration_masks_async(
 
     with (
         patch.object(app.project, "export_registration_masks_async") as mock_export,
-        patch.object(
-            app.project, "get_slice_selection", return_value="mock_slice_infos"
-        ),
+        patch.object(app, "get_slice_selection", return_value="mock_slice_infos"),
     ):
         controller.export_registration_masks_async(
             output_dir, pixel_value_mode, slice_selection, file_format
@@ -164,9 +162,7 @@ def test_export_slice_locations(
 
     with (
         patch.object(app.project, "export_slice_locations") as mock_export,
-        patch.object(
-            app.project, "get_slice_selection", return_value="mock_slice_infos"
-        ),
+        patch.object(app, "get_slice_selection", return_value="mock_slice_infos"),
     ):
         controller.export_slice_locations(output_path, slice_selection)
         mock_export.assert_called_once()

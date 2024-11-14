@@ -99,14 +99,14 @@ class CellDetectorWidget(QWidget):
                 widget_type="CheckBox",
                 options=dict(tooltip="Resume the cell detection if it was interrupted"),
                 annotation=bool,
-                label="Resume",
+                label="Resume Previous Run",
             ),
         )
         if values is None:
             return
 
         slice_selection = SliceSelection(values["slice_selection"])
-        if values["resume"] == False:
+        if not values["resume"]:
             if not show_warning_dialog(
                 f'Unchecking "Resume" will delete all previous cell detections in {slice_selection.value.lower()}.\n\nDo you want to continue?'
             ):

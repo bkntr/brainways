@@ -204,13 +204,14 @@ class WorkflowView(QWidget):
         )
         if user_values is None:
             return
+        custom_model_dir = user_values["cell_detector_custom_model_dir"]
+        if custom_model_dir == Path():
+            custom_model_dir = ""
 
         self.controller.project.settings = replace(
             settings,
             condition_names=user_values["condition_names"].split(";"),
-            cell_detector_custom_model_dir=str(
-                user_values["cell_detector_custom_model_dir"]
-            ),
+            cell_detector_custom_model_dir=str(custom_model_dir),
         )
         self.controller.project.save()
 

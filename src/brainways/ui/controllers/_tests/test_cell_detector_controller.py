@@ -1,7 +1,7 @@
-from brainways.project.info_classes import BrainwaysParams
+from unittest.mock import MagicMock
+
+from brainways.project.info_classes import BrainwaysParams, SliceSelection
 from brainways.ui.controllers.cell_detector_controller import CellDetectorController
-from unittest.mock import MagicMock, patch
-from brainways.project.info_classes import SliceSelection
 
 
 def test_enabled():
@@ -24,6 +24,6 @@ def test_run_cell_detector_async():
         ui_mock.project.run_cell_detector_iter,
         slice_infos=slice_infos,
         resume=resume,
-        progress_label=f"Running Cell Detector on All Subjects...",
+        progress_label="Running Cell Detector on All Subjects...",
         progress_max_value=len(slice_infos),
     )

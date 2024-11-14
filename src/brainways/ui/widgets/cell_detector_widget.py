@@ -53,7 +53,7 @@ class CellDetectorWidget(QWidget):
             self.controller.run_cell_detector_preview_async
         )
 
-        run_cell_detector_button = QPushButton("Run cell detector")
+        run_cell_detector_button = QPushButton("Run cell detector on...")
         run_cell_detector_button.clicked.connect(self.run_cell_detector)
 
         self.setLayout(QVBoxLayout())
@@ -108,7 +108,7 @@ class CellDetectorWidget(QWidget):
         slice_selection = SliceSelection(values["slice_selection"])
         if not values["resume"]:
             if not show_warning_dialog(
-                f'Unchecking "Resume" will delete all previous cell detections in {slice_selection.value.lower()}.\n\nDo you want to continue?'
+                f'Unchecking "Resume Previous Run" will delete all previous cell detections in {slice_selection.value.lower()}.\n\nDo you want to continue?'
             ):
                 return
 

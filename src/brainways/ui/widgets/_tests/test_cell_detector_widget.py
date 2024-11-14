@@ -1,13 +1,14 @@
-from pathlib import Path
 from unittest.mock import Mock, patch
+
 import pytest
+
 from brainways.project.info_classes import SliceSelection
 from brainways.ui.controllers.cell_detector_controller import CellDetectorController
 from brainways.ui.widgets.cell_detector_widget import CellDetectorWidget
 
 
 @pytest.fixture
-def cell_detector_widget() -> CellDetectorWidget:
+def cell_detector_widget():
     controller = CellDetectorController(Mock())
     with patch.object(controller, "run_cell_detector_async"):
         yield CellDetectorWidget(controller)

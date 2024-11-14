@@ -1,17 +1,24 @@
-from typing import Tuple
+from typing import TYPE_CHECKING, Tuple
 
 import magicgui
+from magicgui.widgets import request_values
 from qtpy.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
+
+from brainways.project.info_classes import SliceSelection
+from brainways.ui.widgets.warning_dialog import show_warning_dialog
+
+if TYPE_CHECKING:
+    from brainways.ui.controllers.cell_detector_controller import CellDetectorController
 
 
 class CellDetectorWidget(QWidget):
-    def __init__(self, controller):
+    def __init__(self, controller: "CellDetectorController"):
         super().__init__()
         self.controller = controller
-        self.stardist_label = QLabel(
+        stardist_label = QLabel(
             text='by <a href="https://github.com/stardist/stardist">StarDist</a>'
         )
-        self.stardist_label.setOpenExternalLinks(True)
+        stardist_label.setOpenExternalLinks(True)
 
         self.cell_detector_params_widget = magicgui.magicgui(
             self.controller.on_params_changed,
@@ -41,15 +48,21 @@ class CellDetectorWidget(QWidget):
         )
         self.cell_detector_params_widget.native.layout().setContentsMargins(0, 0, 0, 0)
 
-        self.run_preview_button = QPushButton("Run on preview")
-        self.run_preview_button.clicked.connect(
+        run_preview_button = QPushButton("Preview cell detector")
+        run_preview_button.clicked.connect(
             self.controller.run_cell_detector_preview_async
         )
 
+        run_cell_detector_button = QPushButton("Run cell detector on...")
+        run_cell_detector_button.clicked.connect(self.run_cell_detector)
+
         self.setLayout(QVBoxLayout())
-        self.layout().addWidget(self.stardist_label)
-        self.layout().addWidget(self.cell_detector_params_widget.native)
-        self.layout().addWidget(self.run_preview_button)
+        layout = self.layout()
+        assert layout is not None
+        layout.addWidget(stardist_label)
+        layout.addWidget(self.cell_detector_params_widget.native)
+        layout.addWidget(run_preview_button)
+        layout.addWidget(run_cell_detector_button)
 
     def set_cell_detector_params(
         self,
@@ -67,3 +80,39 @@ class CellDetectorWidget(QWidget):
         widget.max_cell_size_value.value = cell_size_range[1]
         widget.unique.value = unique
         widget._auto_call = True
+
+    def run_cell_detector(self):
+        values = request_values(
+            title="Run Cell Detector",
+            slice_selection=dict(
+                value=SliceSelection.CURRENT_SLICE.value,
+                widget_type="ComboBox",
+                options=dict(
+                    choices=[e.value for e in SliceSelection],
+                    tooltip="Which slices to run the cell detector on",
+                ),
+                annotation=str,
+                label="Slice Selection",
+            ),
+            resume=dict(
+                value=True,
+                widget_type="CheckBox",
+                options=dict(tooltip="Resume the cell detection if it was interrupted"),
+                annotation=bool,
+                label="Resume Previous Run",
+            ),
+        )
+        if values is None:
+            return
+
+        slice_selection = SliceSelection(values["slice_selection"])
+        if not values["resume"]:
+            if not show_warning_dialog(
+                f'Unchecking "Resume Previous Run" will delete all previous cell detections in {slice_selection.value.lower()}.\n\nDo you want to continue?'
+            ):
+                return
+
+        self.controller.run_cell_detector_async(
+            slice_selection=slice_selection,
+            resume=values["resume"],
+        )

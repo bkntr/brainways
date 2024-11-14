@@ -242,16 +242,22 @@ class BrainwaysProject:
                 cell_detection_importer=importer,
             )
 
-    def run_cell_detector_iter(self) -> Iterator:
+    def run_cell_detector_iter(
+        self, slice_infos: List[SliceInfo], resume: bool
+    ) -> Iterator:
         cell_detector = self.get_cell_detector()
-        for subject in self.subjects:
-            yield from subject.run_cell_detector_iter(
-                cell_detector, default_params=self.settings.default_cell_detector_params
-            )
+        subjects = self._get_subjects(slice_infos)
+        if not resume:
+            for subject, slice_info in zip(subjects, slice_infos):
+                subject.clear_cell_detection(slice_info)
 
-    def run_cell_detector(self) -> None:
-        for _ in self.run_cell_detector_iter():
-            pass
+        for subject, slice_info in zip(subjects, slice_infos):
+            subject.run_cell_detector(
+                slice_info=slice_info,
+                cell_detector=cell_detector,
+                default_params=self.settings.default_cell_detector_params,
+            )
+            yield
 
     def get_cell_detector(self) -> CellDetector:
         model_path = self.settings.cell_detector_custom_model_dir
@@ -527,14 +533,9 @@ class BrainwaysProject:
         if len(slice_infos) == 0:
             raise ValueError("No slices to export")
 
-        subject_infos = []
-        for slice_info in slice_infos:
-            for subject in self.subjects:
-                if slice_info in subject.documents:
-                    subject_infos.append(subject.subject_info)
-                    break
-            else:
-                raise ValueError(f"Slice {slice_info.path} not found in any subject")
+        subject_infos = [
+            subject.subject_info for subject in self._get_subjects(slice_infos)
+        ]
 
         missing_params = AtlasRegistrationParams(
             ap=float("nan"),
@@ -563,6 +564,18 @@ class BrainwaysProject:
         slice_locations_df.to_csv(output_path, index=False)
 
         open_directory(output_path.parent)
+
+    def _get_subjects(self, slice_infos: List[SliceInfo]) -> List[BrainwaysSubject]:
+        # TODO: this is inefficient, we should have a better way to do this
+        subjects = []
+        for slice_info in slice_infos:
+            for subject in self.subjects:
+                if slice_info in subject.documents:
+                    subjects.append(subject)
+                    break
+            else:
+                raise ValueError(f"Slice {slice_info.path} not found in any subject")
+        return subjects
 
     @property
     def n_valid_images(self):

@@ -182,21 +182,6 @@ def test_move_images_root_with_base(brainways_subject: BrainwaysSubject, tmpdir)
     assert brainways_subject.documents[0].path.filename == str(new_image_path)
 
 
-def test_run_cell_detector(
-    brainways_subject: BrainwaysSubject,
-    test_data: Tuple[np.ndarray, AtlasSlice],
-    mock_image_path: ImagePath,
-):
-    cell_detector = create_autospec(CellDetector)
-    cell_detector.cells.return_value = pd.DataFrame({"test": ["test"]})
-    default_params = CellDetectorParams()
-    brainways_subject.run_cell_detector(
-        cell_detector=cell_detector, default_params=default_params
-    )
-    for i, document in brainways_subject.valid_documents:
-        assert brainways_subject.cell_detections_path(document.path).exists()
-
-
 def test_empty_cell_count_summary_no_valid_documents(
     brainways_subject: BrainwaysSubject,
 ):
@@ -458,3 +443,110 @@ def test_evenly_spaced_slices_on_ap_axis_raises_error_if_last_slice_missing_para
 
     with pytest.raises(ValueError):
         brainways_subject.evenly_space_slices_on_ap_axis()
+
+
+def test_run_cell_detector_with_provided_params(tmp_path, brainways_subject: BrainwaysSubject):
+    # Mock SliceInfo
+    slice_info = MagicMock(spec=SliceInfo)
+    slice_info.path = tmp_path / "slice_info"
+    slice_info.image_reader.return_value.get_image_dask_data.return_value.compute.return_value = np.random.rand(100, 100)
+    slice_info.params.cell = CellDetectorParams()
+
+    # Mock CellDetector
+    cell_detector = MagicMock(spec=CellDetector)
+    cell_detector.run_cell_detector.return_value = np.random.randint(0, 2, (100, 100))
+    cell_detector.cells.return_value.to_csv = MagicMock()
+
+    # Mock default params
+    default_params = CellDetectorParams()
+
+    # Run the method
+    brainways_subject.run_cell_detector(slice_info, cell_detector, default_params)
+
+    # Assertions
+    cell_detector.run_cell_detector.assert_called_once_with(
+        slice_info.image_reader().get_image_dask_data().compute(),
+        params=slice_info.params.cell,
+        physical_pixel_sizes=slice_info.physical_pixel_sizes,
+    )
+    cell_detector.cells.return_value.to_csv.assert_called_once_with(
+        brainways_subject.cell_detections_path(slice_info.path), index=False
+    )
+
+
+def test_run_cell_detector_with_default_params(tmp_path, brainways_subject: BrainwaysSubject):
+    # Mock SliceInfo
+    slice_info = MagicMock(spec=SliceInfo)
+    slice_info.path = tmp_path / "slice_info"
+    slice_info.image_reader.return_value.get_image_dask_data.return_value.compute.return_value = np.random.rand(100, 100)
+    slice_info.params.cell = None
+
+    # Mock CellDetector
+    cell_detector = MagicMock(spec=CellDetector)
+    cell_detector.run_cell_detector.return_value = np.random.randint(0, 2, (100, 100))
+    cell_detector.cells.return_value.to_csv = MagicMock()
+
+    # Mock default params
+    default_params = CellDetectorParams()
+
+    # Run the method
+    brainways_subject.run_cell_detector(slice_info, cell_detector, default_params)
+
+    # Assertions
+    cell_detector.run_cell_detector.assert_called_once_with(
+        slice_info.image_reader().get_image_dask_data().compute(),
+        params=default_params,
+        physical_pixel_sizes=slice_info.physical_pixel_sizes,
+    )
+    cell_detector.cells.return_value.to_csv.assert_called_once_with(
+        brainways_subject.cell_detections_path(slice_info.path), index=False
+    )
+    
+    
+def test_clear_cell_detection_file_exists(tmp_path):
+    # Create a BrainwaysSubject instance
+    brainways_subject = BrainwaysSubject(
+        subject_info=SubjectInfo(name="test_subject"),
+        slice_infos=[],
+        project=MagicMock(),
+    )
+
+    # Create a mock SliceInfo instance
+    slice_info = MagicMock(spec=SliceInfo)
+    slice_info.path = tmp_path / "slice_info"
+
+    # Mock the cell_detections_path method to return a specific path
+    cell_detections_path = tmp_path / "cell_detections.csv"
+    cell_detections_path.touch()  # Create the file
+
+    brainways_subject.cell_detections_path = MagicMock(return_value=cell_detections_path)
+
+    # Call the method
+    brainways_subject.clear_cell_detection(slice_info)
+
+    # Assert that the file was deleted
+    assert not cell_detections_path.exists()
+
+
+def test_clear_cell_detection_file_does_not_exist(tmp_path):
+    # Create a BrainwaysSubject instance
+    brainways_subject = BrainwaysSubject(
+        subject_info=SubjectInfo(name="test_subject"),
+        slice_infos=[],
+        project=MagicMock(),
+    )
+
+    # Create a mock SliceInfo instance
+    slice_info = MagicMock(spec=SliceInfo)
+    slice_info.path = tmp_path / "slice_info"
+
+    # Mock the cell_detections_path method to return a specific path
+    cell_detections_path = tmp_path / "cell_detections.csv"
+
+    brainways_subject.cell_detections_path = MagicMock(return_value=cell_detections_path)
+
+    # Call the method
+    brainways_subject.clear_cell_detection(slice_info)
+
+    # Assert that the file does not exist
+    assert not cell_detections_path.exists()

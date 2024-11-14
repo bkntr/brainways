@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QApplication
 
 from brainways.pipeline.brainways_params import BrainwaysParams, CellDetectorParams
 from brainways.pipeline.cell_detector import CellDetector
+from brainways.project.info_classes import SliceSelection
 from brainways.ui.controllers.base import Controller
 from brainways.ui.utils.general_utils import update_layer_contrast_limits
 from brainways.ui.widgets.cell_detector_widget import CellDetectorWidget
@@ -270,6 +271,19 @@ class CellDetectorController(Controller):
             self._run_cell_detector_on_preview,
             return_callback=self._on_cell_detector_returned,
             progress_label="Running cell detector on preview...",
+        )
+
+    def run_cell_detector_async(self, slice_selection: SliceSelection, resume: bool):
+        assert self.ui.project is not None
+
+        slice_infos = self.ui.get_slice_selection(slice_selection)
+
+        return self.ui.do_work_async(
+            self.ui.project.run_cell_detector_iter,
+            slice_infos=slice_infos,
+            resume=resume,
+            progress_label=f"Running Cell Detector on {slice_selection.value}...",
+            progress_max_value=len(slice_infos),
         )
 
     @property

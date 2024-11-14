@@ -57,7 +57,6 @@ class WorkflowView(QWidget):
         self.project_actions_section = ProjectActionsSection(
             auto_contrast=self.controller.set_auto_contrast,
             import_cells=self.on_import_cells_clicked,
-            run_cell_detector=self.on_run_cell_detector_clicked,
             view_brain_structure=self.on_view_brain_structure_clicked,
         )
         self.subject_navigation = SubjectControls(
@@ -170,13 +169,15 @@ class WorkflowView(QWidget):
         if user_values is None:
             return
 
+        custom_model_dir = user_values["cell_detector_custom_model_dir"]
+        if custom_model_dir == Path():
+            custom_model_dir = ""
+
         settings = ProjectSettings(
             atlas=user_values["atlas"],
             channel=0,
             condition_names=user_values["condition_names"].split(";"),
-            cell_detector_custom_model_dir=str(
-                user_values["cell_detector_custom_model_dir"]
-            ),
+            cell_detector_custom_model_dir=str(custom_model_dir),
         )
         project = BrainwaysProject.create(path=path, settings=settings, lazy_init=True)
         self.controller.open_project_async(project.path)
@@ -203,13 +204,14 @@ class WorkflowView(QWidget):
         )
         if user_values is None:
             return
+        custom_model_dir = user_values["cell_detector_custom_model_dir"]
+        if custom_model_dir == Path():
+            custom_model_dir = ""
 
         self.controller.project.settings = replace(
             settings,
             condition_names=user_values["condition_names"].split(";"),
-            cell_detector_custom_model_dir=str(
-                user_values["cell_detector_custom_model_dir"]
-            ),
+            cell_detector_custom_model_dir=str(custom_model_dir),
         )
         self.controller.project.save()
 
@@ -345,9 +347,6 @@ class WorkflowView(QWidget):
         self.controller.import_cell_detections_async(
             path=Path(path), importer=Importer(**importer_params)
         )
-
-    def on_run_cell_detector_clicked(self, _=None):
-        self.controller.run_cell_detector_async()
 
     def on_view_brain_structure_clicked(self, _=None):
         values = request_values(
@@ -506,26 +505,22 @@ class ProjectActionsSection(TitledGroupBox):
         self,
         auto_contrast: Callable,
         import_cells: Callable,
-        run_cell_detector: Callable,
         view_brain_structure: Callable,
     ):
         self.auto_contrast = QCheckBox("Auto Contrast")
         self.import_cells = QPushButton("Import Cell Detections")
-        self.run_cell_detector = QPushButton("Run Cell Detector")
         self.view_brain_structure = QPushButton("View Brain Region(s)")
 
         self.auto_contrast.setChecked(True)
 
         self.auto_contrast.stateChanged.connect(auto_contrast)
         self.import_cells.clicked.connect(import_cells)
-        self.run_cell_detector.clicked.connect(run_cell_detector)
         self.view_brain_structure.clicked.connect(view_brain_structure)
 
         super().__init__(
             title="<b>Project Actions:</b>",
             widgets=[
                 self.auto_contrast,
-                self.run_cell_detector,
                 self.import_cells,
                 self.view_brain_structure,
             ],

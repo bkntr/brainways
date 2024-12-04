@@ -78,8 +78,8 @@ def create_reg_model_data(input: Path, output: Path):
                     reader = document.image_reader()
                     channel_names = list(reader.channel_names)
                     images = [
-                        reader.get_thumbnail(
-                            target_size=document.lowres_image_size,
+                        subject.read_lowres_image(
+                            document=document,
                             channel=channel_index,
                         )
                         for channel_index in range(len(channel_names))

@@ -21,7 +21,7 @@ from brainways.utils.atlas.brainways_atlas import AtlasSlice
 from brainways.utils.cell_detection_importer.brainways_cell_detection_importer import (
     BrainwaysCellDetectionsImporter,
 )
-from brainways.utils.io_utils import ImagePath
+from brainways.utils.io_utils.image_path import ImagePath
 
 
 def test_create_subject(brainways_project: BrainwaysProject):

@@ -30,7 +30,6 @@ brainways ui
 
 The first time Brainways is launched, it will automatically download the following dependencies:
 
-* [QuPath](https://qupath.github.io/), used in Brainways for its amazing image reading capabilities.
 * Rat/mice 3d atlases (via [bg-atlasapi](https://github.com/brainglobe/bg-atlasapi)).
 * Brainways automatic registration model weights.
 

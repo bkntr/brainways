@@ -1,6 +1,6 @@
 from dataclasses import replace
 
-from aicsimageio.types import PhysicalPixelSizes
+from bioio_base.types import PhysicalPixelSizes
 from pytest import fixture
 from pytestqt.qtbot import QtBot
 from qtpy.QtWidgets import QCheckBox
@@ -10,8 +10,8 @@ from brainways.project.info_classes import SliceInfo
 from brainways.ui.utils.test_utils import worker_join
 from brainways.ui.widgets.create_subject_dialog import CreateSubjectDialog
 from brainways.utils.image import ImageSizeHW, get_resize_size
-from brainways.utils.io_utils import ImagePath
-from brainways.utils.io_utils.readers import QupathReader
+from brainways.utils.io_utils.image_path import ImagePath
+from bioio import BioImage
 
 
 @fixture
@@ -21,7 +21,7 @@ def create_subject_dialog(
     mock_image_path: ImagePath,
     test_image_size: ImageSizeHW,
 ) -> CreateSubjectDialog:
-    QupathReader.physical_pixel_sizes = PhysicalPixelSizes(Z=None, Y=10.0, X=10.0)
+    BioImage.physical_pixel_sizes = PhysicalPixelSizes(Z=None, Y=10.0, X=10.0)
     create_subject_dialog = CreateSubjectDialog(mock_project, async_disabled=True)
     create_subject_dialog.new_subject(
         subject_id="test_subject", conditions={"condition1": "c1", "condition2": "c2"}

@@ -4,12 +4,13 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
 
+from bioio import BioImage
+
 import brainways._version
 from brainways.pipeline.brainways_params import BrainwaysParams, CellDetectorParams
 from brainways.utils.dataclasses import dataclass_eq
 from brainways.utils.image import ImageSizeHW
-from brainways.utils.io_utils import ImagePath
-from brainways.utils.io_utils.readers import QupathReader
+from brainways.utils.io_utils.image_path import ImagePath
 
 
 @dataclass(frozen=True)
@@ -40,8 +41,8 @@ class SliceInfo:
     ignore: bool = False
     physical_pixel_sizes: Tuple[float, float] = (float("nan"), float("nan"))
 
-    def image_reader(self) -> QupathReader:
-        reader = QupathReader(self.path.filename)
+    def image_reader(self) -> BioImage:
+        reader = BioImage(self.path.filename)
         reader.set_scene(self.path.scene)
         return reader
 

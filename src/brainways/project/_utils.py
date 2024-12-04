@@ -4,12 +4,12 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
 
+from bioio import BioImage
 import dacite
 from packaging import version
 
 import brainways
 from brainways.project.info_classes import SliceInfo, SubjectFileFormat, SubjectInfo
-from brainways.utils.io_utils.readers.qupath_reader import QupathReader
 
 
 def rewrite_project_version(path: Path, version: Optional[str] = None):
@@ -58,7 +58,7 @@ def update_project_to_0_1_5(path: Path):
         with open(brainways_subject_path, "rb") as f:
             serialized_settings, serialized_slice_infos = pickle.load(f)
         for serialized_slice_info in serialized_slice_infos:
-            reader = QupathReader(serialized_slice_info["path"]["filename"])
+            reader = BioImage(serialized_slice_info["path"]["filename"])
             pps = reader.physical_pixel_sizes
             serialized_slice_info["physical_pixel_sizes"] = (pps.Y, pps.X)
         with open(brainways_subject_path, "wb") as f:

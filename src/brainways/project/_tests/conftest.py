@@ -8,7 +8,7 @@ import pytest
 
 from brainways.project.brainways_subject import BrainwaysSubject
 from brainways.project.info_classes import ProjectSettings, SliceInfo
-from brainways.utils.io_utils import ImagePath
+from brainways.utils.io_utils.image_path import ImagePath
 
 
 @pytest.fixture

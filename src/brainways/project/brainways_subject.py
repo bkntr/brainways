@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Callable, Iterator, List, Optional, Tuple, Uni
 import dacite
 import numpy as np
 import pandas as pd
-from PIL import Image
+import imageio.v3 as iio
 
 from brainways.pipeline.brainways_params import (
     AtlasRegistrationParams,
@@ -33,10 +33,14 @@ from brainways.utils.cells import (
     filter_cells_on_tissue,
     get_region_areas,
 )
-from brainways.utils.image import brain_mask_simple, get_resize_size, slice_to_uint8
-from brainways.utils.io_utils import ImagePath
-from brainways.utils.io_utils.readers import get_image_size
-from brainways.utils.io_utils.readers.qupath_reader import QupathReader
+from brainways.utils.image import (
+    brain_mask_simple,
+    get_resize_size,
+    resize_image,
+    slice_to_uint8,
+)
+from brainways.utils.io_utils.image_path import ImagePath
+from bioio import BioImage
 
 if TYPE_CHECKING:
     from brainways.project.brainways_project import BrainwaysProject
@@ -93,38 +97,35 @@ class BrainwaysSubject:
     def read_lowres_image(
         self, document: SliceInfo, channel: Optional[int] = None
     ) -> np.ndarray:
-        thumbnail_path = self.thumbnail_path(
-            document.path, channel=channel or self.project.settings.channel
-        )
+        channel = channel or self.project.settings.channel
+        thumbnail_path = self.thumbnail_path(document.path, channel)
         if thumbnail_path.exists():
-            image = np.array(Image.open(thumbnail_path))
+            image = np.array(iio.imread(thumbnail_path))
         else:
-            reader = QupathReader(document.path.filename)
-            reader.set_scene(document.path.scene)
-            image = reader.get_thumbnail(
-                target_size=document.lowres_image_size,
-                channel=channel or self.project.settings.channel,
+            image = self.read_highres_image(document, channel=channel)
+            thumbnail = resize_image(
+                image, size=document.lowres_image_size, keep_aspect=True
             )
-            image = slice_to_uint8(image)
-            Image.fromarray(image).save(thumbnail_path)
+            thumbnail = slice_to_uint8(thumbnail)
+            iio.imwrite(thumbnail_path, thumbnail)
         return image
 
-    def read_highres_image(self, document: SliceInfo, level: Optional[int] = None):
-        reader = QupathReader(document.path.filename)
+    def read_highres_image(self, document: SliceInfo, channel: Optional[int] = None):
+        channel = channel or self.project.settings.channel
+        reader = BioImage(document.path.filename)
         reader.set_scene(document.path.scene)
-        if level:
-            reader.set_level(level)
-        image = reader.get_image_dask_data(
-            "YX", C=self.project.settings.channel
-        ).compute()
+        image = reader.get_image_data("YX", C=channel)
         return image
 
     def add_image(self, path: ImagePath, load_thumbnail: bool = True) -> SliceInfo:
-        image_size = get_image_size(path)
+        reader = BioImage(path.filename)
+        if path.scene is not None:
+            reader.set_scene(path.scene)
+        image_size = (reader.dims.Y, reader.dims.X)
         lowres_image_size = get_resize_size(
             input_size=image_size, output_size=(1024, 1024), keep_aspect=True
         )
-        pps = QupathReader(path.filename).physical_pixel_sizes
+        pps = reader.physical_pixel_sizes
         document = SliceInfo(
             path=path,
             image_size=image_size,
@@ -206,10 +207,7 @@ class BrainwaysSubject:
     ) -> None:
         cell_detections_path = self.cell_detections_path(slice_info.path)
         cell_detections_path.parent.mkdir(parents=True, exist_ok=True)
-        reader = slice_info.image_reader()
-        image = reader.get_image_dask_data(
-            "YX", C=self.project.settings.channel
-        ).compute()
+        image = self.read_highres_image(slice_info)
         if slice_info.params.cell is not None:
             cell_detector_params = slice_info.params.cell
         else:

@@ -16,7 +16,7 @@ from brainways.project.info_classes import SliceInfo, SliceSelection
 from brainways.ui.brainways_ui import BrainwaysUI
 from brainways.ui.controllers.base import Controller
 from brainways.ui.utils.test_utils import randomly_modified_params
-from brainways.utils.io_utils import ImagePath
+from brainways.utils.io_utils.image_path import ImagePath
 
 
 @fixture(params=[0, 1])

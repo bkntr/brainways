@@ -3,6 +3,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+from bioio import BioImage
 import numpy as np
 from magicgui import widgets
 from qtpy import QtCore
@@ -28,8 +29,7 @@ from brainways.project.brainways_subject import BrainwaysSubject
 from brainways.project.info_classes import SliceInfo, SubjectInfo
 from brainways.ui.utils.async_utils import do_work_async
 from brainways.utils.image import resize_image
-from brainways.utils.io_utils import ImagePath
-from brainways.utils.io_utils.readers import get_channels, get_scenes
+from brainways.utils.io_utils.image_path import ImagePath
 
 
 class CreateSubjectDialog(QDialog):
@@ -157,7 +157,7 @@ class CreateSubjectDialog(QDialog):
                     for document in documents:
                         self.subject.documents.remove(document)
                     return []
-                for scene in range(len(get_scenes(filename))):
+                for scene in range(len(BioImage(filename).scenes)):
                     documents.append(
                         self.subject.add_image(
                             ImagePath(filename=filename, scene=scene),
@@ -239,7 +239,7 @@ class CreateSubjectDialog(QDialog):
             self.files_table.resizeColumnsToContents()
 
             if self.channels_combobox.count() == 0:
-                self.channels_combobox.addItems(get_channels(document.path.filename))
+                self.channels_combobox.addItems(BioImage(document.path.filename).channel_names)
                 self.channels_combobox.currentIndexChanged.connect(
                     self.on_selected_channel_changed
                 )

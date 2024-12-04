@@ -2,13 +2,13 @@ import traceback
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+from bioio import BioImage
 import click
-from aicsimageio import AICSImage
 from PIL import Image
 from tqdm import tqdm
 
 from brainways.utils.image import resize_image, slice_to_uint8
-from brainways.utils.io_utils import ImagePath
+from brainways.utils.io_utils.image_path import ImagePath
 
 
 def creat_thumbnail(
@@ -17,7 +17,7 @@ def creat_thumbnail(
     size: Optional[Tuple[int, int]] = None,
     channels: Optional[List[int]] = None,
 ):
-    reader = AICSImage(input)
+    reader = BioImage(input)
     if channels is None:
         channels = range(reader.channel_names)
     for scene_i, scene in enumerate(tqdm(reader.scenes)):

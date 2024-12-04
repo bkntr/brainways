@@ -9,8 +9,6 @@ from PIL import Image
 from brainways.pipeline.atlas_registration import AtlasRegistration
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 from brainways.utils.config import load_config, write_config
-from brainways.utils.io_utils.readers.qupath_reader import QupathReader
-from brainways.utils.qupath import get_brainways_qupath_dir
 
 
 class BrainwaysSetup:
@@ -35,8 +33,6 @@ class BrainwaysSetup:
         write_config(config)
 
     def run(self) -> None:
-        self._progress_callback("Downloading QuPath...")
-        self._download_qupath()
         for atlas_name in self._atlas_names:
             self._progress_callback(f"Downloading atlas '{atlas_name}'...")
             self._download_atlas(atlas_name)
@@ -49,16 +45,6 @@ class BrainwaysSetup:
                 self._download_model(atlas_name)
 
         self.set_initialized()
-
-    def _download_qupath(self) -> None:
-        try:
-            image = QupathReader(self._sample_image_path).get_image_data("YX")
-            assert image.shape == (512, 663)
-        except Exception:
-            qupath_dir = get_brainways_qupath_dir()
-            if qupath_dir.exists():
-                shutil.rmtree(qupath_dir)
-            raise
 
     def _download_atlas(self, atlas_name: str) -> None:
         if atlas_name in self._downloaded_atlases:

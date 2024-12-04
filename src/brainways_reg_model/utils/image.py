@@ -50,13 +50,3 @@ def slice_contrast_values(
         count -= next_count
         ind -= 1
     return min_display, max_display
-
-
-def normalize_contrast_qupath(slice_image: np.ndarray):
-    min_val, max_val = slice_contrast_values(slice_image)
-    if isinstance(slice_image, torch.Tensor):
-        slice_image = torch.clip(slice_image, min_val, max_val)
-    else:
-        slice_image = np.clip(slice_image, min_val, max_val)
-    slice_image = normalize_min_max(slice_image)
-    return slice_image

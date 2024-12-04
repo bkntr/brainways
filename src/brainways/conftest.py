@@ -6,10 +6,11 @@ from pathlib import Path
 from typing import List, Tuple
 from unittest.mock import Mock
 
+from bioio import BioImage
 import numpy as np
 import pytest
 import torch
-from aicsimageio.types import PhysicalPixelSizes
+from bioio_base.types import PhysicalPixelSizes
 from brainglobe_atlasapi import BrainGlobeAtlas
 from brainglobe_atlasapi.structure_class import StructuresDict
 from PIL import Image
@@ -32,8 +33,7 @@ from brainways.project.info_classes import (
 )
 from brainways.utils.atlas.brainways_atlas import AtlasSlice, BrainwaysAtlas
 from brainways.utils.image import ImageSizeHW
-from brainways.utils.io_utils import ImagePath
-from brainways.utils.io_utils.readers.qupath_reader import QupathReader
+from brainways.utils.io_utils.image_path import ImagePath
 
 
 @fixture(autouse=True)
@@ -148,7 +148,7 @@ def mock_image_path(
     image, _ = test_data
     image_path = ImagePath(str(tmp_path / "image.jpg"), scene=0)
     Image.fromarray(image).save(image_path.filename)
-    QupathReader.physical_pixel_sizes = PhysicalPixelSizes(Z=None, Y=10.0, X=10.0)
+    BioImage.physical_pixel_sizes = PhysicalPixelSizes(Z=None, Y=10.0, X=10.0)
     return image_path
 
 

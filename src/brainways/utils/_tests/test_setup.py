@@ -8,7 +8,6 @@ import pytest
 from brainways.pipeline.atlas_registration import AtlasRegistration
 from brainways.utils import paths
 from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
-from brainways.utils.io_utils.readers.qupath_reader import QupathReader
 from brainways.utils.setup import BrainwaysSetup
 
 _TEST_ATLAS = "whs_sd_rat_39um"
@@ -51,29 +50,6 @@ def test_download_model_fails(
         setup._download_model(_TEST_ATLAS)
 
     assert not atlas_registration.checkpoint_downloaded()
-
-
-def test_download_qupath_fails(
-    setup: BrainwaysSetup,
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-):
-    tmp_qupath_path = tmp_path / "qupath"
-
-    copy_tree(str(paths._BRAINWAYS_PATH / "qupath"), str(tmp_qupath_path))
-    monkeypatch.setattr(paths, "_BRAINWAYS_PATH", tmp_path)
-
-    assert tmp_qupath_path.exists()
-
-    with pytest.raises(Exception):
-
-        def raise_error():
-            raise AssertionError
-
-        monkeypatch.setattr(QupathReader, "_initialize_qupath", raise_error)
-        setup._download_qupath()
-
-    assert not tmp_qupath_path.exists()
 
 
 def test_is_first_launch(

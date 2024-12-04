@@ -27,7 +27,7 @@ from brainways.project.info_classes import ProjectSettings, SliceInfo, SubjectIn
 from brainways.ui.brainways_ui import BrainwaysUI
 from brainways.utils.atlas.brainways_atlas import AtlasSlice, BrainwaysAtlas
 from brainways.utils.image import ImageSizeHW
-from brainways.utils.io_utils import ImagePath
+from brainways.utils.io_utils.image_path import ImagePath
 from brainways.utils.paths import get_brainways_dir
 from brainways.utils.setup import BrainwaysSetup
 

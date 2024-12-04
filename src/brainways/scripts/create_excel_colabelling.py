@@ -55,7 +55,7 @@ def display_cells_2d(subject: BrainwaysSubject):
             continue
 
         viewer = napari.Viewer()
-        image = subject.read_highres_image(document, level=1)
+        image = subject.read_highres_image(document)
         viewer.add_image(image, name=str(document.path))
 
         cells_atlas = subject.get_cells_on_atlas([document])

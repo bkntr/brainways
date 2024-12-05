@@ -3,7 +3,16 @@ import logging
 from collections import Counter
 from dataclasses import asdict, replace
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Iterator, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import dacite
 import numpy as np
@@ -40,6 +49,9 @@ from brainways.utils.io_utils.readers.qupath_reader import QupathReader
 
 if TYPE_CHECKING:
     from brainways.project.brainways_project import BrainwaysProject
+
+
+ImageReadMode = Literal["registration", "cell_detection"]
 
 
 class BrainwaysSubject:
@@ -90,33 +102,33 @@ class BrainwaysSubject:
 
         return subject
 
-    def read_lowres_image(
-        self, document: SliceInfo, channel: Optional[int] = None
-    ) -> np.ndarray:
-        thumbnail_path = self.thumbnail_path(
-            document.path, channel=channel or self.project.settings.channel
-        )
+    def read_lowres_image(self, document: SliceInfo) -> np.ndarray:
+        thumbnail_path = self.thumbnail_path(document.path)
         if thumbnail_path.exists():
             image = np.array(Image.open(thumbnail_path))
         else:
-            reader = QupathReader(document.path.filename)
-            reader.set_scene(document.path.scene)
+            reader = document.image_reader()
             image = reader.get_thumbnail(
                 target_size=document.lowres_image_size,
-                channel=channel or self.project.settings.channel,
+                channel=self.subject_info.registration_channel,
             )
             image = slice_to_uint8(image)
             Image.fromarray(image).save(thumbnail_path)
         return image
 
-    def read_highres_image(self, document: SliceInfo, level: Optional[int] = None):
-        reader = QupathReader(document.path.filename)
-        reader.set_scene(document.path.scene)
+    def read_highres_image(
+        self, document: SliceInfo, mode: ImageReadMode, level: Optional[int] = None
+    ):
+        reader = document.image_reader()
         if level:
             reader.set_level(level)
-        image = reader.get_image_dask_data(
-            "YX", C=self.project.settings.channel
-        ).compute()
+        if mode == "registration":
+            channels = [self.subject_info.registration_channel]
+        elif mode == "cell_detection":
+            channels = self.subject_info.cell_detection_channels
+        else:
+            raise ValueError(f"Invalid mode: {mode}")
+        image = reader.get_image_dask_data("YX", C=channels).compute()
         return image
 
     def add_image(self, path: ImagePath, load_thumbnail: bool = True) -> SliceInfo:
@@ -208,7 +220,7 @@ class BrainwaysSubject:
         cell_detections_path.parent.mkdir(parents=True, exist_ok=True)
         reader = slice_info.image_reader()
         image = reader.get_image_dask_data(
-            "YX", C=self.project.settings.channel
+            "YX", C=self.subject_info.cell_detection_channels
         ).compute()
         if slice_info.params.cell is not None:
             cell_detector_params = slice_info.params.cell
@@ -392,14 +404,11 @@ class BrainwaysSubject:
             )
         return df
 
-    def thumbnail_path(self, image_path: ImagePath, channel: Optional[int] = None):
-        if channel is None:
-            channel = self.project.settings.channel
-
+    def thumbnail_path(self, image_path: ImagePath):
         suffixes = []
         if image_path.scene is not None:
             suffixes.append(f"Scene #{image_path.scene}")
-        suffixes.append(f"Channel #{channel}")
+        suffixes.append(f"Channel #{self.subject_info.registration_channel}")
         suffix = " ".join(suffixes)
         thumbnail_filename = f"{Path(image_path.filename).stem} [{suffix}].jpg"
         return self.thumbnails_root / thumbnail_filename

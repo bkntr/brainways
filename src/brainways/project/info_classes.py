@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 import brainways._version
 from brainways.pipeline.brainways_params import BrainwaysParams, CellDetectorParams
@@ -12,10 +12,9 @@ from brainways.utils.io_utils import ImagePath
 from brainways.utils.io_utils.readers import QupathReader
 
 
-@dataclass(frozen=True)
+@dataclass
 class ProjectSettings:
     atlas: str
-    channel: Union[int, str]
     default_cell_detector_params: CellDetectorParams = field(
         default_factory=CellDetectorParams
     )
@@ -24,14 +23,16 @@ class ProjectSettings:
     version: str = brainways._version.version
 
 
-@dataclass(frozen=True)
+@dataclass
 class SubjectInfo:
     name: str
+    registration_channel: int
+    cell_detection_channels: List[int]
     conditions: Dict[str, str] = field(default_factory=dict)
     rotation: Optional[tuple[float, float]] = None
 
 
-@dataclass(frozen=True, eq=False)
+@dataclass(eq=False)
 class SliceInfo:
     path: ImagePath
     image_size: ImageSizeHW
@@ -42,14 +43,15 @@ class SliceInfo:
 
     def image_reader(self) -> QupathReader:
         reader = QupathReader(self.path.filename)
-        reader.set_scene(self.path.scene)
+        if self.path.scene is not None:
+            reader.set_scene(self.path.scene)
         return reader
 
     def __eq__(self, other):
         return dataclass_eq(self, other)
 
 
-@dataclass(frozen=True)
+@dataclass
 class SubjectFileFormat:
     subject_info: SubjectInfo
     slice_infos: List[SliceInfo]

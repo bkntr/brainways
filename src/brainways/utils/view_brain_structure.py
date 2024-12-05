@@ -259,7 +259,7 @@ def load_data_from_project(
                     highres_image_cc = tifffile.imread(highres_image_cc_cache_path)
                 else:
                     if display_channel is None:
-                        display_channel = project.settings.channel
+                        display_channel = subject.subject_info.registration_channel
                     highres_image_cc = (
                         document.image_reader()
                         .get_image_dask_data(

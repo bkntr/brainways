@@ -351,7 +351,7 @@ class CellDetectorController(Controller):
                 "YX",
                 X=slice(x0, x1),
                 Y=slice(y0, y1),
-                C=self.ui.project.settings.channel,
+                C=self.ui.current_subject.subject_info.cell_detection_channels,
             )
             .compute()
         )

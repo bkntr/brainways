@@ -14,6 +14,7 @@ from qtpy.QtWidgets import (
     QDialog,
     QFileDialog,
     QGridLayout,
+    QHBoxLayout,
     QHeaderView,
     QLabel,
     QProgressDialog,
@@ -46,46 +47,51 @@ class CreateSubjectDialog(QDialog):
         self.subject: Optional[BrainwaysSubject] = None
         self.create_subject_button = QPushButton("&Create", self)
         self.create_subject_button.clicked.connect(self.on_create_subject_clicked)
-        self.channels_combobox = QComboBox()
+        self.registration_channel_combobox = QComboBox()
+        self.cell_detection_channels_checkboxes: List[QCheckBox] = []
         self.add_images_button = QPushButton("&Add Image(s)...", self)
         self.add_images_button.clicked.connect(self.on_add_images_clicked)
         self.files_table = self.create_table()
         self.conditions_widget = self._create_conditions_widget()
         self.bottom_label = QLabel("")
 
-        self.layout = QGridLayout(self)
-        self.setLayout(self.layout)
+        self._layout = QGridLayout(self)
+        self.setLayout(self._layout)
 
         cur_row = 0
-        self.layout.addWidget(QLabel("Channel:"), cur_row, 0)
-        self.layout.addWidget(self.channels_combobox, cur_row, 1)
+        self._layout.addWidget(QLabel("Channel:"), cur_row, 0)
+        self._layout.addWidget(self.registration_channel_combobox, cur_row, 1)
+        cur_row += 1  # leave room for cell detection channel checkboxes
 
         if self.project.settings.condition_names:
             cur_row += 1
-            self.layout.addWidget(self.conditions_widget.native, cur_row, 0, 1, 3)
+            self._layout.addWidget(self.conditions_widget.native, cur_row, 0, 1, 3)
 
         cur_row += 1
-        self.layout.addWidget(self.files_table, cur_row, 0, 1, 3)
+        self._layout.addWidget(self.files_table, cur_row, 0, 1, 3)
 
         cur_row += 1
-        self.layout.addWidget(self.bottom_label, cur_row, 0, 1, 2)
+        self._layout.addWidget(self.bottom_label, cur_row, 0, 1, 2)
 
         cur_row += 1
-        self.layout.addWidget(
-            self.add_images_button, cur_row, 1, alignment=QtCore.Qt.AlignRight
+        self._layout.addWidget(
+            self.add_images_button, cur_row, 1, alignment=QtCore.Qt.AlignRight  # type: ignore
         )
 
-        self.layout.addWidget(self.create_subject_button, cur_row, 2)
+        self._layout.addWidget(self.create_subject_button, cur_row, 2)
 
         if parent is not None:
+            window = self.window()
+            assert window is not None
             self.resize(
-                int(parent.parent().parent().parent().width() * 0.8),
-                int(parent.parent().parent().parent().height() * 0.8),
+                int(window.width() * 0.8),
+                int(window.height() * 0.8),
             )
 
     def edit_subject_async(self, subject_index: int, document_index: int) -> None:
         self.setWindowTitle("Edit Subject")
         self._set_subject(self.project.subjects[subject_index])
+        assert self.subject is not None
         self.create_subject_button.setText("Done")
         self.add_document_rows_async(
             documents=self.subject.documents, select_document_index=document_index
@@ -94,9 +100,21 @@ class CreateSubjectDialog(QDialog):
     def new_subject(self, subject_id: str, conditions: Dict[str, str]):
         assert subject_id is not None
         self.setWindowTitle(f"New Subject ({subject_id})")
+        if self.project.subjects:
+            last_subject_info = self.project.subjects[-1].subject_info
+            default_registration_channel = last_subject_info.registration_channel
+            default_cell_detection_channels = last_subject_info.cell_detection_channels
+        else:
+            default_registration_channel = 0
+            default_cell_detection_channels = [0]
         self._set_subject(
             self.project.add_subject(
-                SubjectInfo(name=subject_id, conditions=conditions)
+                SubjectInfo(
+                    name=subject_id,
+                    registration_channel=default_registration_channel,
+                    cell_detection_channels=default_cell_detection_channels,
+                    conditions=conditions,
+                )
             )
         )
 
@@ -121,12 +139,16 @@ class CreateSubjectDialog(QDialog):
         table = QTableWidget(0, 4)
         table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         table.setHorizontalHeaderLabels(["", "Thumbnail", "Path", "Scene"])
-        table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
-        table.verticalHeader().hide()
+        horizontal_header = table.horizontalHeader()
+        assert horizontal_header is not None
+        vertical_header = table.verticalHeader()
+        assert vertical_header is not None
+        horizontal_header.setSectionResizeMode(2, QHeaderView.Stretch)
+        vertical_header.hide()
         table.setShowGrid(False)
         return table
 
-    def _create_conditions_widget(self) -> widgets.Widget:
+    def _create_conditions_widget(self) -> widgets.Container:
         condition_widgets = [
             widgets.LineEdit(label=condition)
             for condition in self.project.settings.condition_names
@@ -191,6 +213,7 @@ class CreateSubjectDialog(QDialog):
         return image_widget
 
     def get_thumbnail_image(self, document: SliceInfo) -> np.ndarray:
+        assert self.subject is not None
         thumbnail = self.subject.read_lowres_image(document)
         thumbnail = resize_image(thumbnail, size=(256, 256), keep_aspect=True)
         thumbnail = np.tile(thumbnail[..., None], [1, 1, 3]).astype(np.float32)
@@ -204,6 +227,7 @@ class CreateSubjectDialog(QDialog):
     def add_document_rows_async(
         self, documents: List[SliceInfo], select_document_index: Optional[int] = None
     ) -> None:
+        assert self.subject is not None
         progress = QProgressDialog(
             "Opening images...", "Cancel", 0, len(documents), self
         )
@@ -213,7 +237,15 @@ class CreateSubjectDialog(QDialog):
         progress.show()
 
         def on_work_returned():
-            self.channels_combobox.setCurrentIndex(self.project.settings.channel)
+            self.registration_channel_combobox.setCurrentIndex(
+                self.subject.subject_info.registration_channel
+            )
+            for channel_index, checkbox in enumerate(
+                self.cell_detection_channels_checkboxes
+            ):
+                checkbox.setChecked(
+                    channel_index in self.subject.subject_info.cell_detection_channels
+                )
             if select_document_index is not None:
                 self.files_table.selectRow(select_document_index)
             progress.close()
@@ -238,11 +270,23 @@ class CreateSubjectDialog(QDialog):
             self.files_table.resizeRowToContents(row)
             self.files_table.resizeColumnsToContents()
 
-            if self.channels_combobox.count() == 0:
-                self.channels_combobox.addItems(get_channels(document.path.filename))
-                self.channels_combobox.currentIndexChanged.connect(
+            channels = get_channels(document.path.filename)
+            if self.registration_channel_combobox.count() == 0:
+                self.registration_channel_combobox.addItems(channels)
+                self.registration_channel_combobox.currentIndexChanged.connect(
                     self.on_selected_channel_changed
                 )
+                self._add_cell_detection_channels_checkboxes(channels)
+            else:
+                current_channels = [
+                    self.registration_channel_combobox.itemText(i)
+                    for i in range(self.registration_channel_combobox.count())
+                ]
+                if channels != current_channels:
+                    raise ValueError(
+                        f"Channels for {document.path.filename} ({channels}) do not match existing "
+                        f"channels ({current_channels}), please add images with the same channels."
+                    )
 
             progress.setValue(progress.value() + 1)
 
@@ -265,9 +309,26 @@ class CreateSubjectDialog(QDialog):
     def subject_path(self) -> Path:
         return Path(self.subject_location_line_edit.text())
 
-    def on_check_changed(
-        self, _=None, checkbox: QCheckBox = None, document_index: int = None
+    def _add_cell_detection_channels_checkboxes(
+        self, cell_detection_channels: List[str]
     ):
+        assert self.subject is not None
+        assert self.cell_detection_channels_checkboxes == []
+        for channel_index, channel in enumerate(cell_detection_channels):
+            checkbox = QCheckBox(channel)
+            checkbox.setChecked(
+                channel_index in self.subject.subject_info.cell_detection_channels
+            )
+            checkbox.stateChanged.connect(self.on_cell_detection_channel_changed)
+            self.cell_detection_channels_checkboxes.append(checkbox)
+
+        layout = QHBoxLayout()
+        for checkbox in self.cell_detection_channels_checkboxes:
+            layout.addWidget(checkbox)
+        self._layout.addLayout(layout, 1, 0, 1, 3)
+
+    def on_check_changed(self, _, checkbox: QCheckBox, document_index: int):
+        assert self.subject is not None
         document = replace(
             self.subject.documents[document_index],
             ignore=not checkbox.isChecked(),
@@ -278,9 +339,22 @@ class CreateSubjectDialog(QDialog):
         )
         self.subject.documents[document_index] = document
 
+    def on_cell_detection_channel_changed(self, _=None):
+        assert self.subject is not None
+        cell_detection_channels = [
+            channel_index
+            for channel_index, checkbox in enumerate(
+                self.cell_detection_channels_checkboxes
+            )
+            if checkbox.isChecked()
+        ]
+        self.subject.subject_info.cell_detection_channels = cell_detection_channels
+
     def on_selected_channel_changed(self, _=None):
-        new_channel = int(self.channels_combobox.currentIndex())
-        self.project.settings = replace(self.project.settings, channel=new_channel)
+        new_channel = int(self.registration_channel_combobox.currentIndex())
+        self.subject.subject_info = replace(
+            self.subject.subject_info, channel=new_channel
+        )
         self.files_table.setRowCount(0)
         self.add_document_rows_async(self.subject.documents)
 
@@ -293,5 +367,6 @@ class CreateSubjectDialog(QDialog):
         self.add_filenames_async(filenames)
 
     def on_create_subject_clicked(self, _=None):
+        self.project.save()
         self.subject.save()
         self.accept()

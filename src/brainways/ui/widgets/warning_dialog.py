@@ -29,7 +29,7 @@ class WarningDialog(QDialog):
         # Set dialog size to 50% of screen size
         self.resize(screen_width // 2, screen_height // 2)
 
-        self._layout = QVBoxLayout(self)
+        self.__layout = QVBoxLayout(self)
 
         self.icon_label = QLabel(self)
         self.icon_label.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
@@ -45,7 +45,7 @@ class WarningDialog(QDialog):
         self.horizontal_layout.addWidget(self.icon_label, alignment=Qt.AlignTop)  # type: ignore[attr-defined]
         self.horizontal_layout.addWidget(self.text_edit)
 
-        self._layout.addLayout(self.horizontal_layout)
+        self.__layout.addLayout(self.horizontal_layout)
 
         self.button_layout = QHBoxLayout()
 
@@ -66,7 +66,7 @@ class WarningDialog(QDialog):
         self.ok_button.clicked.connect(self.accept)
         self.button_layout.addWidget(self.ok_button)
 
-        self._layout.addLayout(self.button_layout)
+        self.__layout.addLayout(self.button_layout)
 
 
 def show_warning_dialog(text: str) -> bool:

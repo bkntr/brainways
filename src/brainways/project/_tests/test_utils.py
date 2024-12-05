@@ -22,3 +22,10 @@ def test_update_project_from_v0_1_5(
     project = BrainwaysProject.open(brainways_project_path_v0_1_5, lazy_init=True)
     assert project.subjects[0].documents[0].params == mock_subject_documents[0].params
     assert project.subjects[0].subject_info.name == project.subjects[0]._save_dir.name
+
+
+def test_update_project_from_v0_1_7(brainways_project_path_v0_1_7: Path):
+    update_project_from_previous_versions(brainways_project_path_v0_1_7)
+    project = BrainwaysProject.open(brainways_project_path_v0_1_7, lazy_init=True)
+    assert project.subjects[0].subject_info.registration_channel == 1
+    assert project.subjects[0].subject_info.cell_detection_channels == [1]

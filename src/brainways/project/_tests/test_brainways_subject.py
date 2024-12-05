@@ -1,7 +1,7 @@
 from dataclasses import replace
 from pathlib import Path
 from typing import List, Tuple
-from unittest.mock import MagicMock, create_autospec
+from unittest.mock import MagicMock
 
 import numpy as np
 import pandas as pd
@@ -124,7 +124,7 @@ def test_read_lowres_image_reads_from_thumbnail_cache(
     brainways_subject: BrainwaysSubject,
     mock_image_path: ImagePath,
 ):
-    thumbnail_path = brainways_subject.thumbnail_path(mock_image_path, channel=0)
+    thumbnail_path = brainways_subject.thumbnail_path(mock_image_path)
     random_image = np.random.randint(0, 255, (20, 20), dtype=np.uint8)
     Image.fromarray(random_image).save(thumbnail_path)
     cached_thumbnail_image = np.array(Image.open(thumbnail_path))
@@ -445,11 +445,15 @@ def test_evenly_spaced_slices_on_ap_axis_raises_error_if_last_slice_missing_para
         brainways_subject.evenly_space_slices_on_ap_axis()
 
 
-def test_run_cell_detector_with_provided_params(tmp_path, brainways_subject: BrainwaysSubject):
+def test_run_cell_detector_with_provided_params(
+    tmp_path, brainways_subject: BrainwaysSubject
+):
     # Mock SliceInfo
     slice_info = MagicMock(spec=SliceInfo)
     slice_info.path = tmp_path / "slice_info"
-    slice_info.image_reader.return_value.get_image_dask_data.return_value.compute.return_value = np.random.rand(100, 100)
+    slice_info.image_reader.return_value.get_image_dask_data.return_value.compute.return_value = np.random.rand(
+        100, 100
+    )
     slice_info.params.cell = CellDetectorParams()
 
     # Mock CellDetector
@@ -474,11 +478,15 @@ def test_run_cell_detector_with_provided_params(tmp_path, brainways_subject: Bra
     )
 
 
-def test_run_cell_detector_with_default_params(tmp_path, brainways_subject: BrainwaysSubject):
+def test_run_cell_detector_with_default_params(
+    tmp_path, brainways_subject: BrainwaysSubject
+):
     # Mock SliceInfo
     slice_info = MagicMock(spec=SliceInfo)
     slice_info.path = tmp_path / "slice_info"
-    slice_info.image_reader.return_value.get_image_dask_data.return_value.compute.return_value = np.random.rand(100, 100)
+    slice_info.image_reader.return_value.get_image_dask_data.return_value.compute.return_value = np.random.rand(
+        100, 100
+    )
     slice_info.params.cell = None
 
     # Mock CellDetector
@@ -501,8 +509,8 @@ def test_run_cell_detector_with_default_params(tmp_path, brainways_subject: Brai
     cell_detector.cells.return_value.to_csv.assert_called_once_with(
         brainways_subject.cell_detections_path(slice_info.path), index=False
     )
-    
-    
+
+
 def test_clear_cell_detection_file_exists(tmp_path):
     # Create a BrainwaysSubject instance
     brainways_subject = BrainwaysSubject(
@@ -519,7 +527,9 @@ def test_clear_cell_detection_file_exists(tmp_path):
     cell_detections_path = tmp_path / "cell_detections.csv"
     cell_detections_path.touch()  # Create the file
 
-    brainways_subject.cell_detections_path = MagicMock(return_value=cell_detections_path)
+    brainways_subject.cell_detections_path = MagicMock(
+        return_value=cell_detections_path
+    )
 
     # Call the method
     brainways_subject.clear_cell_detection(slice_info)
@@ -543,7 +553,9 @@ def test_clear_cell_detection_file_does_not_exist(tmp_path):
     # Mock the cell_detections_path method to return a specific path
     cell_detections_path = tmp_path / "cell_detections.csv"
 
-    brainways_subject.cell_detections_path = MagicMock(return_value=cell_detections_path)
+    brainways_subject.cell_detections_path = MagicMock(
+        return_value=cell_detections_path
+    )
 
     # Call the method
     brainways_subject.clear_cell_detection(slice_info)

@@ -220,7 +220,7 @@ def mock_subject_documents(
 @pytest.fixture
 def mock_project_settings() -> ProjectSettings:
     return ProjectSettings(
-        atlas="MOCK_ATLAS", channel=0, condition_names=["condition1", "condition2"]
+        atlas="MOCK_ATLAS", condition_names=["condition1", "condition2"]
     )
 
 
@@ -237,14 +237,20 @@ def mock_project(
     )
     subject1 = project.add_subject(
         SubjectInfo(
-            name="subject1", conditions={"condition1": "c11", "condition2": "c21"}
+            name="subject1",
+            registration_channel=0,
+            cell_detection_channels=[0],
+            conditions={"condition1": "c11", "condition2": "c21"},
         )
     )
     subject1.documents = mock_subject_documents
     subject1.save()
     subject2 = project.add_subject(
         SubjectInfo(
-            name="subject2", conditions={"condition1": "c12", "condition2": "c22"}
+            name="subject2",
+            registration_channel=0,
+            cell_detection_channels=[0],
+            conditions={"condition1": "c12", "condition2": "c22"},
         )
     )
     subject2.documents = mock_subject_documents

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from typing import TYPE_CHECKING, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Tuple, Union
 
 import napari
 import napari.layers
@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QApplication
 
 from brainways.pipeline.brainways_params import BrainwaysParams, CellDetectorParams
 from brainways.pipeline.cell_detector import CellDetector
-from brainways.project.info_classes import SliceSelection
+from brainways.project.info_classes import MaskFileFormat, SliceSelection
 from brainways.ui.controllers.base import Controller
 from brainways.ui.utils.general_utils import update_layer_contrast_limits
 from brainways.ui.widgets.cell_detector_widget import CellDetectorWidget
@@ -273,7 +273,12 @@ class CellDetectorController(Controller):
             progress_label="Running cell detector on preview...",
         )
 
-    def run_cell_detector_async(self, slice_selection: SliceSelection, resume: bool):
+    def run_cell_detector_async(
+        self,
+        slice_selection: SliceSelection,
+        resume: bool,
+        save_cell_detection_masks_file_format: Optional[MaskFileFormat],
+    ):
         assert self.ui.project is not None
 
         slice_infos = self.ui.get_slice_selection(slice_selection)
@@ -282,6 +287,7 @@ class CellDetectorController(Controller):
             self.ui.project.run_cell_detector_iter,
             slice_infos=slice_infos,
             resume=resume,
+            save_cell_detection_masks_file_format=save_cell_detection_masks_file_format,
             progress_label=f"Running Cell Detector on {slice_selection.value}...",
             progress_max_value=len(slice_infos),
         )

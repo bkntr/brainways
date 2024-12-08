@@ -6,9 +6,7 @@ from pathlib import Path
 from typing import Callable, Iterator, List, Optional, Tuple, Union
 
 import dacite
-import numpy as np
 import pandas as pd
-import scipy.io
 from natsort import natsorted, ns
 from pandas import ExcelWriter
 
@@ -19,8 +17,8 @@ from brainways.project._utils import update_project_from_previous_versions
 from brainways.project.brainways_subject import BrainwaysSubject
 from brainways.project.info_classes import (
     ExcelMode,
+    MaskFileFormat,
     ProjectSettings,
-    RegisteredAnnotationFileFormat,
     RegisteredPixelValues,
     SliceInfo,
     SubjectInfo,
@@ -30,6 +28,7 @@ from brainways.utils.cell_detection_importer.cell_detection_importer import (
     CellDetectionImporter,
 )
 from brainways.utils.contrast import calculate_contrast
+from brainways.utils.export import export_mask
 from brainways.utils.network_analysis import calculate_network_graph
 from brainways.utils.paths import open_directory
 from brainways.utils.pls_analysis import (
@@ -243,7 +242,10 @@ class BrainwaysProject:
             )
 
     def run_cell_detector_iter(
-        self, slice_infos: List[SliceInfo], resume: bool
+        self,
+        slice_infos: List[SliceInfo],
+        resume: bool,
+        save_cell_detection_masks_file_format: Optional[MaskFileFormat],
     ) -> Iterator:
         cell_detector = self.get_cell_detector()
         subjects = self._get_subjects(slice_infos)
@@ -256,8 +258,12 @@ class BrainwaysProject:
                 slice_info=slice_info,
                 cell_detector=cell_detector,
                 default_params=self.settings.default_cell_detector_params,
+                save_cell_detection_masks_file_format=save_cell_detection_masks_file_format,
             )
             yield
+
+        if save_cell_detection_masks_file_format is not None:
+            open_directory(self.path.parent / "__outputs__" / "cell_detection_masks")
 
     def get_cell_detector(self) -> CellDetector:
         model_path = self.settings.cell_detector_custom_model_dir
@@ -480,12 +486,12 @@ class BrainwaysProject:
         output_dir: Path,
         pixel_value_mode: RegisteredPixelValues,
         slice_infos: List[SliceInfo],
-        file_format: RegisteredAnnotationFileFormat,
+        file_format: MaskFileFormat,
     ):
         assert self.pipeline is not None
 
         if (
-            file_format == RegisteredAnnotationFileFormat.CSV
+            file_format == MaskFileFormat.CSV
             and pixel_value_mode != RegisteredPixelValues.STRUCTURE_IDS
         ):
             raise ValueError(
@@ -498,29 +504,12 @@ class BrainwaysProject:
             )
             output_dir.mkdir(parents=True, exist_ok=True)
             file_name = (
-                Path(str(slice_info.path)).name
-                + f"_{pixel_value_mode.name.lower()}.{file_format.value}"
+                Path(str(slice_info.path)).name + f"_{pixel_value_mode.name.lower()}"
             )
             output_path = output_dir / file_name
-            logging.info(f"Saving {file_format.value} file to {output_path}")
-            if file_format == RegisteredAnnotationFileFormat.NPZ:
-                np.savez_compressed(
-                    output_path,
-                    values=registered_values,
-                )
-            elif file_format == RegisteredAnnotationFileFormat.MAT:
-                scipy.io.savemat(
-                    output_path,
-                    {"values": registered_values},
-                    do_compression=True,
-                )
-            elif file_format == RegisteredAnnotationFileFormat.CSV:
-                np.savetxt(
-                    output_path,
-                    registered_values,
-                    fmt="%d",
-                    delimiter=",",
-                )
+            export_mask(
+                data=registered_values, path=output_path, file_format=file_format
+            )
             yield
 
         open_directory(output_dir)

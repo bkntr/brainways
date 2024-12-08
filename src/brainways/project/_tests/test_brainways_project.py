@@ -1,18 +1,17 @@
 from dataclasses import replace
 from pathlib import Path
-from typing import Callable, List
+from typing import List
 from unittest.mock import Mock, patch
 
 import numpy as np
 import pandas as pd
 import pytest
-import scipy
 
 from brainways.pipeline.brainways_params import AtlasRegistrationParams
 from brainways.project.brainways_project import BrainwaysProject
 from brainways.project.info_classes import (
+    MaskFileFormat,
     ProjectSettings,
-    RegisteredAnnotationFileFormat,
     RegisteredPixelValues,
     SliceInfo,
     SubjectInfo,
@@ -267,26 +266,11 @@ def test_network_analysis(
 
 
 @pytest.mark.parametrize(
-    "file_format, extension, loader",
+    "file_format",
     [
-        pytest.param(
-            RegisteredAnnotationFileFormat.NPZ,
-            "npz",
-            lambda x: np.load(x)["values"],
-            id="npz",
-        ),
-        pytest.param(
-            RegisteredAnnotationFileFormat.CSV,
-            "csv",
-            lambda x: np.loadtxt(x, delimiter=","),
-            id="csv",
-        ),
-        pytest.param(
-            RegisteredAnnotationFileFormat.MAT,
-            "mat",
-            lambda x: scipy.io.loadmat(x)["values"],
-            id="mat",
-        ),
+        MaskFileFormat.NPZ,
+        MaskFileFormat.CSV,
+        MaskFileFormat.MAT,
     ],
 )
 @pytest.mark.parametrize(
@@ -298,13 +282,13 @@ def test_network_analysis(
     ],
 )
 @patch("brainways.project.brainways_project.open_directory")
+@patch("brainways.project.brainways_project.export_mask")
 def test_export_registration_masks_async(
-    open_directory_mock,
+    export_mask_mock: Mock,
+    open_directory_mock: Mock,
     brainways_project: BrainwaysProject,
     pixel_value_mode: RegisteredPixelValues,
-    file_format: RegisteredAnnotationFileFormat,
-    extension: str,
-    loader: Callable[[Path], np.ndarray],
+    file_format: MaskFileFormat,
     tmp_path,
 ):
     brainways_project.pipeline = Mock()
@@ -327,10 +311,13 @@ def test_export_registration_masks_async(
     )
 
     if (
-        file_format == RegisteredAnnotationFileFormat.CSV
+        file_format == MaskFileFormat.CSV
         and pixel_value_mode != RegisteredPixelValues.STRUCTURE_IDS
     ):
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match="CSV format is only supported for structure IDs pixel values",
+        ):
             for _ in generator:
                 pass
         return
@@ -345,15 +332,13 @@ def test_export_registration_masks_async(
         brainways_project.pipeline.get_registered_values_on_image.assert_any_call(
             slice_info, pixel_value_mode=pixel_value_mode
         )
-
-    for slice_info in slice_infos:
         output_file = (
             output_dir
-            / f"{Path(str(slice_info.path)).name}_{pixel_value_mode.name.lower()}.{extension}"
+            / f"{Path(str(slice_info.path)).name}_{pixel_value_mode.name.lower()}"
         )
-        assert output_file.exists()
-        data = loader(output_file)
-        assert np.array_equal(data, values)
+        export_mask_mock.assert_any_call(
+            data=values, path=output_file, file_format=file_format
+        )
 
 
 @patch("brainways.project.brainways_project.open_directory")
@@ -431,9 +416,7 @@ def test_export_slice_locations(
     pd.testing.assert_frame_equal(slice_locations_df, expected_df)
 
 
-def test_get_subjects_unknown_slice(
-    brainways_project: BrainwaysProject, tmp_path
-):
+def test_get_subjects_unknown_slice(brainways_project: BrainwaysProject, tmp_path):
     # Create invalid slice info
     invalid_slice = SliceInfo(
         path=ImagePath("nonexistent.jpg"),
@@ -448,8 +431,9 @@ def test_get_subjects_unknown_slice(
         brainways_project._get_subjects([invalid_slice])
 
 
+@patch("brainways.project.brainways_project.open_directory")
 def test_export_slice_locations_missing_params(
-    brainways_project: BrainwaysProject, tmp_path
+    open_directory_mock, brainways_project: BrainwaysProject, tmp_path
 ):
     """Test handling of slices with missing atlas parameters"""
     output_path = tmp_path / "slice_locations.csv"
@@ -480,14 +464,38 @@ def test_export_slice_locations_empty_list(
         brainways_project.export_slice_locations(output_path, [])
 
 
-def test_run_cell_detector_iter_without_resume(brainways_project: BrainwaysProject):
+@pytest.mark.parametrize(
+    "resume",
+    [
+        pytest.param(True, id="resume"),
+        pytest.param(False, id="no_resume"),
+    ],
+)
+@pytest.mark.parametrize(
+    "save_cell_detection_masks_file_format",
+    [
+        pytest.param(MaskFileFormat.NPZ, id="npz"),
+        pytest.param(None, id="none"),
+    ],
+)
+@patch("brainways.project.brainways_project.open_directory")
+def test_run_cell_detector_iter(
+    open_directory_mock,
+    brainways_project: BrainwaysProject,
+    resume: bool,
+    save_cell_detection_masks_file_format: MaskFileFormat,
+):
     slice_infos = [Mock(spec=SliceInfo), Mock(spec=SliceInfo)]
     subjects = [Mock(), Mock()]
 
     brainways_project.get_cell_detector = Mock()
     brainways_project._get_subjects = Mock(return_value=subjects)
 
-    generator = brainways_project.run_cell_detector_iter(slice_infos, resume=False)
+    generator = brainways_project.run_cell_detector_iter(
+        slice_infos,
+        resume=resume,
+        save_cell_detection_masks_file_format=save_cell_detection_masks_file_format,
+    )
 
     for _ in generator:
         pass
@@ -496,33 +504,13 @@ def test_run_cell_detector_iter_without_resume(brainways_project: BrainwaysProje
     brainways_project._get_subjects.assert_called_once_with(slice_infos)
 
     for subject, slice_info in zip(subjects, slice_infos):
-        subject.clear_cell_detection.assert_called_once_with(slice_info)
+        if resume:
+            subject.clear_cell_detection.assert_not_called()
+        else:
+            subject.clear_cell_detection.assert_called_once_with(slice_info)
         subject.run_cell_detector.assert_called_once_with(
             slice_info=slice_info,
             cell_detector=brainways_project.get_cell_detector(),
             default_params=brainways_project.settings.default_cell_detector_params,
-        )
-
-
-def test_run_cell_detector_iter_with_resume(brainways_project: BrainwaysProject):
-    slice_infos = [Mock(spec=SliceInfo), Mock(spec=SliceInfo)]
-    subjects = [Mock(), Mock()]
-
-    brainways_project.get_cell_detector = Mock()
-    brainways_project._get_subjects = Mock(return_value=subjects)
-
-    generator = brainways_project.run_cell_detector_iter(slice_infos, resume=True)
-
-    for _ in generator:
-        pass
-
-    brainways_project.get_cell_detector.assert_called_once()
-    brainways_project._get_subjects.assert_called_once_with(slice_infos)
-
-    for subject, slice_info in zip(subjects, slice_infos):
-        subject.clear_cell_detection.assert_not_called()
-        subject.run_cell_detector.assert_called_once_with(
-            slice_info=slice_info,
-            cell_detector=brainways_project.get_cell_detector(),
-            default_params=brainways_project.settings.default_cell_detector_params,
+            save_cell_detection_masks_file_format=save_cell_detection_masks_file_format,
         )

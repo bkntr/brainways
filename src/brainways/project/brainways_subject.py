@@ -18,6 +18,7 @@ from brainways.pipeline.brainways_pipeline import BrainwaysPipeline, PipelineSte
 from brainways.pipeline.cell_detector import CellDetector
 from brainways.project.info_classes import (
     ExcelMode,
+    MaskFileFormat,
     SliceInfo,
     SubjectFileFormat,
     SubjectInfo,
@@ -33,6 +34,7 @@ from brainways.utils.cells import (
     filter_cells_on_tissue,
     get_region_areas,
 )
+from brainways.utils.export import export_mask
 from brainways.utils.image import brain_mask_simple, get_resize_size, slice_to_uint8
 from brainways.utils.io_utils import ImagePath
 from brainways.utils.io_utils.readers import get_image_size
@@ -203,6 +205,7 @@ class BrainwaysSubject:
         slice_info: SliceInfo,
         cell_detector: CellDetector,
         default_params: CellDetectorParams,
+        save_cell_detection_masks_file_format: Optional[MaskFileFormat] = None,
     ) -> None:
         cell_detections_path = self.cell_detections_path(slice_info.path)
         cell_detections_path.parent.mkdir(parents=True, exist_ok=True)
@@ -225,6 +228,20 @@ class BrainwaysSubject:
             physical_pixel_sizes=slice_info.physical_pixel_sizes,
         )
         cells.to_csv(cell_detections_path, index=False)
+
+        if save_cell_detection_masks_file_format is not None:
+            mask_path = (
+                self.project.path.parent
+                / "__outputs__"
+                / "cell_detection_masks"
+                / self.subject_info.name
+                / Path(str(slice_info.path)).name
+            )
+            export_mask(
+                data=labels,
+                path=mask_path,
+                file_format=save_cell_detection_masks_file_format,
+            )
 
     def clear_cell_detection(self, slice_info: SliceInfo):
         cell_detections_path = self.cell_detections_path(slice_info.path)

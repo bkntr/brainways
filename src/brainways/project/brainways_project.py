@@ -3,7 +3,7 @@ import logging
 from dataclasses import asdict, fields
 from itertools import combinations
 from pathlib import Path
-from typing import Callable, Iterator, List, Optional, Tuple, Union
+from typing import Callable, Dict, Iterator, List, Optional, Tuple, Union
 
 import dacite
 import pandas as pd
@@ -129,7 +129,26 @@ class BrainwaysProject:
         with open(self.path, "w") as f:
             json.dump(serialized_settings, f)
 
-    def add_subject(self, subject_info: SubjectInfo) -> BrainwaysSubject:
+    def new_subject(
+        self, subject_id: str, conditions: Dict[str, str]
+    ) -> BrainwaysSubject:
+        if self.subjects:
+            last_subject_info = self.subjects[-1].subject_info
+            default_registration_channel = last_subject_info.registration_channel
+            default_cell_detection_channels = last_subject_info.cell_detection_channels
+            channel_names = last_subject_info.channel_names
+        else:
+            default_registration_channel = 0
+            default_cell_detection_channels = [0]
+            channel_names = []
+
+        subject_info = SubjectInfo(
+            name=subject_id,
+            registration_channel=default_registration_channel,
+            cell_detection_channels=default_cell_detection_channels,
+            channel_names=channel_names,
+            conditions=conditions,
+        )
         subject = BrainwaysSubject.create(subject_info=subject_info, project=self)
         self.subjects.append(subject)
         return subject

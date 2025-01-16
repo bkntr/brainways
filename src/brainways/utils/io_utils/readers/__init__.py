@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import List, Union
 
 from brainways.utils.image import ImageSizeHW
 from brainways.utils.io_utils.image_path import ImagePath
@@ -18,6 +18,8 @@ def get_image_size(path: ImagePath) -> ImageSizeHW:
     return (reader.dims.Y, reader.dims.X)
 
 
-def get_channels(filename: Union[str, Path]):
+def get_channels(filename: Union[str, Path]) -> List[str]:
     reader = QupathReader(filename)
-    return reader.channel_names
+    channel_names = reader.channel_names
+    assert channel_names is not None, f"Channel names not found in {filename}"
+    return channel_names

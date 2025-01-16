@@ -1,7 +1,7 @@
 import functools
 from dataclasses import replace
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 from magicgui import widgets
@@ -26,7 +26,7 @@ from qtpy.QtWidgets import (
 
 from brainways.project.brainways_project import BrainwaysProject
 from brainways.project.brainways_subject import BrainwaysSubject
-from brainways.project.info_classes import SliceInfo, SubjectInfo
+from brainways.project.info_classes import SliceInfo
 from brainways.ui.utils.async_utils import do_work_async
 from brainways.utils.image import resize_image
 from brainways.utils.io_utils import ImagePath
@@ -37,14 +37,15 @@ class CreateSubjectDialog(QDialog):
     def __init__(
         self,
         project: BrainwaysProject,
+        subject: BrainwaysSubject,
         async_disabled: bool = False,
         parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
 
         self.project = project
+        self.subject = subject
         self.async_disabled = async_disabled
-        self.subject: Optional[BrainwaysSubject] = None
         self.create_subject_button = QPushButton("&Create", self)
         self.create_subject_button.clicked.connect(self.on_create_subject_clicked)
         self.registration_channel_combobox = QComboBox()
@@ -81,52 +82,30 @@ class CreateSubjectDialog(QDialog):
         self._layout.addWidget(self.create_subject_button, cur_row, 2)
 
         if parent is not None:
-            window = self.window()
-            assert window is not None
             self.resize(
-                int(window.width() * 0.8),
-                int(window.height() * 0.8),
+                int(parent.parent().parent().parent().width() * 0.8),  # type: ignore
+                int(parent.parent().parent().parent().height() * 0.8),  # type: ignore
             )
+
+        self._populate_conditions_widget()
 
     def edit_subject_async(self, subject_index: int, document_index: int) -> None:
         self.setWindowTitle("Edit Subject")
-        self._set_subject(self.project.subjects[subject_index])
-        assert self.subject is not None
         self.create_subject_button.setText("Done")
         self.add_document_rows_async(
             documents=self.subject.documents, select_document_index=document_index
         )
 
-    def new_subject(self, subject_id: str, conditions: Dict[str, str]):
-        assert subject_id is not None
-        self.setWindowTitle(f"New Subject ({subject_id})")
-        if self.project.subjects:
-            last_subject_info = self.project.subjects[-1].subject_info
-            default_registration_channel = last_subject_info.registration_channel
-            default_cell_detection_channels = last_subject_info.cell_detection_channels
-        else:
-            default_registration_channel = 0
-            default_cell_detection_channels = [0]
-        self._set_subject(
-            self.project.add_subject(
-                SubjectInfo(
-                    name=subject_id,
-                    registration_channel=default_registration_channel,
-                    cell_detection_channels=default_cell_detection_channels,
-                    conditions=conditions,
-                )
-            )
-        )
-
-    def _set_subject(self, subject: BrainwaysSubject):
-        self.subject = subject
+    def _populate_conditions_widget(self):
         for index, condition in enumerate(self.project.settings.condition_names):
-            self.conditions_widget[index].value = subject.subject_info.conditions.get(
-                condition, ""
+            self.conditions_widget[index].value = (
+                self.subject.subject_info.conditions.get(condition, "")
             )
             self.conditions_widget[index].changed.disconnect()
             self.conditions_widget[index].changed.connect(
-                self._get_set_condition_callback(subject=subject, condition=condition)
+                self._get_set_condition_callback(
+                    subject=self.subject, condition=condition
+                )
             )
 
     def _get_set_condition_callback(self, subject: BrainwaysSubject, condition: str):
@@ -213,7 +192,6 @@ class CreateSubjectDialog(QDialog):
         return image_widget
 
     def get_thumbnail_image(self, document: SliceInfo) -> np.ndarray:
-        assert self.subject is not None
         thumbnail = self.subject.read_lowres_image(document)
         thumbnail = resize_image(thumbnail, size=(256, 256), keep_aspect=True)
         thumbnail = np.tile(thumbnail[..., None], [1, 1, 3]).astype(np.float32)
@@ -227,7 +205,6 @@ class CreateSubjectDialog(QDialog):
     def add_document_rows_async(
         self, documents: List[SliceInfo], select_document_index: Optional[int] = None
     ) -> None:
-        assert self.subject is not None
         progress = QProgressDialog(
             "Opening images...", "Cancel", 0, len(documents), self
         )
@@ -285,7 +262,7 @@ class CreateSubjectDialog(QDialog):
                 if channels != current_channels:
                     raise ValueError(
                         f"Channels for {document.path.filename} ({channels}) do not match existing "
-                        f"channels ({current_channels}), please add images with the same channels."
+                        f"channels ({current_channels}), please add images with identical channel names."
                     )
 
             progress.setValue(progress.value() + 1)
@@ -312,7 +289,6 @@ class CreateSubjectDialog(QDialog):
     def _add_cell_detection_channels_checkboxes(
         self, cell_detection_channels: List[str]
     ):
-        assert self.subject is not None
         assert self.cell_detection_channels_checkboxes == []
         for channel_index, channel in enumerate(cell_detection_channels):
             checkbox = QCheckBox(channel)
@@ -328,7 +304,6 @@ class CreateSubjectDialog(QDialog):
         self._layout.addLayout(layout, 1, 0, 1, 3)
 
     def on_check_changed(self, _, checkbox: QCheckBox, document_index: int):
-        assert self.subject is not None
         document = replace(
             self.subject.documents[document_index],
             ignore=not checkbox.isChecked(),
@@ -340,7 +315,6 @@ class CreateSubjectDialog(QDialog):
         self.subject.documents[document_index] = document
 
     def on_cell_detection_channel_changed(self, _=None):
-        assert self.subject is not None
         cell_detection_channels = [
             channel_index
             for channel_index, checkbox in enumerate(

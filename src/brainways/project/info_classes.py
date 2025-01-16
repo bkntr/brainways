@@ -28,6 +28,7 @@ class SubjectInfo:
     name: str
     registration_channel: int
     cell_detection_channels: List[int]
+    channel_names: List[str] = field(default_factory=list)
     conditions: Dict[str, str] = field(default_factory=dict)
     rotation: Optional[tuple[float, float]] = None
 

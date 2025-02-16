@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Callable, Iterator, List, Optional, Tuple, Union
 
 import dacite
+import networkx as nx
 import numpy as np
 import pandas as pd
 import scipy.io
@@ -63,8 +64,8 @@ class BrainwaysProject:
         self.subjects = subjects
         self.settings = settings
 
-        self.atlas: Optional[BrainwaysAtlas] = None
-        self.pipeline: Optional[BrainwaysPipeline] = None
+        self._atlas: Optional[BrainwaysAtlas] = None
+        self._pipeline: Optional[BrainwaysPipeline] = None
 
         if not lazy_init:
             self.load_atlas()
@@ -136,7 +137,7 @@ class BrainwaysProject:
         return subject
 
     def load_atlas(self, load_volumes: bool = True):
-        self.atlas = BrainwaysAtlas.load(
+        self._atlas = BrainwaysAtlas.load(
             self.settings.atlas, exclude_regions=[76, 42, 41]
         )  # TODO: from model
 
@@ -149,7 +150,7 @@ class BrainwaysProject:
     def load_pipeline(self):
         if self.atlas is None:
             self.load_atlas()
-        self.pipeline = BrainwaysPipeline(self.atlas)
+        self._pipeline = BrainwaysPipeline(self.atlas)
 
     def move_images_directory(
         self, new_images_root: Path, old_images_root: Optional[Path] = None
@@ -398,7 +399,8 @@ class BrainwaysProject:
         condition_col: str,
         values_col: str,
         min_group_size: int,
-        alpha: float,
+        multiple_comparison_correction_method: str,
+        output_path: Path,
     ):
         if not self.can_calculate_contrast(condition_col):
             raise RuntimeError(
@@ -418,16 +420,12 @@ class BrainwaysProject:
             min_per_group=min_group_size,
         )
 
-        file_prefix = f"Condition={condition_col},Values={values_col}"
-        graph_root_path = (
-            self.path.parent / "__outputs__" / "network_graph" / file_prefix
-        )
-        graph_root_path.mkdir(parents=True, exist_ok=True)
-        calculate_network_graph(
+        graph = calculate_network_graph(
             cell_counts=cell_counts,
-            alpha=alpha,
-            output_path=graph_root_path.with_suffix(".graphml"),
+            multiple_comparison_correction_method=multiple_comparison_correction_method,
         )
+        nx.write_graphml(graph, output_path.with_suffix(".graphml"))
+        open_directory(output_path.parent)
 
     def next_slice_missing_params(self) -> Optional[Tuple[int, int]]:
         for subject_idx, subject in enumerate(self.subjects):
@@ -482,8 +480,6 @@ class BrainwaysProject:
         slice_infos: List[SliceInfo],
         file_format: RegisteredAnnotationFileFormat,
     ):
-        assert self.pipeline is not None
-
         if (
             file_format == RegisteredAnnotationFileFormat.CSV
             and pixel_value_mode != RegisteredPixelValues.STRUCTURE_IDS
@@ -528,8 +524,6 @@ class BrainwaysProject:
     def export_slice_locations(
         self, output_path: Path, slice_infos: List[SliceInfo]
     ) -> None:
-        assert self.atlas is not None
-
         if len(slice_infos) == 0:
             raise ValueError("No slices to export")
 
@@ -580,6 +574,18 @@ class BrainwaysProject:
     @property
     def n_valid_images(self):
         return sum(len(subject.valid_documents) for subject in self.subjects)
+
+    @property
+    def atlas(self) -> BrainwaysAtlas:
+        if self._atlas is None:
+            raise RuntimeError("Atlas not loaded")
+        return self._atlas
+
+    @property
+    def pipeline(self) -> BrainwaysPipeline:
+        if self._pipeline is None:
+            raise RuntimeError("Pipeline not loaded")
+        return self._pipeline
 
     def possible_contrasts(self, condition: str) -> List[Tuple[str, str]]:
         condition_values = {

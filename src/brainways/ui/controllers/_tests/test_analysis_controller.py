@@ -90,7 +90,8 @@ def test_analysis_controller_run_contrast_analysis(
 
 
 def test_analysis_controller_run_network_analysis(
-    app_on_analysis: Tuple[BrainwaysUI, AnalysisController]
+    app_on_analysis: Tuple[BrainwaysUI, AnalysisController],
+    tmp_path: Path,
 ):
     app, controller = app_on_analysis
     for subject in app.project.subjects:
@@ -110,24 +111,16 @@ def test_analysis_controller_run_network_analysis(
             )
         )
 
-    graph_path = (
-        app.project.path.parent
-        / "__outputs__"
-        / "network_graph"
-        / "Condition=condition1,Values=cells.graphml"
-    )
-
-    assert not graph_path.exists()
-
     controller.run_calculate_results_async()
     controller.run_network_analysis_async(
         condition_col="condition1",
         values_col="cells",
         min_group_size=1,
-        alpha=1.0,
+        multiple_comparison_correction_method="fdr_bh",
+        output_path=tmp_path / "network_graph",
     )
 
-    assert graph_path.exists()
+    assert (tmp_path / "network_graph.graphml").exists()
 
 
 def test_export_registration_masks_async(

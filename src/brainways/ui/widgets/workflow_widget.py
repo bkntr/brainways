@@ -183,7 +183,6 @@ class WorkflowView(QWidget):
         self.controller.open_project_async(project.path)
 
     def on_edit_project_clicked(self, _=None) -> None:
-        assert self.controller.project is not None
         settings = self.controller.project.settings
         user_values = request_values(
             title="Edit Brainways Project",

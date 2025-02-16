@@ -256,7 +256,7 @@ def brainways_project(
         path=project_path,
         lazy_init=True,
     )
-    brainways_project.atlas = mock_atlas
+    brainways_project._atlas = mock_atlas
     brainways_project.load_pipeline()
 
     # add mock subject to project

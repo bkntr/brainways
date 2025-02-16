@@ -114,7 +114,7 @@ def test_open_project(
     app: BrainwaysUI,
     mock_project: BrainwaysProject,
 ):
-    assert app.project is None
+    assert app._project is None
     app.open_project_async(mock_project.path)
     assert isinstance(app.project, BrainwaysProject)
     assert isinstance(app.current_subject, BrainwaysSubject)
@@ -125,7 +125,7 @@ def test_open_project_without_subjects(
 ):
     for subject_dir in mock_project.path.parent.glob("subject*"):
         shutil.rmtree(subject_dir)
-    assert app.project is None
+    assert app._project is None
     app.open_project_async(mock_project.path)
     assert isinstance(app.project, BrainwaysProject)
     assert app._current_valid_subject_index is None
@@ -287,7 +287,7 @@ def brainways_ui():
 
 @patch("brainways.ui.brainways_ui.show_warning_dialog", return_value=True)
 def test_no_subjects(mock_show_warning_dialog, brainways_ui):
-    brainways_ui.project = MagicMock(subjects=[])
+    brainways_ui._project = MagicMock(subjects=[])
     assert brainways_ui.prompt_user_slices_have_missing_params()
     mock_show_warning_dialog.assert_not_called()
 
@@ -295,7 +295,7 @@ def test_no_subjects(mock_show_warning_dialog, brainways_ui):
 @patch("brainways.ui.brainways_ui.show_warning_dialog", return_value=True)
 def test_no_valid_documents(mock_show_warning_dialog, brainways_ui):
     subject = MagicMock(valid_documents=[])
-    brainways_ui.project = MagicMock(subjects=[subject])
+    brainways_ui._project = MagicMock(subjects=[subject])
     assert brainways_ui.prompt_user_slices_have_missing_params()
     mock_show_warning_dialog.assert_not_called()
 
@@ -305,7 +305,7 @@ def test_all_params_present(mock_show_warning_dialog, brainways_ui):
     params = BrainwaysParams(atlas="atlas", affine="affine", tps="tps", cell="cell")
     slice_info = MagicMock(params=params)
     subject = MagicMock(valid_documents=[(0, slice_info)])
-    brainways_ui.project = MagicMock(subjects=[subject])
+    brainways_ui._project = MagicMock(subjects=[subject])
     assert brainways_ui.prompt_user_slices_have_missing_params()
     mock_show_warning_dialog.assert_not_called()
 
@@ -315,7 +315,7 @@ def test_some_params_missing(mock_show_warning_dialog, brainways_ui):
     params = BrainwaysParams(atlas=None, affine="affine", tps="tps", cell="cell")
     slice_info = MagicMock(params=params)
     subject = MagicMock(valid_documents=[(0, slice_info)])
-    brainways_ui.project = MagicMock(subjects=[subject])
+    brainways_ui._project = MagicMock(subjects=[subject])
     assert brainways_ui.prompt_user_slices_have_missing_params()
     mock_show_warning_dialog.assert_called_once()
 
@@ -325,7 +325,7 @@ def test_all_params_missing(mock_show_warning_dialog, brainways_ui):
     params = BrainwaysParams(atlas=None, affine=None, tps=None, cell=None)
     slice_info = MagicMock(params=params)
     subject = MagicMock(valid_documents=[(0, slice_info)])
-    brainways_ui.project = MagicMock(subjects=[subject])
+    brainways_ui._project = MagicMock(subjects=[subject])
     assert brainways_ui.prompt_user_slices_have_missing_params()
     mock_show_warning_dialog.assert_called_once()
 
@@ -335,7 +335,7 @@ def test_all_params_missing_user_rejects(mock_show_warning_dialog, brainways_ui)
     params = BrainwaysParams(atlas=None, affine=None, tps=None, cell=None)
     slice_info = MagicMock(params=params)
     subject = MagicMock(valid_documents=[(0, slice_info)])
-    brainways_ui.project = MagicMock(subjects=[subject])
+    brainways_ui._project = MagicMock(subjects=[subject])
     assert not brainways_ui.prompt_user_slices_have_missing_params()
     mock_show_warning_dialog.assert_called_once()
 
@@ -361,7 +361,6 @@ def test_get_slice_selection_current_subject(opened_app: BrainwaysUI):
 
 
 def test_get_slice_selection_all_subjects(opened_app: BrainwaysUI):
-    assert opened_app.project is not None
     slice_selection = SliceSelection.ALL_SUBJECTS
     expected_slice_infos = [
         slice_info

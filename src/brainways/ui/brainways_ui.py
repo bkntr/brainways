@@ -62,7 +62,7 @@ class BrainwaysUI(QWidget):
             self.analysis_controller,
         ]
 
-        self.project: Optional[BrainwaysProject] = None
+        self._project: Optional[BrainwaysProject] = None
         self._current_valid_subject_index: Optional[int] = None
         self._current_valid_document_index: Optional[int] = None
         self._current_step_index: int = 0
@@ -215,7 +215,7 @@ class BrainwaysUI(QWidget):
 
     def _open_project(self, path: Path):
         yield "Opening project..."
-        self.project = BrainwaysProject.open(path, lazy_init=True)
+        self._project = BrainwaysProject.open(path, lazy_init=True)
         # subjects with no valid documents are not supported in GUI
         self.project.subjects = [
             subject
@@ -489,7 +489,6 @@ class BrainwaysUI(QWidget):
         )
 
     def prompt_user_slices_have_missing_params(self, check_cells: bool = False) -> bool:
-        assert self.project is not None
         missing_param_warnings = []
         missing_cell_detction_warnings = []
         for subject_idx, subject in enumerate(self.project.subjects):
@@ -595,10 +594,8 @@ class BrainwaysUI(QWidget):
 
     def _on_work_error(self, *args, **kwargs):
         self.widget.hide_progress_bar()
-    
-    def get_slice_selection(self, slice_selection: SliceSelection) -> List[SliceInfo]:
-        assert self.project is not None
 
+    def get_slice_selection(self, slice_selection: SliceSelection) -> List[SliceInfo]:
         if slice_selection == SliceSelection.CURRENT_SLICE:
             return [self.current_document]
         elif slice_selection == SliceSelection.CURRENT_SUBJECT:
@@ -659,3 +656,9 @@ class BrainwaysUI(QWidget):
     @property
     def subject_size(self):
         return len(self.current_subject.valid_documents)
+
+    @property
+    def project(self) -> BrainwaysProject:
+        if self._project is None:
+            raise ValueError("Project not opened")
+        return self._project

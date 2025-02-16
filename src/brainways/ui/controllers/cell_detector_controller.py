@@ -61,7 +61,6 @@ class CellDetectorController(Controller):
         image: np.ndarray | None = None,
         from_ui: bool = False,
     ) -> None:
-        assert self.ui.project is not None
         self._params = params
 
         if self._params.cell is not None:
@@ -97,7 +96,6 @@ class CellDetectorController(Controller):
         self.ui.viewer.reset_view()
 
     def load_model(self) -> None:
-        assert self.ui.project is not None
         if (
             self.model is None
             or self.model.custom_model_dir

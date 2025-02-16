@@ -228,6 +228,7 @@ def test_pls_analysis(
 
 def test_network_analysis(
     brainways_project: BrainwaysProject,
+    tmp_path,
 ):
     """
     need to add mock cells for this test to work
@@ -252,17 +253,15 @@ def test_network_analysis(
 
     brainways_project.calculate_results()
     brainways_project.calculate_network_graph(
-        condition_col="condition", values_col="cells", min_group_size=1, alpha=1.0
+        condition_col="condition",
+        values_col="cells",
+        min_group_size=1,
+        n_bootstraps=100,
+        multiple_comparison_correction_method="fdr_bh",
+        output_path=tmp_path / "network_graph",
     )
 
-    graph_path = (
-        brainways_project.path.parent
-        / "__outputs__"
-        / "network_graph"
-        / "Condition=condition,Values=cells.graphml"
-    )
-
-    assert graph_path.exists()
+    assert (tmp_path / "network_graph.graphml").exists()
 
 
 @pytest.mark.parametrize(
@@ -291,7 +290,7 @@ def test_export_registration_masks_async(
     file_format: MaskFileFormat,
     tmp_path,
 ):
-    brainways_project.pipeline = Mock()
+    brainways_project._pipeline = Mock()
     if pixel_value_mode == RegisteredPixelValues.STRUCTURE_IDS:
         values = np.array([[1, 2], [3, 4]])
     else:

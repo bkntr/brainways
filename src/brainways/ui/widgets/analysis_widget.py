@@ -256,21 +256,48 @@ class AnalysisWidget(QWidget):
                     tooltip="Minimal number of animals to consider an area for contrast"
                 ),
             ),
-            alpha=dict(
-                value=0.05,
-                annotation=float,
-                label="alpha",
-                options=dict(tooltip="alpha for plots"),
+            n_bootstraps=dict(
+                value=1000,
+                annotation=int,
+                label="Number of Bootstraps",
+                options=dict(
+                    tooltip="Number of bootstrap iterations to perform for the null network analysis"
+                ),
+            ),
+            multiple_comparison_correction_method=dict(
+                value="fdr_bh",
+                annotation=str,
+                label="Multiple Comparisons",
+                options=dict(
+                    tooltip="Method to use when adjusting for multiple comparisons"
+                ),
+            ),
+            output_path=dict(
+                value="",
+                annotation=Path,
+                label="Output Path",
+                options=dict(
+                    mode="w",
+                    tooltip="Path to save the network analysis results to",
+                    filter="GraphML files (*.graphml)",
+                ),
             ),
         )
         if values is None:
             return
 
+        if not values["output_path"].parent.exists():
+            raise ValueError("Output directory does not exist")
+
         self.controller.run_network_analysis_async(
             condition_col=values["condition_col"],
             values_col=values["values_col"],
             min_group_size=values["min_group_size"],
-            alpha=values["alpha"],
+            n_bootstraps=values["n_bootstraps"],
+            multiple_comparison_correction_method=values[
+                "multiple_comparison_correction_method"
+            ],
+            output_path=values["output_path"],
         )
         self.set_label()
 

@@ -7,7 +7,6 @@ from typing import Callable, Iterator, List, Optional, Tuple, Union
 
 import dacite
 import networkx as nx
-import numpy as np
 import pandas as pd
 from natsort import natsorted, ns
 from pandas import ExcelWriter

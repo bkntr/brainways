@@ -64,21 +64,22 @@ def add_null_network_bootstrap_pvalues(
             the bootstrap analysis.
     """
     null_corrs = []
-    animal_ids = cell_counts["animal_id"].unique()
+    animal_ids = cell_counts.index.unique().to_numpy()
 
     node_id_to_name = nx.get_node_attributes(graph, "name")
     name_to_node_id = {name: node_id for node_id, name in node_id_to_name.items()}
     node_names = list(node_id_to_name.values())
     node_ids = [name_to_node_id[name] for name in node_names]
-    cell_counts = cell_counts[["animal_id"] + node_names]
+
+    assert set(node_names) == set(
+        cell_counts.columns
+    ), "Node names in `cell_counts` do not match those in `graph`"
 
     for _ in range(n_bootstraps):
         bootstrap_animal_ids = np.random.choice(
             animal_ids, len(animal_ids), replace=True
         )
-        bootstrap_counts = cell_counts[
-            cell_counts["animal_id"].isin(bootstrap_animal_ids)
-        ]
+        bootstrap_counts = cell_counts.loc[bootstrap_animal_ids]
         corr = bootstrap_counts.corr(numeric_only=True).values
         corr[np.tril_indices_from(corr)] = 0
         null_corrs.append(corr)

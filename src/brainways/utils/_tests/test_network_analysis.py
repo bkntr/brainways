@@ -16,7 +16,7 @@ def test_calculate_network_graph():
         "region2": region_2,
         "region3": region_3,
     }
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(data).set_index("animal_id")
 
     # Run function
     graph = calculate_network_graph(df, n_bootstraps=100)

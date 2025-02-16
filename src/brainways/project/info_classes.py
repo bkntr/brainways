@@ -66,7 +66,7 @@ class SliceSelection(Enum):
     ALL_SUBJECTS = "All Subjects"
 
 
-class RegisteredAnnotationFileFormat(Enum):
+class MaskFileFormat(Enum):
     NPZ = "npz"
     MAT = "mat"
     CSV = "csv"

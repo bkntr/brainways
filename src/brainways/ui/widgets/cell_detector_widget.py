@@ -4,7 +4,7 @@ import magicgui
 from magicgui.widgets import request_values
 from qtpy.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
-from brainways.project.info_classes import SliceSelection
+from brainways.project.info_classes import MaskFileFormat, SliceSelection
 from brainways.ui.widgets.warning_dialog import show_warning_dialog
 
 if TYPE_CHECKING:
@@ -82,6 +82,7 @@ class CellDetectorWidget(QWidget):
         widget._auto_call = True
 
     def run_cell_detector(self):
+        DONT_SAVE_CELL_DETECTION_MASK_VALUE = "Don't Save"
         values = request_values(
             title="Run Cell Detector",
             slice_selection=dict(
@@ -93,6 +94,17 @@ class CellDetectorWidget(QWidget):
                 ),
                 annotation=str,
                 label="Slice Selection",
+            ),
+            save_cell_detection_masks_file_format=dict(
+                value=DONT_SAVE_CELL_DETECTION_MASK_VALUE,
+                widget_type="ComboBox",
+                options=dict(
+                    choices=[DONT_SAVE_CELL_DETECTION_MASK_VALUE]
+                    + [e.value for e in MaskFileFormat],
+                    tooltip="File format to save the cell detection masks to",
+                ),
+                annotation=str,
+                label="Cell Detection Masks File Format",
             ),
             resume=dict(
                 value=True,
@@ -112,7 +124,15 @@ class CellDetectorWidget(QWidget):
             ):
                 return
 
+        save_cell_detection_masks_file_format = (
+            None
+            if values["save_cell_detection_masks_file_format"]
+            == DONT_SAVE_CELL_DETECTION_MASK_VALUE
+            else MaskFileFormat(values["save_cell_detection_masks_file_format"])
+        )
+
         self.controller.run_cell_detector_async(
             slice_selection=slice_selection,
             resume=values["resume"],
+            save_cell_detection_masks_file_format=save_cell_detection_masks_file_format,
         )

@@ -6,7 +6,7 @@ from qtpy.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
 from brainways.project.info_classes import (
     ExcelMode,
-    RegisteredAnnotationFileFormat,
+    MaskFileFormat,
     RegisteredPixelValues,
     SliceSelection,
 )
@@ -368,10 +368,10 @@ class AnalysisWidget(QWidget):
                 label="Slice Selection",
             ),
             file_format=dict(
-                value=RegisteredAnnotationFileFormat.NPZ.value,
+                value=MaskFileFormat.NPZ.value,
                 widget_type="ComboBox",
                 options=dict(
-                    choices=[e.value for e in RegisteredAnnotationFileFormat],
+                    choices=[e.value for e in MaskFileFormat],
                     tooltip="File format to save the masks to",
                 ),
                 annotation=str,
@@ -385,7 +385,7 @@ class AnalysisWidget(QWidget):
             output_path=values["output_path"],
             pixel_value_mode=RegisteredPixelValues(values["pixel_value_mode"]),
             slice_selection=SliceSelection(values["slice_selection"]),
-            file_format=RegisteredAnnotationFileFormat(values["file_format"]),
+            file_format=MaskFileFormat(values["file_format"]),
         )
 
     def on_export_slice_locations_clicked(self, _=None):

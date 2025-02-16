@@ -256,6 +256,14 @@ class AnalysisWidget(QWidget):
                     tooltip="Minimal number of animals to consider an area for contrast"
                 ),
             ),
+            n_bootstraps=dict(
+                value=1000,
+                annotation=int,
+                label="Number of Bootstraps",
+                options=dict(
+                    tooltip="Number of bootstrap iterations to perform for the null network analysis"
+                ),
+            ),
             multiple_comparison_correction_method=dict(
                 value="fdr_bh",
                 annotation=str,
@@ -285,6 +293,7 @@ class AnalysisWidget(QWidget):
             condition_col=values["condition_col"],
             values_col=values["values_col"],
             min_group_size=values["min_group_size"],
+            n_bootstraps=values["n_bootstraps"],
             multiple_comparison_correction_method=values[
                 "multiple_comparison_correction_method"
             ],

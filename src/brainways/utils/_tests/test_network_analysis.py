@@ -19,7 +19,7 @@ def test_calculate_network_graph():
     df = pd.DataFrame(data)
 
     # Run function
-    graph = calculate_network_graph(df)
+    graph = calculate_network_graph(df, n_bootstraps=100)
 
     # Validate graph structure
     assert len(graph.nodes) == 3  # region1, region2, region3
@@ -42,6 +42,7 @@ def test_calculate_network_graph():
 
     # Check null pvalues
     null_pvalues = nx.get_edge_attributes(graph, "null_pvalue")
+    assert len(null_pvalues) == len(p_values)
     assert all(
         0 <= val <= 1 for val in null_pvalues.values()
     ), "null pvalues must be between 0 and 1"

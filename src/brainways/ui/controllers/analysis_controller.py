@@ -296,6 +296,7 @@ class AnalysisController(Controller):
         condition_col: str,
         values_col: str,
         min_group_size: int,
+        n_bootstraps: int,
         multiple_comparison_correction_method: str,
         output_path: Path,
     ):
@@ -304,6 +305,7 @@ class AnalysisController(Controller):
             condition_col=condition_col,
             values_col=values_col,
             min_group_size=min_group_size,
+            n_bootstraps=n_bootstraps,
             multiple_comparison_correction_method=multiple_comparison_correction_method,
             output_path=output_path,
         )

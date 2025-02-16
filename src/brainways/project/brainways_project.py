@@ -399,6 +399,7 @@ class BrainwaysProject:
         condition_col: str,
         values_col: str,
         min_group_size: int,
+        n_bootstraps: int,
         multiple_comparison_correction_method: str,
         output_path: Path,
     ):
@@ -422,6 +423,7 @@ class BrainwaysProject:
 
         graph = calculate_network_graph(
             cell_counts=cell_counts,
+            n_bootstraps=n_bootstraps,
             multiple_comparison_correction_method=multiple_comparison_correction_method,
         )
         nx.write_graphml(graph, output_path.with_suffix(".graphml"))

@@ -257,6 +257,7 @@ def test_network_analysis(
         condition_col="condition",
         values_col="cells",
         min_group_size=1,
+        n_bootstraps=100,
         multiple_comparison_correction_method="fdr_bh",
         output_path=tmp_path / "network_graph",
     )

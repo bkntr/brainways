@@ -35,7 +35,7 @@ def calculate_correlation_graph(cell_counts: pd.DataFrame):
     return corr_graph
 
 
-def add_edge_bootstrap_pvalues(
+def add_null_network_bootstrap_pvalues(
     graph: Graph,
     cell_counts: pd.DataFrame,
     n_bootstraps: int,
@@ -68,9 +68,7 @@ def add_edge_bootstrap_pvalues(
 
     node_id_to_name = nx.get_node_attributes(graph, "name")
     name_to_node_id = {name: node_id for node_id, name in node_id_to_name.items()}
-    node_names = [
-        name for name in cell_counts.columns[2:].tolist() if name in name_to_node_id
-    ]
+    node_names = list(node_id_to_name.values())
     node_ids = [name_to_node_id[name] for name in node_names]
     cell_counts = cell_counts[["animal_id"] + node_names]
 
@@ -109,6 +107,7 @@ def add_edge_bootstrap_pvalues(
 
 def calculate_network_graph(
     cell_counts: pd.DataFrame,
+    n_bootstraps: int = 1000,
     multiple_comparison_correction_method: str = "fdr_bh",
 ) -> nx.Graph:
     graph = calculate_correlation_graph(cell_counts)
@@ -130,5 +129,12 @@ def calculate_network_graph(
     }
 
     nx.set_edge_attributes(graph, edge_to_p_values_corrected, name="pvalue")
+
+    add_null_network_bootstrap_pvalues(
+        graph,
+        cell_counts,
+        n_bootstraps=n_bootstraps,
+        multiple_comparison_correction_method=multiple_comparison_correction_method,
+    )
 
     return graph

@@ -7,7 +7,7 @@ import pandas as pd
 from pytest import fixture
 
 from brainways.project.info_classes import (
-    RegisteredAnnotationFileFormat,
+    MaskFileFormat,
     RegisteredPixelValues,
     SliceSelection,
 )
@@ -137,7 +137,7 @@ def test_export_registration_masks_async(
     output_dir = Path("/fake/path")
     pixel_value_mode = RegisteredPixelValues.PIXEL_COORDINATES
     slice_selection = SliceSelection.CURRENT_SUBJECT
-    file_format = RegisteredAnnotationFileFormat.NPZ
+    file_format = MaskFileFormat.NPZ
 
     with (
         patch.object(app.project, "export_registration_masks_async") as mock_export,

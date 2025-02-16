@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from brainways.project.info_classes import (
-    RegisteredAnnotationFileFormat,
+    MaskFileFormat,
     RegisteredPixelValues,
     SliceSelection,
 )
@@ -38,7 +38,7 @@ def test_on_export_registration_masks_clicked_current_slice(analysis_widget):
             output_path=Path("/fake/path"),
             pixel_value_mode=RegisteredPixelValues.MICRON_COORDINATES,
             slice_selection=SliceSelection.CURRENT_SLICE,
-            file_format=RegisteredAnnotationFileFormat.CSV,
+            file_format=MaskFileFormat.CSV,
         )
 
 
@@ -57,7 +57,7 @@ def test_on_export_registration_masks_clicked_current_subject(analysis_widget):
             output_path=Path("/fake/path"),
             pixel_value_mode=RegisteredPixelValues.PIXEL_COORDINATES,
             slice_selection=SliceSelection.CURRENT_SUBJECT,
-            file_format=RegisteredAnnotationFileFormat.CSV,
+            file_format=MaskFileFormat.CSV,
         )
 
 
@@ -76,7 +76,7 @@ def test_on_export_registration_masks_clicked_all_subjects(analysis_widget):
             output_path=Path("/fake/path"),
             pixel_value_mode=RegisteredPixelValues.STRUCTURE_IDS,
             slice_selection=SliceSelection.ALL_SUBJECTS,
-            file_format=RegisteredAnnotationFileFormat.CSV,
+            file_format=MaskFileFormat.CSV,
         )
 
 
@@ -95,7 +95,7 @@ def test_on_export_registration_masks_clicked_different_format(analysis_widget):
             output_path=Path("/fake/path"),
             pixel_value_mode=RegisteredPixelValues.STRUCTURE_IDS,
             slice_selection=SliceSelection.CURRENT_SLICE,
-            file_format=RegisteredAnnotationFileFormat.NPZ,
+            file_format=MaskFileFormat.NPZ,
         )
 
 

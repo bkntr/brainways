@@ -16,9 +16,8 @@ from PyQt5.QtWidgets import QApplication
 from brainways.pipeline.brainways_params import BrainwaysParams
 from brainways.project.info_classes import (
     ExcelMode,
-    RegisteredAnnotationFileFormat,
+    MaskFileFormat,
     RegisteredPixelValues,
-    SliceInfo,
     SliceSelection,
 )
 from brainways.ui.controllers.base import Controller
@@ -312,7 +311,7 @@ class AnalysisController(Controller):
         output_path: Path,
         pixel_value_mode: RegisteredPixelValues,
         slice_selection: SliceSelection,
-        file_format: RegisteredAnnotationFileFormat,
+        file_format: MaskFileFormat,
     ):
         assert self.ui.project is not None
 

@@ -154,6 +154,13 @@ def filter_cells_by_size(
     min_size_um: Optional[float] = None,
     max_size_um: Optional[float] = None,
 ):
+    if not min_size_um and not max_size_um:
+        return cells
+
+    if "area_um" not in cells.columns and "area_pixels" not in cells.columns:
+        logging.warning("Cells do not have size information, skipping size filtering.")
+        return cells
+
     query = np.ones(len(cells), dtype=bool)
     if cells["area_um"].isna().any():
         logging.warning(

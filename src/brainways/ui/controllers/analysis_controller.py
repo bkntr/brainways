@@ -165,7 +165,7 @@ class AnalysisController(Controller):
         atlas = self.ui.project.atlas
         annotation = self.ui.project.atlas.annotation.numpy()
         annotation_anova = np.zeros_like(annotation)
-        for structure, row in self._anova_df[self._anova_df["reject"]].iterrows():
+        for structure, row in self._anova_df.iterrows():
             struct_id = atlas.brainglobe_atlas.structures[structure]["id"]
             struct_mask = annotation == struct_id
             annotation_anova[struct_mask] = row["F"]

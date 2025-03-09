@@ -79,6 +79,10 @@ If you use brainways, please cite [Kantor and Bartal (2023)](https://doi.org/10.
 Distributed under the terms of the [GNU GPL v3.0] license,
 "brainways" is free and open source software
 
+## Funding
+
+This work was generously supported by the Azrieli Foundation, the Israel Science Foundation (ISF), and the Tel Aviv University Center for AI and Data Science (TAD).
+
 ## Issues
 
 If you encounter any problems, please [file an issue] along with a detailed description.

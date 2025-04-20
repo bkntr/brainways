@@ -28,10 +28,10 @@ def test_setup_outputs_progress(setup: BrainwaysSetup):
 
 def test_download_model_success(setup: BrainwaysSetup, mock_rat_atlas: BrainwaysAtlas):
     atlas_registration = AtlasRegistration(mock_rat_atlas)
-    assert atlas_registration.checkpoint_downloaded()
+    assert atlas_registration.is_model_downloaded()
 
 
-def test_download_model_fails(
+def test_download_model_fail_removes_model_dir(
     setup: BrainwaysSetup,
     mock_rat_atlas: BrainwaysAtlas,
     monkeypatch: pytest.MonkeyPatch,
@@ -41,16 +41,16 @@ def test_download_model_fails(
     monkeypatch.setattr(paths, "_BRAINWAYS_PATH", tmp_path)
     atlas_registration = AtlasRegistration(mock_rat_atlas)
 
-    with open(atlas_registration.local_checkpoint_path, "wb") as f:
+    with open(atlas_registration.local_model_dir / "state_dict.pt", "wb") as f:
         f.seek(0)
         f.write(np.zeros(100).tobytes())
 
-    assert atlas_registration.checkpoint_downloaded()
+    assert atlas_registration.is_model_downloaded()
 
     with pytest.raises(Exception):
         setup._download_model(_TEST_ATLAS)
 
-    assert not atlas_registration.checkpoint_downloaded()
+    assert not atlas_registration.is_model_downloaded()
 
 
 def test_download_qupath_fails(

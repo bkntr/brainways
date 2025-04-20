@@ -179,7 +179,7 @@ class RegistrationController(Controller):
         self.ui.save_subject()
 
     def model_available(self) -> bool:
-        return self.pipeline.atlas_registration.automatic_registration_available()
+        return self.pipeline.atlas_registration.is_model_available()
 
     def show(
         self,

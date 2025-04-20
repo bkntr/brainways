@@ -42,7 +42,7 @@ class BrainwaysSetup:
             self._download_atlas(atlas_name)
 
             atlas_registration = AtlasRegistration(self._downloaded_atlases[atlas_name])
-            if atlas_registration.trained_model_available():
+            if atlas_registration.is_model_available():
                 self._progress_callback(
                     f"Downloading registration model for '{atlas_name}'..."
                 )
@@ -73,13 +73,15 @@ class BrainwaysSetup:
 
     def _download_model(self, atlas_name: str) -> None:
         assert atlas_name in self._downloaded_atlases
+        atlas_registration = AtlasRegistration(self._downloaded_atlases[atlas_name])
+        model_dir = atlas_registration.local_model_dir
         try:
-            atlas_registration = AtlasRegistration(self._downloaded_atlases[atlas_name])
-            atlas_registration.download_model()
+            # download_model is called implicitly by run_automatic_registration if needed
             atlas_registration.run_automatic_registration(
                 np.array(Image.open(self._sample_image_path))
             )
         except Exception:
-            if atlas_registration.local_checkpoint_path.exists():
-                atlas_registration.local_checkpoint_path.unlink()
+            # Clean up the model directory on failure during initial run/download
+            if model_dir and model_dir.exists():
+                shutil.rmtree(model_dir)
             raise

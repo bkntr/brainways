@@ -1,9 +1,11 @@
+import json
+import shutil
+from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Tuple
 
 import numpy as np
 from huggingface_hub import HfApi, hf_hub_download
-from huggingface_hub.utils import RepositoryNotFoundError
 
 from brainways.model.model_utils import load_model
 from brainways.pipeline.brainways_params import AtlasRegistrationParams
@@ -12,87 +14,34 @@ from brainways.transforms.depth_registration import (
     DepthRegistrationParams,
 )
 from brainways.utils.atlas.brainways_atlas import AtlasSlice, BrainwaysAtlas
-from brainways.utils.image import brain_mask, nonzero_bounding_box
 from brainways.utils.paths import get_brainways_dir
 
 if TYPE_CHECKING:
     from brainways.model.siamese.siamese_model import SiameseModel
-    from brainways_reg_model.model.model import BrainwaysRegModel
+
+_MODEL_FILES: Tuple[str, ...] = ("config.yml", "state_dict.pt")
+_SIAMESE_REPO_ID = "brainways/siamese"
+_MODEL_IDS_FILENAME = "model_ids.json"
 
 
 class AtlasRegistration:
     def __init__(self, atlas: BrainwaysAtlas):
         self.model: Optional[SiameseModel] = None
-        self.legacy_model: Optional[BrainwaysRegModel] = None
         self.atlas = atlas
 
     def run_automatic_registration(self, image: np.ndarray) -> AtlasRegistrationParams:
-        # Ensure a local model is available
-        if not self.trained_model_available():
+        if not self.is_model_available():
             raise RuntimeError(
-                f"Trained model not available for {self.atlas.atlas_name}, contact "
-                "Brainways team to create an automatic registration model for this atlas."
+                f"Trained model not available for {self.atlas.atlas_name}, contact Brainways team"
             )
 
-        # Download model files (checkpoint, config, state)
-        self.download_model()
+        if self.model is None:
+            self.download_model()
+            self.model = load_model(self.local_model_dir)
 
-        import torch
-
-        # Crop to brain region
-        mask = brain_mask(image)
-        x, y, w, h = nonzero_bounding_box(mask)
-        cropped = image[y : y + h, x : x + w]
-
-        # Determine if new model files are present and non-empty
-        model_dir = self.local_checkpoint_path.parent
-        cfg_file = model_dir / "pred_config.yml"
-        state_file = model_dir / "model_state_dict.pt"
-        use_new = False
-        if cfg_file.exists() and state_file.exists():
-            try:
-                if cfg_file.stat().st_size > 0 and state_file.stat().st_size > 0:
-                    use_new = True
-            except OSError:
-                pass
-        # If new model available, use SiameseModel
-        if use_new:
-            if self.model is None:
-                self.model = load_model(model_dir)
-            pred_ap, _ = self.model.predict(
-                torch.as_tensor(cropped).float(), atlas_name=self.atlas.atlas_name
-            )
-            # Convert to scalar
-            ap_val = (
-                float(pred_ap.cpu().item())
-                if hasattr(pred_ap, "cpu")
-                else float(pred_ap)
-            )
-            return AtlasRegistrationParams(ap=ap_val)
-        # Fallback to legacy BrainwaysRegModel
-        if self.legacy_model is None:
-            from brainways_reg_model.model.model import BrainwaysRegModel
-
-            self.legacy_model = BrainwaysRegModel.load_from_checkpoint(
-                self.local_checkpoint_path, atlas=self.atlas
-            )
-            self.legacy_model.freeze()
-        # Get legacy output and convert to single item
-        legacy_out = self.legacy_model.predict(torch.as_tensor(cropped).float())
-        if isinstance(legacy_out, list):
-            legacy_out = legacy_out[0]
-        # Map to new AtlasRegistrationParams
-        return AtlasRegistrationParams(
-            ap=legacy_out.ap,
-            rot_frontal=legacy_out.rot_frontal,
-            rot_horizontal=legacy_out.rot_horizontal,
-            rot_sagittal=legacy_out.rot_sagittal,
-            hemisphere=legacy_out.hemisphere,
-            confidence=legacy_out.confidence,
-        )
-
-    def automatic_registration_available(self) -> bool:
-        return self.trained_model_available()
+        pred_ap, _ = self.model.predict(image, atlas_name=self.atlas.atlas_name)
+        ap_val = float(pred_ap)
+        return AtlasRegistrationParams(ap=ap_val)
 
     def get_atlas_slice(self, params: AtlasRegistrationParams) -> AtlasSlice:
         atlas_slice = self.atlas.slice(
@@ -112,57 +61,101 @@ class AtlasRegistration:
         )
 
     def download_model(self):
-        """
-        Download the model checkpoint and associated files.
-        """
-        if self.checkpoint_downloaded():
-            return
-        model_dir = self.local_checkpoint_path.parent
-        model_dir.mkdir(parents=True, exist_ok=True)
-        # Download or create model.ckpt
-        try:
-            hf_hub_download(
-                repo_id=f"brainways/{self.atlas.atlas_name}",
-                filename="model.ckpt",
-                local_dir=model_dir,
+        if self._model_id is None:
+            raise ValueError(
+                f"Failed to download model files for atlas {self.atlas.atlas_name}: No model ID found. "
+                "Is there a model available for this atlas?"
             )
-        except Exception:
-            (model_dir / "model.ckpt").touch()
-        # Download or create config and state if present
-        for filename in ("pred_config.yml", "model_state_dict.pt"):
-            try:
-                hf_hub_download(
-                    repo_id=f"brainways/{self.atlas.atlas_name}",
-                    filename=filename,
-                    local_dir=model_dir,
-                )
-            except Exception:
-                # Create empty file if download fails
-                (model_dir / filename).touch()
 
-    def checkpoint_downloaded(self) -> bool:
-        """
-        Check if the model checkpoint file exists locally.
-        """
-        return self.local_checkpoint_path.exists()
+        model_dir = self.local_model_dir
 
-    def trained_model_available(self) -> bool:
-        """
-        Check if the model is available locally or remotely on HuggingFace.
-        """
-        if self.checkpoint_downloaded():
-            return True
-        api = HfApi()
+        if self.is_model_downloaded():
+            return
+
+        model_dir.mkdir(parents=True, exist_ok=True)
+
+        # Download config and state from the specific model ID subfolder
         try:
-            repo_files = api.list_repo_files(f"brainways/{self.atlas.atlas_name}")
-            # Look for any of the registration files
-            for fname in ("model.ckpt", "pred_config.yml", "model_state_dict.pt"):
-                if fname in repo_files:
-                    return True
+            for filename in _MODEL_FILES:
+                hf_hub_download(
+                    repo_id=_SIAMESE_REPO_ID,
+                    filename=filename,
+                    subfolder=self._model_id,
+                    local_dir=self._reg_models_dir(),
+                    local_dir_use_symlinks=False,
+                )
+        except Exception as e:
+            # Clean up potentially partially downloaded files/directory on error
+            if model_dir.exists():
+                shutil.rmtree(model_dir)
+            # Re-raise the exception after cleanup attempt
+            raise RuntimeError(
+                f"Failed to download model files for atlas {self.atlas.atlas_name} (model ID: {self._model_id}): {e}"
+            ) from e
+
+    def is_model_downloaded(self) -> bool:
+        if self._model_id is None:
             return False
-        except RepositoryNotFoundError:
+
+        model_dir = self.local_model_dir
+        if not model_dir.exists():
             return False
+        return all((model_dir / filename).exists() for filename in _MODEL_FILES)
+
+    def is_model_available(self) -> bool:
+        if self._model_id is None:
+            return False
+
+        if self.is_model_downloaded():
+            return True
+
+        # Check if all required files are present in the remote repo subfolder
+        api = HfApi()
+        repo_files = api.list_repo_files(repo_id=_SIAMESE_REPO_ID, revision="main")
+        return all(f"{self._model_id}/{fname}" in repo_files for fname in _MODEL_FILES)
 
     @property
-    def local_checkpoint_path(self) -> Path:
-        return get_brainways_dir() / "reg_models" / self.atlas.atlas_name / "model.ckpt"
+    def local_model_dir(self) -> Path:
+        if self._model_id is None:
+            raise ValueError(
+                "Model ID is not set. Cannot determine local model directory."
+            )
+        return AtlasRegistration._reg_models_dir() / self._model_id
+
+    @cached_property
+    def _model_id(self) -> Optional[str]:
+        """Loads the model ID mapping from the local cache or downloads it."""
+        models_dir = AtlasRegistration._reg_models_dir()
+        local_ids_path = models_dir / _MODEL_IDS_FILENAME
+        if not local_ids_path.exists():
+            try:
+                hf_hub_download(
+                    repo_id=_SIAMESE_REPO_ID,
+                    filename=_MODEL_IDS_FILENAME,
+                    local_dir=models_dir,
+                    local_dir_use_symlinks=False,
+                )
+            except Exception as e:
+                raise RuntimeError(
+                    f"Failed to download {_MODEL_IDS_FILENAME}: {e}"
+                ) from e
+
+        try:
+            with open(local_ids_path) as f:
+                result = json.load(f)
+            # Ensure the loaded result is a dictionary
+            if not isinstance(result, dict):
+                raise ValueError(
+                    f"Invalid format in {local_ids_path}: expected a dictionary."
+                )
+
+            return result.get(self.atlas.atlas_name)
+        except (json.JSONDecodeError, FileNotFoundError) as e:
+            # If loading fails (e.g., corrupted file), attempt to remove and raise
+            if local_ids_path.exists():
+                local_ids_path.unlink()
+            raise RuntimeError(f"Failed to load or parse {local_ids_path}: {e}") from e
+
+    @staticmethod
+    def _reg_models_dir() -> Path:
+        return get_brainways_dir() / "reg_models"

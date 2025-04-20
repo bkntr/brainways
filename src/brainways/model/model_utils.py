@@ -5,6 +5,9 @@ import yaml
 from jsonargparse import ArgumentParser
 
 from brainways.model.siamese.siamese_model import SiameseModel
+from brainways.model.transforms.normalize_percentile import (  # noqa: F401
+    NormalizePercentile,
+)
 
 
 def load_model(model_dir: Path) -> SiameseModel:
@@ -18,7 +21,7 @@ def load_model(model_dir: Path) -> SiameseModel:
         Loaded and configured SiameseModel
     """
     # Load configuration
-    config_path = model_dir / "pred_config.yml"
+    config_path = model_dir / "config.yml"
     with open(config_path) as f:
         model_cfg = yaml.safe_load(f)
 
@@ -30,8 +33,8 @@ def load_model(model_dir: Path) -> SiameseModel:
     assert isinstance(model, SiameseModel)
 
     # Load state dict
-    state_dict_path = model_dir / "model_state_dict.pt"
-    state_dict = torch.load(state_dict_path)
+    state_dict_path = model_dir / "state_dict.pt"
+    state_dict = torch.load(state_dict_path, weights_only=True)
     model.load_state_dict(state_dict)
 
     # Set model to evaluation mode and move to GPU

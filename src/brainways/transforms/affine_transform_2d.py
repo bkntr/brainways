@@ -74,7 +74,7 @@ class BrainwaysAffineTransform2D(BrainwaysTransform):
         return BrainwaysAffineTransform2D(
             mat=torch.inverse(self.mat),
             input_size=self.input_size,
-            scale=self.scale,
+            scale=1 / self.scale if self.scale is not None else None,
         )
 
     def transform_image(

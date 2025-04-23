@@ -296,14 +296,18 @@ class AnalysisController(Controller):
         condition_col: str,
         values_col: str,
         min_group_size: int,
-        alpha: float,
+        n_bootstraps: int,
+        multiple_comparison_correction_method: str,
+        output_path: Path,
     ):
         self.ui.do_work_async(
             self.ui.project.calculate_network_graph,
             condition_col=condition_col,
             values_col=values_col,
             min_group_size=min_group_size,
-            alpha=alpha,
+            n_bootstraps=n_bootstraps,
+            multiple_comparison_correction_method=multiple_comparison_correction_method,
+            output_path=output_path,
         )
 
     def export_registration_masks_async(
@@ -313,8 +317,6 @@ class AnalysisController(Controller):
         slice_selection: SliceSelection,
         file_format: MaskFileFormat,
     ):
-        assert self.ui.project is not None
-
         slice_infos = self.ui.get_slice_selection(slice_selection)
         self.ui.do_work_async(
             self.ui.project.export_registration_masks_async,
@@ -329,8 +331,6 @@ class AnalysisController(Controller):
     def export_slice_locations(
         self, output_path: Path, slice_selection: SliceSelection
     ):
-        assert self.ui.project is not None
-
         slice_infos = self.ui.get_slice_selection(slice_selection)
         self.ui.project.export_slice_locations(output_path, slice_infos)
 

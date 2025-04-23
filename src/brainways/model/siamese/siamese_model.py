@@ -8,8 +8,8 @@ import torch.nn as nn
 from albumentations.core.composition import Compose, TransformType
 from numpy.typing import NDArray
 
-from brainways.model.dataset_utils import load_atlas_reference, transform_atlas_volume
 from brainways.model.siamese.siamese_backbone import SiameseBackbone
+from brainways.utils.atlas.brainways_atlas import BrainwaysAtlas
 
 
 class ModelOutput(TypedDict):
@@ -30,9 +30,6 @@ class SiameseModel(nn.Module):
         self._backbone = backbone
         self._transform = Compose(transforms)
         self._ap_limits = ap_limits
-
-        for atlas_name in self._ap_limits:
-            self._prepare_atlas(atlas_name)
 
         downsample_op: nn.Module
         if self._backbone.feature_size > inner_dim:
@@ -95,39 +92,37 @@ class SiameseModel(nn.Module):
         """
         with torch.no_grad():
             if transform_image:
-                image = (
-                    self._transform(image=image)["image"]
-                    .unsqueeze(0)
-                    .to(self.classifier[0].weight.device)
-                )
+                image = self._batch_transform([image])
 
             assert isinstance(image, torch.Tensor)
 
-            atlas = self._get_atlas(atlas_name)
-            low = torch.full((len(image),), 0, device=image.device)
-            high = torch.full((len(image),), atlas.shape[0] - 1, device=image.device)
+            atlas = BrainwaysAtlas(atlas_name).raw_numpy_reference
+            ap_limits = self._ap_limits[atlas_name]
+
+            low = torch.full((len(image),), ap_limits[0], device=image.device)
+            high = torch.full((len(image),), ap_limits[1], device=image.device)
             while (low < high).any():
                 mid = (low + high) // 2
-                atlas_slice = atlas[mid]
+                atlas_slice = self._batch_transform(atlas[mid.cpu().numpy()])
                 output = self.forward(image, atlas_slice)
                 pred = output["preds"]
                 high = torch.where((pred < 0) & (low < high), mid - 1, high)
                 low = torch.where((pred >= 0) & (low < high), mid + 1, other=low)
 
-            # Final prediction is the found low value, plus the lower limit of the atlas
-            pred_slice = atlas[low, 0]
-            pred_ap = low + self._ap_limits[atlas_name][0]
+            # Final prediction is the found low value
+            pred_slice = atlas[low.cpu().numpy(), 0]
+            pred_ap = low
 
         return pred_ap, pred_slice
 
-    def _prepare_atlas(self, atlas_name: str) -> None:
-        reference = load_atlas_reference(atlas_name)
-        ap_limits = self._ap_limits[atlas_name]
-        reference = reference[ap_limits[0] : ap_limits[1] + 1]
-        reference = transform_atlas_volume(
-            atlas_volume=reference, transform=self._transform
+    def _batch_transform(self, batch) -> torch.Tensor:
+        """
+        Applies the transformation to a batch of images.
+        Args:
+            batch: The batch of images to transform.
+        Returns:
+            torch.Tensor: The transformed batch of images.
+        """
+        return torch.stack([self._transform(image=t)["image"] for t in batch]).to(
+            self.classifier[0].weight.device
         )
-        self.register_buffer(f"_atlas_{atlas_name}", reference, persistent=False)
-
-    def _get_atlas(self, atlas_name: str) -> NDArray:
-        return getattr(self, f"_atlas_{atlas_name}")

@@ -8,25 +8,60 @@ import cv2
 import numpy as np
 import torch
 from brainglobe_atlasapi import BrainGlobeAtlas
+from numpy.typing import NDArray
 
 from brainways.utils.atlas.slice_atlas import slice_atlas
 from brainways.utils.image import nonzero_bounding_box
 
 
 class BrainwaysAtlas:
+    _instances = {}
+    _atlas_obj_cache = {}
+    _raw_numpy_reference_cache = {}
+
+    def __new__(
+        cls,
+        brainglobe_atlas: Union[str, BrainGlobeAtlas],
+        exclude_regions: Optional[Sequence[int]] = None,
+    ):
+        atlas_name = (
+            brainglobe_atlas
+            if isinstance(brainglobe_atlas, str)
+            else brainglobe_atlas.atlas_name
+        )
+        key = (atlas_name, tuple(exclude_regions) if exclude_regions else None)
+        if key in cls._instances:
+            return cls._instances[key]
+        instance = super().__new__(cls)
+        cls._instances[key] = instance
+        return instance
+
     def __init__(
         self,
         brainglobe_atlas: Union[str, BrainGlobeAtlas],
-        exclude_regions: Optional[Sequence[int]],
+        exclude_regions: Optional[Sequence[int]] = None,
     ):
-        if isinstance(brainglobe_atlas, str):
-            self.brainglobe_atlas = BrainGlobeAtlas(
-                brainglobe_atlas, check_latest=False
-            )
+        # Prevent re-initialization for singleton
+        if hasattr(self, "_initialized") and self._initialized:
+            return
+
+        atlas_name = (
+            brainglobe_atlas
+            if isinstance(brainglobe_atlas, str)
+            else brainglobe_atlas.atlas_name
+        )
+        if atlas_name in self._atlas_obj_cache:
+            self.brainglobe_atlas = self._atlas_obj_cache[atlas_name]
         else:
-            self.brainglobe_atlas = brainglobe_atlas
+            if isinstance(brainglobe_atlas, str):
+                obj = BrainGlobeAtlas(atlas_name, check_latest=False)
+            else:
+                obj = brainglobe_atlas
+            self._atlas_obj_cache[atlas_name] = obj
+            self.brainglobe_atlas = obj
 
         self.exclude_regions = exclude_regions
+        self._initialized = True
 
     @classmethod
     def load(
@@ -34,9 +69,7 @@ class BrainwaysAtlas:
         brainglobe_atlas: Union[str, BrainGlobeAtlas],
         exclude_regions: Optional[Sequence[int]],
     ):
-        return BrainwaysAtlas(
-            brainglobe_atlas=brainglobe_atlas, exclude_regions=exclude_regions
-        )
+        return cls(brainglobe_atlas=brainglobe_atlas, exclude_regions=exclude_regions)
 
     def slice(
         self,
@@ -97,12 +130,19 @@ class BrainwaysAtlas:
     def shape(self):
         return self.brainglobe_atlas.shape
 
+    @property
+    def raw_numpy_reference(self) -> NDArray[np.float32]:
+        atlas_name = self.atlas_name
+        if atlas_name in self._raw_numpy_reference_cache:
+            return self._raw_numpy_reference_cache[atlas_name]
+        ref = self.brainglobe_atlas.reference.astype(np.float32)
+        ref /= ref.max()
+        self._raw_numpy_reference_cache[atlas_name] = ref
+        return ref
+
     @cached_property
     def reference(self):
-        ref = torch.as_tensor(self.brainglobe_atlas.reference.astype(np.float32))
-        ref /= ref.max()
-        ref *= self.annotation != 0
-        return ref
+        return torch.as_tensor(self.raw_numpy_reference) * (self.annotation != 0)
 
     @cached_property
     def annotation(self):

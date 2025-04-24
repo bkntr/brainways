@@ -74,7 +74,7 @@ def app(
     )
     monkeypatch.setattr(
         AtlasRegistration,
-        "trained_model_available",
+        "is_model_available",
         Mock(return_value=False),
     )
     monkeypatch.setattr(

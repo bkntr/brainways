@@ -29,3 +29,8 @@ markdown_extensions:
   - attr_list          # Adds attribute lists to generated HTML
   - toc:               # Builds a table of contents
       permalink: "#"   # Puts a "#" at the end of each header, which
+nav:
+  - Overview: index.md
+  - Getting Started: 02_getting_started.md
+  - Cell Detection: 03_cell_detection.md
+  - Best Practices: 04_best_practices.md # Add the new page here

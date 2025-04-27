@@ -5,8 +5,9 @@ Welcome to the cell detection guide! This document will walk you through the ste
 ## Prerequisites
 
 Before you begin, ensure you have the following:
-- A computer with GPU support (recommended for faster processing).
-- Optional: The Brainways software [installed](02_getting_started.md) (which includes StarDist).
+
+-   A computer with GPU support (recommended for faster processing).
+-   Optional: The Brainways software [installed](02_getting_started.md) (which includes StarDist).
 
 ## Step-by-Step Instructions
 
@@ -28,16 +29,18 @@ When setting up a new Brainways project, select the directory containing your cu
 
 ### 5. Test Your Model
 
-1. **Run on Preview**:
-   - Go to the "Cell Detection" step in Brainways.
-   - Click the "Run on preview" button. This will run the model on a small crop to verify that the model is working as expected.
+1.  **Run on Preview**:
 
-2. **Test on Multiple Crops**:
-   - Run your project on several crops to ensure the model works well on diverse scenarios relevant to your project.
+    -   Go to the "Cell Detection" step in Brainways.
+    -   Click the "Run on preview" button. This will run the model on a small crop to verify that the model is working as expected.
 
-3. **Identify and Address Issues**:
-   - If you identify any issues, create more crops that are similar to the problematic scenario.
-   - Retrain the model using these new crops.
+2.  **Test on Multiple Crops**:
+
+    -   Run your project on several crops to ensure the model works well on diverse scenarios relevant to your project.
+
+3.  **Identify and Address Issues**:
+    -   If you identify any issues, create more crops that are similar to the problematic scenario.
+    -   Retrain the model using these new crops.
 
 ### 6. Run the Cell Detector on the Entire Project
 
@@ -45,12 +48,13 @@ Once you have verified that the model works well on a few images, you can run th
 
 ## Tips for Success
 
-- **Annotation Quality**: The quality of your annotations significantly impacts the model's performance. Take your time to annotate accurately.
-- **Model Training**: Training the model might take some time, especially on large datasets. If you have a GPU, make sure you installed StarDist with GPU support, this will very significantly reduce model training and inference times.
-- **Validation**: Always validate your model on a few images before running it on the entire project to ensure it performs as expected. If you identify any issues, create more crops that are similar to the problematic scenario and retrain the model.
+-   **Annotation Quality**: The quality of your annotations significantly impacts the model's performance. Take your time to annotate accurately.
+-   **Model Training**: Training the model might take some time, especially on large datasets. If you have a GPU, make sure you installed StarDist with GPU support, this will very significantly reduce model training and inference times.
+-   **Validation**: Always validate your model on a few images before running it on the entire project to ensure it performs as expected. If you identify any issues, create more crops that are similar to the problematic scenario and retrain the model.
 
 ## Troubleshooting
 
 If you encounter any issues, consider the following:
-- **Installation Problems**: Ensure all dependencies are installed correctly. Refer to the StarDist installation guide for troubleshooting tips.
-- **Model Performance**: If the model is not performing well in some scenarios, consider annotating more images and retrain your model.
+
+-   **Installation Problems**: Ensure all dependencies are installed correctly. Refer to the StarDist installation guide for troubleshooting tips.
+-   **Model Performance**: If the model is not performing well in some scenarios, consider annotating more images and retrain your model.

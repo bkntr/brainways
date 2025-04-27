@@ -10,7 +10,9 @@
 [![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/brainways)](https://napari-hub.org/plugins/brainways)
 
 <!-- markdownlint-disable MD026 -->
+
 ## What Is Brainways?
+
 <!-- markdownlint-enable MD026 -->
 
 Brainways is an AI-based tool for automated registration, quantification and generation of brain-wide activity networks based on fluorescence in coronal slices.
@@ -18,7 +20,9 @@ Brainways is an AI-based tool for automated registration, quantification and gen
 ![Brainways UI](assets/brainways-ui.gif)
 
 <!-- markdownlint-disable MD026 -->
+
 ## Why Brainways?
+
 <!-- markdownlint-enable MD026 -->
 
 Coronal slice registration, cell quantification and whole-brain contrast analysis between experimental conditions should be made easily accessible from a single software, without requiring programming experience.
@@ -27,7 +31,7 @@ Customization should be made easy by having a highly flexible pythonic backend.
 ## Getting Started
 
 !!! note
-    If you are installing Brainways on Windows and need GPU support, you need to first install PyTorch and TensorBoard with GPU support. Please refer to the [PyTorch](https://pytorch.org/get-started/locally/) and [TensorBoard](https://www.tensorflow.org/install/pip) websites for detailed instructions. After installing these dependencies, you can proceed with the Brainways installation.
+If you are installing Brainways on Windows and need GPU support, you need to first install PyTorch and TensorBoard with GPU support. Please refer to the [PyTorch](https://pytorch.org/get-started/locally/) and [TensorBoard](https://www.tensorflow.org/install/pip) websites for detailed instructions. After installing these dependencies, you can proceed with the Brainways installation.
 
 To install and run brainways, run the following in your python environment:
 
@@ -38,6 +42,9 @@ brainways ui
 
 Follow our [getting started guide](02_getting_started.md) for more details.
 
+!!! tip "Best Practices"
+    For the most reliable results, please also review our [Best Practices Guide](04_best_practices.md).
+
 ## How it works
 
 Brainways allows users to register, quantify and provide statistical contrast analysis by following several simple steps:
@@ -47,9 +54,9 @@ Brainways allows users to register, quantify and provide statistical contrast an
 1. Cell detection (using [StarDist](https://github.com/stardist/stardist)).
 1. Quantification of cell counts per brain region.
 1. Statistical analysis:
-    * ANOVA contrast analysis.
-    * PLS (Partial Least Square) analysis.
-    * Network graph creation.
+    - ANOVA contrast analysis.
+    - PLS (Partial Least Square) analysis.
+    - Network graph creation.
 
 ## Architecture
 
@@ -61,15 +68,15 @@ Brainways is being actively developed by Ben Kantor of Bartal lab, Tel Aviv Univ
 
 ## Citation
 
-If you use brainways, please cite [Kantor and Bartal (2023)](https://doi.org/10.1101/2023.05.25.542252):
+If you use brainways, please cite [Kantor and Bartal (2025)](https://doi.org/10.1038/s41386-025-02105-3):
 
-    @article{kantor2023brainways,
-      title={Brainways: An Open-Source AI-based Software For Registration and Analysis of Fluorescent   Markers on Coronal Brain Slices},
-      author={Kantor, Ben and Ben-Ami Bartal, Inbal},
-      journal={bioRxiv},
-      pages={2023--05},
-      year={2023},
-      publisher={Cold Spring Harbor Laboratory}
+    @article{kantor2025mapping,
+        title={Mapping brain-wide activity networks: brainways as a tool for neurobiological discovery},
+        author={Kantor, Ben and Ruzal, Keren and Ben-Ami Bartal, Inbal},
+        journal={Neuropsychopharmacology},
+        pages={1--11},
+        year={2025},
+        publisher={Springer International Publishing Cham}
     }
 
 ## License
@@ -91,9 +98,7 @@ If you encounter any problems, please [file an issue] along with a detailed desc
 [Apache Software License 2.0]: http://www.apache.org/licenses/LICENSE-2.0
 [Mozilla Public License 2.0]: https://www.mozilla.org/media/MPL/2.0/index.txt
 [cookiecutter-napari-plugin]: https://github.com/napari/cookiecutter-napari-plugin
-
 [file an issue]: https://github.com/bkntr/brainways/issues
-
 [napari]: https://github.com/napari/napari
 [tox]: https://tox.readthedocs.io/en/latest/
 [pip]: https://pypi.org/project/pip/

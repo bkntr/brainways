@@ -538,14 +538,19 @@ class BrainwaysProject:
         slice_locations = []
         for subject_info, slice_info in zip(subject_infos, slice_infos):
             atlas_reg_params = slice_info.params.atlas or missing_params
+            if slice_info.params.atlas is not None:
+                ap_um = round(
+                    atlas_reg_params.ap * self.atlas.brainglobe_atlas.resolution[0]
+                )
+            else:
+                ap_um = float("nan")
+
             slice_locations.append(
                 {
                     "subject": subject_info.name,
                     **subject_info.conditions,
                     "slice": str(slice_info.path),
-                    "AP (μm)": round(
-                        atlas_reg_params.ap * self.atlas.brainglobe_atlas.resolution[0]
-                    ),
+                    "AP (μm)": ap_um,
                     "Frontal rotation": atlas_reg_params.rot_frontal,
                     "Horizontal rotation": atlas_reg_params.rot_horizontal,
                     "Sagittal rotation": atlas_reg_params.rot_sagittal,

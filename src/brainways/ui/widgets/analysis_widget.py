@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from magicgui.widgets import request_values
-from qtpy.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
+from magicgui.widgets import ComboBox, request_values
+from qtpy.QtWidgets import QLabel, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
 from brainways.project.info_classes import (
     ExcelMode,
@@ -10,6 +10,7 @@ from brainways.project.info_classes import (
     RegisteredPixelValues,
     SliceSelection,
 )
+from brainways.ui.widgets.structure_selection_dialog import StructureSelectionDialog
 
 if TYPE_CHECKING:
     from brainways.ui.controllers.analysis_controller import AnalysisController
@@ -53,16 +54,27 @@ class AnalysisWidget(QWidget):
             self.on_export_slice_locations_clicked
         )
 
-        self.setLayout(QVBoxLayout())
-        self.layout().addWidget(self.label)
-        self.layout().addWidget(calculate_results_button)
-        self.layout().addWidget(contrast_analysis_button)
-        self.layout().addWidget(pls_analysis_button)
-        self.layout().addWidget(network_analysis_button)
-        self.layout().addWidget(show_anova_button)
-        self.layout().addWidget(show_posthoc_button)
-        self.layout().addWidget(export_registration_masks_button)
-        self.layout().addWidget(export_slice_locations_button)
+        export_annotated_region_images_button = QPushButton(
+            "Export Annotated Region Images"
+        )
+        export_annotated_region_images_button.clicked.connect(
+            self.on_export_annotated_region_images_clicked
+        )
+
+        self.setLayout(QVBoxLayout())  # Initialize layout first
+        layout = self.layout()
+        assert layout is not None
+
+        layout.addWidget(self.label)
+        layout.addWidget(calculate_results_button)
+        layout.addWidget(contrast_analysis_button)
+        layout.addWidget(pls_analysis_button)
+        layout.addWidget(network_analysis_button)
+        layout.addWidget(show_anova_button)
+        layout.addWidget(show_posthoc_button)
+        layout.addWidget(export_registration_masks_button)
+        layout.addWidget(export_slice_locations_button)
+        layout.addWidget(export_annotated_region_images_button)
 
     def on_run_calculate_results_clicked(self, _=None):
         if not self.controller.ui.prompt_user_slices_have_missing_params(
@@ -425,6 +437,58 @@ class AnalysisWidget(QWidget):
             output_path=values["output_path"],
             slice_selection=SliceSelection(values["slice_selection"]),
         )
+
+    def on_export_annotated_region_images_clicked(self, _=None):
+        if not self.controller.ui.prompt_user_slices_have_missing_params():
+            return
+
+        values = request_values(
+            title="Export Annotated Region Images",
+            output_path=dict(
+                annotation=Path,
+                label="Output Directory",
+                options=dict(
+                    mode="d",
+                    tooltip="Directory to save the annotated region images to",
+                ),
+            ),
+            draw_cells=dict(
+                annotation=bool,
+                label="Draw Cells",
+                value=True,
+                options=dict(tooltip="Overlay detected cell locations on the images"),
+            ),
+            slice_selection=dict(
+                widget_type=ComboBox,
+                value=SliceSelection.CURRENT_SLICE.value,
+                options=dict(
+                    choices=[e.value for e in SliceSelection],
+                    tooltip="Which slices to export images for",
+                ),
+                annotation=str,
+                label="Slice Selection",
+            ),
+        )
+        if values is None:
+            return
+
+        structures = self.controller.ui.project.atlas.brainglobe_atlas.structures
+
+        dialog = StructureSelectionDialog(structures, parent=self)
+        if dialog.exec_():
+            selected_acronyms = dialog.get_selected_structures()
+            if not selected_acronyms:
+                QMessageBox.warning(
+                    self, "No Selection", "No structures were selected."
+                )
+                return
+
+            self.controller.export_annotated_region_images_async(
+                output_path=values["output_path"],
+                structure_acronyms=selected_acronyms,
+                draw_cells=values["draw_cells"],
+                slice_selection=SliceSelection(values["slice_selection"]),
+            )
 
     def set_label(self):
         if self.controller.current_show_mode is None:

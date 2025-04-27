@@ -5,11 +5,17 @@ from itertools import combinations
 from pathlib import Path
 from typing import Callable, Iterator, List, Optional, Tuple, Union
 
+import cv2
 import dacite
+import matplotlib.pyplot as plt
 import networkx as nx
+import numpy as np
 import pandas as pd
+from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.patches import Polygon
 from natsort import natsorted, ns
 from pandas import ExcelWriter
+from tqdm import tqdm
 
 from brainways.pipeline.brainways_params import AtlasRegistrationParams
 from brainways.pipeline.brainways_pipeline import BrainwaysPipeline
@@ -532,13 +538,19 @@ class BrainwaysProject:
         slice_locations = []
         for subject_info, slice_info in zip(subject_infos, slice_infos):
             atlas_reg_params = slice_info.params.atlas or missing_params
+            if slice_info.params.atlas is not None:
+                ap_um = round(
+                    atlas_reg_params.ap * self.atlas.brainglobe_atlas.resolution[0]
+                )
+            else:
+                ap_um = float("nan")
+
             slice_locations.append(
                 {
                     "subject": subject_info.name,
                     **subject_info.conditions,
                     "slice": str(slice_info.path),
-                    "AP (μm)": atlas_reg_params.ap
-                    * self.atlas.brainglobe_atlas.resolution[0],
+                    "AP (μm)": ap_um,
                     "Frontal rotation": atlas_reg_params.rot_frontal,
                     "Horizontal rotation": atlas_reg_params.rot_horizontal,
                     "Sagittal rotation": atlas_reg_params.rot_sagittal,
@@ -550,8 +562,335 @@ class BrainwaysProject:
 
         open_directory(output_path.parent)
 
+    def export_annotated_region_images(
+        self,
+        output_dir: Union[str, Path],
+        structure_acronyms: List[str],
+        draw_cells: bool = False,
+        slice_info_predicate: Optional[Callable[[SliceInfo], bool]] = None,
+        output_dpi: int = 150,
+    ):
+        """Exports images of annotated brain regions for specified structures using Matplotlib.
+
+        Generates two types of images per structure per slice:
+        1. Full slice view with the structure highlighted.
+        2. Zoomed-in view focusing on the structure's bounding box, preserving crop resolution.
+
+        Args:
+            output_dir: The root directory where images will be saved.
+            structure_acronyms: A list of structure acronyms (e.g., ["NAc-sh", "BLA"]).
+            draw_cells: If True, detected cells within the slice will be overlaid as points.
+            slice_info_predicate: An optional function to filter which slices are processed.
+            output_dpi: The resolution (dots per inch) for the output images.
+        """
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Define the custom black to green colormap
+        colors = [(0, 0, 0), (0, 1, 0)]  # Black to Green
+        n_bins = 256
+        cmap_name = "black_green"
+        black_green_cmap = LinearSegmentedColormap.from_list(
+            cmap_name, colors, N=n_bins
+        )
+
+        struct_tree = self.atlas.brainglobe_atlas.structures.tree
+        leaf_ids = {node.identifier for node in struct_tree.leaves()}
+
+        total_iterations = 0
+        for subject in self.subjects:
+            for _, slice_info in subject.valid_documents:
+                if slice_info_predicate is None or slice_info_predicate(slice_info):
+                    if slice_info.params.atlas is not None:
+                        total_iterations += len(structure_acronyms)
+
+        pbar = tqdm(total=total_iterations, desc="Exporting region images")
+
+        for acronym in structure_acronyms:
+            try:
+                struct_id = self.atlas.brainglobe_atlas.structures[acronym]["id"]
+            except KeyError:
+                logging.warning(
+                    f"Structure acronym '{acronym}' not found in atlas. Skipping."
+                )
+                pbar.update(
+                    sum(
+                        1
+                        for subject in self.subjects
+                        for _, slice_info in subject.valid_documents
+                        if (
+                            slice_info_predicate is None
+                            or slice_info_predicate(slice_info)
+                        )
+                        and slice_info.params.atlas is not None
+                    )
+                )
+                continue
+
+            display_ids = [struct_id] + [
+                child_id
+                for child_id in struct_tree.is_branch(struct_id)
+                if child_id in leaf_ids
+            ]
+
+            for subject in self.subjects:
+                subject_name = subject.subject_info.name
+                for _, slice_info in subject.valid_documents:
+                    if slice_info_predicate is not None and not slice_info_predicate(
+                        slice_info
+                    ):
+                        continue
+                    if slice_info.params.atlas is None:
+                        logging.warning(
+                            f"Skipping slice {slice_info.path} for subject {subject_name}, structure {acronym}: Missing atlas parameters."
+                        )
+                        pbar.update(1)
+                        continue
+
+                    try:
+                        image = subject.read_highres_image(slice_info)
+                        mask = np.isin(
+                            self.pipeline.get_registered_values_on_image(
+                                slice_info,
+                                pixel_value_mode=RegisteredPixelValues.STRUCTURE_IDS,
+                            ),
+                            display_ids,
+                        )
+
+                        if not np.any(mask):
+                            pbar.update(1)
+                            continue
+
+                        contours, _ = cv2.findContours(
+                            mask.astype(np.uint8),
+                            cv2.RETR_EXTERNAL,
+                            cv2.CHAIN_APPROX_SIMPLE,
+                        )
+
+                        # --- Load Cells (if needed) ---
+                        cells_coords = None
+                        cells_df = None  # Initialize cells_df
+                        if draw_cells:
+                            try:
+                                cells_df = subject.read_cell_detections(slice_info)
+                                # Convert normalized coords to pixel coords
+                                cells_coords = cells_df[["x", "y"]].values * np.array(
+                                    [slice_info.image_size[1], slice_info.image_size[0]]
+                                )  # x, y order for plotting
+                            except FileNotFoundError:
+                                logging.warning(
+                                    f"Cell detections not found for slice {slice_info.path} in subject {subject_name}. Skipping cells for {acronym}."
+                                )
+                            except Exception as e:
+                                logging.error(
+                                    f"Error loading cells for {slice_info.path}, structure {acronym}: {e}"
+                                )
+
+                        # --- Calculate Contrast Limits ---
+                        vmin, vmax = (
+                            np.quantile(image[image > 0], [0.01, 0.998])
+                            if np.any(image > 0)
+                            else (0, 1)
+                        )
+
+                        # --- Prepare Output Paths ---
+                        slice_filename_stem = Path(str(slice_info.path)).stem
+                        ap_value = int(
+                            round(
+                                slice_info.params.atlas.ap
+                                * self.atlas.brainglobe_atlas.resolution[0]
+                            )
+                        )
+                        # Directory for full slice images
+                        full_output_dir = output_dir / acronym / subject_name / "full"
+                        full_output_dir.mkdir(parents=True, exist_ok=True)
+                        screenshot_path_full = (
+                            full_output_dir / f"{ap_value}um_{slice_filename_stem}.jpg"
+                        )
+                        # Directory for cropped images WITHOUT cells
+                        struct_output_dir = (
+                            output_dir / acronym / subject_name / "struct"
+                        )
+                        struct_output_dir.mkdir(parents=True, exist_ok=True)
+                        # Directory for cropped images WITH cells
+                        struct_cells_output_dir = (
+                            output_dir / acronym / subject_name / "struct-cells"
+                        )
+                        if draw_cells:  # Only create if needed
+                            struct_cells_output_dir.mkdir(parents=True, exist_ok=True)
+
+                        # --- Plot Full Slice ---
+                        fig_full, ax_full = plt.subplots(
+                            figsize=(10, 10)
+                        )  # Adjust figsize as needed
+                        ax_full.imshow(
+                            image, cmap=black_green_cmap, vmin=vmin, vmax=vmax
+                        )  # Use custom cmap
+
+                        # Draw contours
+                        for contour in contours:
+                            # cv2 contours are [N, 1, 2] with (x, y)
+                            poly = Polygon(
+                                contour.squeeze(),
+                                closed=True,
+                                edgecolor="cyan",
+                                facecolor="none",
+                                linewidth=1.5,
+                            )  # Mimic napari label look
+                            ax_full.add_patch(poly)
+
+                        ax_full.set_axis_off()
+                        ax_full.set_position([0, 0, 1, 1])  # Remove padding
+                        fig_full.savefig(
+                            screenshot_path_full,
+                            dpi=output_dpi,
+                            bbox_inches="tight",
+                            pad_inches=0,
+                        )
+                        plt.close(fig_full)
+
+                        # --- Plot Zoomed Structure Views ---
+                        largest_contours = sorted(
+                            contours, key=cv2.contourArea, reverse=True
+                        )
+                        if largest_contours:
+                            max_area = cv2.contourArea(largest_contours[0])
+                            largest_contours = [
+                                c
+                                for c in largest_contours
+                                if cv2.contourArea(c) >= 0.3 * max_area
+                            ]
+
+                        for c_id, contour in enumerate(largest_contours):
+                            x, y, w, h = cv2.boundingRect(
+                                contour
+                            )  # x, y is top-left corner
+                            # Ensure width and height are at least 1 pixel
+                            w = max(1, w)
+                            h = max(1, h)
+                            logging.info(
+                                f"{acronym} bounding box: x={x}, y={y}, w={w}, h={h}"
+                            )
+
+                            # Define view box with 10% padding
+                            pad_x = int(0.1 * w)
+                            pad_y = int(0.1 * h)
+                            ymin = max(0, y - pad_y)
+                            ymax = min(image.shape[0], y + h + pad_y)
+                            xmin = max(0, x - pad_x)
+                            xmax = min(image.shape[1], x + w + pad_x)
+
+                            # Calculate figure size in inches to match crop resolution at target DPI
+                            fig_width_inches = w / output_dpi
+                            fig_height_inches = h / output_dpi
+
+                            fig_struct, ax_struct = plt.subplots(
+                                figsize=(fig_width_inches, fig_height_inches)
+                            )
+                            ax_struct.imshow(
+                                image, cmap=black_green_cmap, vmin=vmin, vmax=vmax
+                            )
+
+                            # Draw the current contour
+                            poly = Polygon(
+                                contour.squeeze(),
+                                closed=True,
+                                edgecolor="cyan",
+                                facecolor="none",
+                                linewidth=1.5,  # Consider scaling linewidth based on fig size?
+                            )
+                            ax_struct.add_patch(poly)
+
+                            # Set zoom limits (invert y-axis for imshow)
+                            ax_struct.set_xlim(xmin, xmax)
+                            ax_struct.set_ylim(ymax, ymin)  # Inverted y-axis
+                            ax_struct.set_axis_off()
+                            ax_struct.set_position([0, 0, 1, 1])  # Remove padding
+
+                            # --- Save version WITHOUT cells ---
+                            base_filename = (
+                                f"{ap_value}um_{slice_filename_stem}_contour_{c_id}"
+                            )
+                            # Path for image without cells (uses struct_output_dir)
+                            screenshot_path_struct_no_cells = (
+                                struct_output_dir / f"{base_filename}.jpg"
+                            )
+                            fig_struct.savefig(
+                                screenshot_path_struct_no_cells,
+                                dpi=output_dpi,
+                                bbox_inches="tight",
+                                pad_inches=0,
+                            )
+
+                            # --- Save version WITH cells (if requested and available) ---
+                            if (
+                                draw_cells
+                                and cells_coords is not None
+                                and len(cells_coords) > 0
+                            ):
+                                cells_in_box_mask = (
+                                    (cells_coords[:, 0] >= xmin)
+                                    & (cells_coords[:, 0] <= xmax)
+                                    & (cells_coords[:, 1] >= ymin)
+                                    & (cells_coords[:, 1] <= ymax)
+                                )
+                                cells_in_box = cells_coords[cells_in_box_mask]
+                                if len(cells_in_box) > 0:
+                                    scatter_sizes_struct = 10  # Default size
+                                    if (
+                                        cells_df is not None
+                                        and "area_pixels" in cells_df.columns
+                                    ):
+                                        # Select sizes corresponding to cells within the box
+                                        scatter_sizes_struct = (
+                                            pd.to_numeric(
+                                                cells_df.loc[
+                                                    cells_in_box_mask, "area_pixels"
+                                                ],
+                                                errors="coerce",
+                                            )
+                                            .fillna(10)
+                                            .values
+                                        )
+
+                                    ax_struct.scatter(
+                                        cells_in_box[:, 0],
+                                        cells_in_box[:, 1],
+                                        s=scatter_sizes_struct,
+                                        edgecolor="red",
+                                        facecolor="none",
+                                        linewidth=0.5,
+                                    )  # Use calculated sizes
+
+                                # Path for image with cells (uses struct_cells_output_dir)
+                                screenshot_path_struct_with_cells = (
+                                    struct_cells_output_dir
+                                    / f"{base_filename}.jpg"  # Use same base filename, different dir
+                                )
+                                fig_struct.savefig(
+                                    screenshot_path_struct_with_cells,
+                                    dpi=output_dpi,
+                                    bbox_inches="tight",
+                                    pad_inches=0,
+                                )
+
+                            # Close the figure after all saves for this contour are done
+                            plt.close(fig_struct)
+
+                            yield
+                    except Exception as e:
+                        logging.error(
+                            f"Failed to process slice {slice_info.path} for subject {subject_name}, structure {acronym}: {e}",
+                            exc_info=True,
+                        )
+                    finally:
+                        pbar.update(1)
+
+        pbar.close()
+        logging.info(f"Finished exporting images to {output_dir}")
+        open_directory(output_dir)
+
     def _get_subjects(self, slice_infos: List[SliceInfo]) -> List[BrainwaysSubject]:
-        # TODO: this is inefficient, we should have a better way to do this
         subjects = []
         for slice_info in slice_infos:
             for subject in self.subjects:

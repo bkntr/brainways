@@ -1,204 +1,202 @@
 # Getting Started
 
-## Requirements
+This guide will walk you through installing Brainways and starting your first project.
 
-* Installed [python](https://www.python.org/downloads/) 3.9-3.12.
+## Prerequisites
 
-!!! tip
-    We recommend installing brainways in a separated virtual environment, for example using [anaconda](https://docs.anaconda.com/free/anaconda/install/).
+*   **Python:** You need Python version 3.9, 3.10, 3.11, or 3.12 installed. You can download it from [python.org](https://www.python.org/downloads/).
 
-!!! tip
-    If you intend to use Cell Detection features in Brainways, it is highly recommended to install StarDist with GPU support. To do this, first install TensorFlow with GPU support before installing brainways (brainways install StarDist as a dependency). Please refer to the [TensorFlow](https://www.tensorflow.org/install/pip) website for detailed instructions, then proceed with brainways installation.
+!!! tip "Use a Virtual Environment"
+    We strongly recommend installing Brainways in a dedicated virtual environment (e.g., using `venv` or `conda`) to avoid conflicts with other Python packages.
+    ```bash
+    # Example using venv
+    python -m venv brainways-env
+    source brainways-env/bin/activate  # On Windows use `brainways-env\Scripts\activate`
+    ```
+
+!!! warning "GPU Support for Cell Detection (Optional but Recommended)"
+    If you plan to use the Cell Detection features, installing TensorFlow with GPU support *before* installing Brainways is highly recommended for performance. Brainways installs StarDist (which uses TensorFlow) as a dependency. Follow the official [TensorFlow GPU installation guide](https://www.tensorflow.org/install/pip) first, then proceed with the Brainways installation below.
 
 ## 1. Install Brainways
 
-Run the following command (if you created a virtual environment, run this command inside the virtual environment):
+Once your environment is set up (and TensorFlow with GPU support is installed, if desired), install Brainways using pip:
 
 ```bash
 pip install brainways
 ```
-
-This will install the brainways GUI along with all of its dependencies. After this command successfully finished, you are ready to use brainways.
+This command installs the Brainways GUI and all necessary dependencies.
 
 ## 2. Launch Brainways
 
-Launch brainways using the following command (if you installed brainways in a virtual environment, execute this command inside the virtual environment):
+To start the Brainways application, run the following command in your terminal (ensure your virtual environment is activated if you used one):
 
 ```bash
 brainways ui
 ```
 
-The first time Brainways is launched, it will automatically download the following dependencies:
-
-* [QuPath](https://qupath.github.io/), used in Brainways for its amazing image reading capabilities.
-* Rat/mice 3d atlases (via [bg-atlasapi](https://github.com/brainglobe/bg-atlasapi)).
-* Brainways automatic registration model weights.
+**First Launch:** The first time you run Brainways, it will automatically download additional components:
+*   [QuPath](https://qupath.github.io/): Used for robust image reading.
+*   3D Rat/Mice Atlases: Downloaded via [bg-atlasapi](https://github.com/brainglobe/bg-atlasapi).
+*   Brainways Registration Model Weights: For automatic atlas alignment.
 
 ## 3. Your First Brainways Project
 
-If you have images waiting to be registered, you can create a [new brainways project](#creating-a-new-brainways-project). If you don't have your own images, or just want to jump right in, brainways comes with two [sample projects](#loading-a-sample-project).
+You have two options to get started: load a sample project or create your own.
 
-### Loading a Sample Project
+### Option A: Loading a Sample Project (Recommended for Beginners)
 
-Brainways comes with two sample projects:
+Brainways includes sample projects to help you explore its features quickly:
 
-1. Sample project: contains sample images.
-1. Annotated sample projects: contains fully-annotated and quantified sample images to quickly showcase all of the features that are enabled after fully annotating a project.
+1.  **Sample Project:** Contains unregistered sample images.
+2.  **Annotated Sample Project:** Contains fully processed images, showcasing registration, cell detection, and analysis results.
 
-The sample projects can be loaded by using the following menu items: `File -> Open Sample -> Brainways -> Sample project / Annotated sample project`
+To load one, go to the menu: `File -> Open Sample -> Brainways -> Sample project` (or `Annotated sample project`).
 
 ![Loading sample project](./assets/load-demo.jpg){: width='70%' }
 
-### Creating a New Brainways Project
+### Option B: Creating a New Brainways Project
 
-1. In the right hand panel, click the `Project -> New` button.
-1. In the file menu dialog, create your project in a **new empty directory**.
-1. The "New Brainways Project" dialog will open with the following options:
-    * **Atlas:** Choose the atlas you'd like to register to (*whs_sd_rat_39um* comes with an automatic registration model, but other atlases can be used for manual registration).
-    * **Condition types:** the condition types in your experiment. Each subject can be assigned a condition for each of the given condition types, for example "age" and "sex". If you have more than one condition type, they should be separated by a comma, for example: `age;sex`
+If you have your own image data, follow these steps:
+
+1.  Click the `Project -> New` button in the right-hand panel.
+2.  In the file dialog, **select or create a new, empty directory** for your project. Brainways will store all project data here.
+3.  The "New Brainways Project" dialog appears. Configure the following:
+    *   **Atlas:** Select the reference atlas. The *whs_sd_rat_39um* atlas includes an automatic registration model. Other atlases require manual registration.
+    *   **Condition types (Optional):** Define experimental variables (e.g., `treatment`, `genotype`). Separate multiple types with semicolons (e.g., `treatment;genotype`). These allow grouping subjects for analysis.
 
 #### Adding Subjects
 
 ![Create subject dialog](./assets/new_subject.jpg)
 
-1. Click the `Add Subject` button and insert a Subject ID.
-1. If condition types were given, fill in the experimental conditions (for example `age=juvenile`, `sex=male`).
-1. Click the "Add Image(s)" button and choose one or more slice image files to add to the current subject (add all slice images that belong to a single brain. We do not recommend mixing different brains in a single subject).
-1. For multi-channel images, choose the channel with the fluorescent marker to be quantified.
-1. To finish creating a subject, click the "Create" button.
-1. Follow the previous steps again to add all subjects in your experiment.
+Add each experimental subject (e.g., individual animal) to your project:
 
-## 4. Working with Brainways
+1.  Click the `Add Subject` button.
+2.  Enter a unique **Subject ID**.
+3.  If you defined condition types, assign values for this subject (e.g., `treatment=control`, `genotype=WT`).
+4.  Click `Add Image(s)` and select **all the 2D slice images** belonging to this subject (this single brain).
+    *   *Important:* Do not mix images from different brains within one subject.
+5.  If using multi-channel images, select the channel containing the signal you want to quantify (e.g., the fluorescent marker).
+6.  Click `Create` to add the subject and their images to the project.
+7.  Repeat steps 1-6 for all subjects in your experiment.
 
-### Slice registration to the 3D atlas
+## 4. Working with Brainways: Registration
 
-Once a new project is created, register all the slices to the 3D atlas by following the registration steps for each slice image.
+After creating a project, the primary task is registering each slice image to the 3D atlas. This involves several steps for each slice.
 
-!!! tip
-    All registration sliders can be quickly adjusted using keyboard shortcuts. To see a full list of the keyboard shortcuts for each step, click "?" on your keyboard.
+!!! tip "Best Practices"
+    Before proceeding, review the [Best Practices Guide](04_best_practices.md) for tips on achieving accurate results.
 
-#### Atlas registration
+!!! tip "Keyboard Shortcuts"
+    Most sliders and controls can be adjusted using keyboard shortcuts. Press `?` within any registration panel to see the available shortcuts for that step.
 
-In the "Atlas registration" panel, you will see the slice image on the right and an atlas slice image on the left. Adjust the sliders on the right panel until your slice matches the atlas slice. If only one of the hemispheres is visible, choose the visible hemisphere in the "Hem" box.
+The registration process typically involves these stages:
 
-If an auomatic registration algorithm is available for the current atlas, it will be automatically run on every image upon image opening.
+#### Atlas Registration
+
+*   **Goal:** Align the slice image (right panel) with the corresponding atlas slice (left panel).
+*   **How:** Adjust the sliders in the right panel. If only one hemisphere is present, select it using the "Hem" dropdown.
+*   **Automatic:** If an automatic registration model is available for the selected atlas (like *whs_sd_rat_39um*), it will run automatically when you open an image. You can then refine the result manually if needed.
 
 ![Atlas registration](./assets/atlas-reg.gif)
 
-#### Rigid registration
+#### Rigid Registration (Affine)
 
-In the "Rigid registration" panel, adjust the sliders until the slice image roughly matches the atlas annotated that is overlayed on the image.
+*   **Goal:** Fine-tune the alignment using rotation, scaling, and translation so the slice roughly matches the atlas overlay.
+*   **How:** Adjust the sliders in the "Rigid registration" panel.
 
 ![Rigid registration](./assets/affine-reg.gif)
 
-#### Non-rigid registration
+#### Non-rigid Registration (Elastic)
 
-To accomodate subtle differences between different brains, the images can be elastically deformed to perfectly match the atlas slice. To do that, move the blue dots until the underlying structures matches the atlas annotation overlay. The "Elastix" button can be used to perform automatic elastic registration using the Elastix algorithm.
+*   **Goal:** Deform the slice image elastically to precisely match the atlas contours, accounting for small anatomical variations.
+*   **How:**
+    *   **Manual:** Drag the blue control points until the underlying image structures align with the atlas overlay.
+    *   **Automatic:** Click the `Elastix` button to use the Elastix algorithm for automatic elastic registration (this can take some time).
 
 ![Non-rigid registration](./assets/non-rigid-reg.gif)
 
-### Cell detection
+## 5. Cell Detection (Optional)
 
-!!! tip
-    To get satisfactory cell detection results, it is highly recommended to train a custom StarDist model on data from your experiment. Instructions detailing how to do it can be [found here](03_cell_detection.md).
+Brainways uses the [StarDist](https://github.com/stardist/stardist) algorithm to detect cells (e.g., labeled neurons) in your images.
 
-!!! tip
-    If you intend to use Cell Detection features in Brainways, it is highly recommended to install brainways with GPU support. To do this, first install TensorFlow with GPU support before installing brainways. Please refer to the [TensorFlow](https://www.tensorflow.org/install/pip) website for detailed instructions, then proceed with brainways installation.
+!!! tip "Train a Custom Model for Best Results"
+    The default StarDist models may not perform well on all datasets. For optimal accuracy, **training a custom StarDist model** on your specific experimental data is highly recommended. See the [Cell Detection Guide](03_cell_detection.md) for instructions.
 
-Active cells can be detected for each image using the [StarDist](https://github.com/stardist/stardist) cell detection algorithm. Because cell detection is performed on the full resolution images and can take a significant amount of time, detections can be run on a small preview crop to make sure that it works properly. To run cell detection on a preview crop, double-click on the relevant area in your image, and then click on the "Run on preview" button. If the detections are not satisfactory, it is recommended to train your own model following [these instructions](03_cell_detection.md). Image normalization parameters can be adjusted to try and achieve better results with the default StarDist pretrained model, but in our experience, it is very difficult to achieve good results without training a custom model on our data.
+!!! warning "GPU Recommended"
+    As mentioned in the prerequisites, using a GPU significantly speeds up cell detection. Ensure TensorFlow with GPU support is installed if you need faster processing.
 
-The "unique" check box can be used to determine whether the adjusted normalization parameters will be used only for this image or for the whole project:
-* If the "unique" checkbox is ticked, the parameters will only be used for this image.
-* If the "unique" checkbox is not ticked, the parameters will be used for the whole project.
+**Steps:**
 
-After verifying the cell detection algorithm works well, run the cell detector for the entire project by clicking the "Run Cell Detector" button. Note that it may take a few hours for a big project.
+1.  **Preview (Recommended):** Cell detection on full-resolution images can be slow. To test parameters quickly:
+    *   Double-click on a small, representative area in your image to define a preview region.
+    *   Adjust normalization parameters (`Percentile low`, `Percentile high`) in the "Cell detection" panel.
+    *   Click `Run on preview`. Check the results in the preview area.
+2.  **Adjust Parameters:**
+    *   Fine-tune normalization parameters based on the preview.
+    *   **Unique Settings:**
+        *   Check the `unique` box: The current parameters apply *only* to this specific image.
+        *   Uncheck the `unique` box: The current parameters become the default for *all* images in the project (unless overridden by a unique setting).
+3.  **Run on Full Project:** Once satisfied with the parameters (ideally after testing on previews from several images/subjects):
+    *   Click the `Run Cell Detector` button. This processes all images in the project, which can take considerable time (potentially hours for large projects).
 
 ![Cell detection](./assets/cell-detection.jpg)
 
-### Outputs
+## 6. Outputs and Analysis
+
+Once registration is complete (and optionally, cell detection has been run), you can export data and perform analyses.
+
+### Exporting Data
 
 #### Export Excel with Cell Density per Region
 
-Brainways allows you to export cell density data for each brain region and animal to an Excel file. Follow the steps below:
+Generate a spreadsheet summarizing cell counts and densities for each annotated brain region.
 
-1. **Open the Calculate Results Dialog:**
-   - Navigate to the `Analysis` section and click the `Calculate results` button.
-
-2. **Configure Calculation Options:**
-   - In the calculation dialog, you will need to specify the following options:
-     - **Min Structure Square Area (μm):** Minimum area (in µm²) for regions to be included in the excel.
-     - **Cells Per Square Area (μm):** Excel will output cell density per square area (raw cell counts will also be provided).
-     - **Min Cell Area (μm):** Filter out detected cells with area smaller than this value.
-     - **Max Cell Area (μm):** Filter out detected cells with area larger than this value.
-     - **Excel Mode:** Select the mode for the Excel output. Options include:
-       - `Row per Subject`: One row per subject.
-       - `Row per Slice`: One row per slice image.
-
-3. **Calculate Results:**
-   - After configuring the options, click the `OK` button to start the calculation process. A progress bar will indicate the status of the calculation.
-
-4. **Verify Exported Files:**
-   - Once the calculation is complete, navigate to the specified output directory to find the exported Excel file. The file will contain cell density data for each brain region and animal.
+1.  Go to the `Analysis` section and click `Calculate results`.
+2.  Configure the options:
+    *   **Min Structure Square Area (μm²):** Exclude small regions below this area threshold.
+    *   **Cells Per Square Area (μm²):** Define the unit area for density calculation (e.g., 10000 for cells/mm²). Raw counts are always included.
+    *   **Min/Max Cell Area (μm²):** Filter detected cells based on their size (useful for removing noise or artifacts).
+    *   **Excel Mode:**
+        *   `Row per Subject`: Aggregates data across all slices for each subject.
+        *   `Row per Slice`: Provides data for each individual slice.
+3.  Click `OK`. The calculation may take some time.
+4.  The Excel file will be saved in your project directory.
 
 #### Export Registered Annotation Masks
 
-The Export Registered Annotation Masks feature allows you to export the registered annotations of your brain slices to various file formats. Follow the steps below to use this feature:
+Export the atlas regions mapped onto your slice coordinates. This is useful for analysis in other software.
 
-1. **Open the Export Dialog:**
-   - Navigate to the `Analysis` section and click the `Export Registered Annotation Masks` button.
+1.  Go to the `Analysis` section and click `Export Registered Annotation Masks`.
+2.  Configure the options:
+    *   **Output Directory:** Choose where to save the mask files.
+    *   **Slice Selection:** Export masks for the `Current Slice`, `Current Subject`, or `All Subjects`.
+    *   **File Format:** Choose `CSV`, `NPZ` (NumPy), or `MAT` (MATLAB).
+3.  Click `OK`.
+4.  Files (named after the original images) will be saved in the specified directory.
 
-2. **Configure Export Options:**
-   - In the export dialog, you will need to specify the following options:
-     - **Output Directory:** The directory where the registered annotation masks will be saved.
-     - **Slice Selection:** Choose which slices to export. Options include:
-       - `Current Slice`: Export the currently selected slice.
-       - `Current Subject`: Export all slices of the currently selected subject.
-       - `All Subjects`: Export all slices of all subjects in the project.
-     - **File Format:** Select the file format for the exported masks. Supported formats include:
-       - `CSV`
-       - `NPZ`
-       - `MAT`
+### Performing Analysis
 
-3. **Export the Masks:**
-   - After configuring the options, click the `OK` button to start the export process. A progress bar will indicate the status of the export.
+Brainways offers built-in statistical tools to analyze cell distribution patterns across experimental conditions. Access these via the `Analysis` panel.
 
-4. **Verify Exported Files:**
-   - Once the export is complete, navigate to the specified output directory to find the exported files. Each file will be named according to the slice image name and saved in the chosen format.
+!!! note
+    Analysis requires cell detection data. Ensure you have run the cell detector on your project first.
 
-### Analysis
+#### ANOVA Contrast Analysis
 
-Once all images are annotated and cell detection is run on all images, statistical analysis can be performed to find neural patterns which differentiate between experimental conditions.
-
-Several kinds of analyses are supported:
-
-1. ANOVA contrast analysis
-1. PLS (Partial Least Squares) contrast analysis
-1. Network graph analysis
-
-#### ANOVA contrast analysis
-
-ANOVA contrast analysis can be performed through Brainways to identify and visualize the brain regions that contributed to the contrast between different experimental conditions. ANOVA is performed on each brain region separately, followed by FDR correction for multiple comparisons. Other multiple comparison methods can be used (see full list of multiple comparison methods [here](https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html)). Regions that significantly contributed to the contrast are subjected to post hoc analysis to identify the particular differences between condition pairs. To display a posthoc statistical analysis between two conditions, click the "Show Posthoc" button. All ANOVA and posthoc values are saved to an excel file in the project directory under:
-
-```
-<PROJECT_DIR>/contrast-<CONDITION>-cells.xlsx
-```
+*   **Purpose:** Identify brain regions showing statistically significant differences in cell counts/density between experimental groups defined by your conditions.
+*   **Method:** Performs ANOVA on each region, with corrections for multiple comparisons (FDR by default, others available). Post-hoc tests identify specific group differences.
+*   **Output:** Results are displayed visually on the atlas and saved to an Excel file: `<PROJECT_DIR>/contrast-<CONDITION>-cells.xlsx`. Click `Show Posthoc` to view pairwise comparisons.
 
 ![Analysis](./assets/analysis.jpg)
 
-#### PLS (Partial Least Squares) contrast analysis
+#### PLS (Partial Least Squares) Contrast Analysis
 
-Task PLS is a multivariate statistical technique that is used to identify optimal neural activity patterns that differentiate between experimental conditions. PLS produces a set of mutually orthogonal pairs of latent variables (LV). One element of the LV depicts the contrast, which reflects a commonality or difference between conditions. The other element of the LV, the relative contribution of each brain region (termed here ‘salience’), identifies brain regions that show the activation profile across tasks, indicating which brain areas are maximally expressed in a particular LV. Statistical assessment of PLS is performed using permutation testing for LVs and bootstrap estimation of standard error for the brain region saliences. The significance of latent variables is assessed by permutation testing. The reliability of the salience of the brain region is assessed using bootstrap estimation of standard error. Brain regions with a bootstrap ratio >2.57 (roughly corresponding to a confidence interval of 99%) are considered to be reliably contributing to the pattern. Missing values are interpolated by the average for the test condition. Brainways uses the [pyls](https://github.com/rmarkello/pyls) Python package to perform the PLS analysis.
+*   **Purpose:** A multivariate technique to find patterns of brain region activity that best differentiate experimental conditions.
+*   **Method:** Uses the [pyls](https://github.com/rmarkello/pyls) package. Identifies latent variables (LVs) representing condition contrasts and calculates 'saliences' indicating each region's contribution. Significance is assessed via permutation testing and bootstrapping.
+*   **Output:** Results (salience plots, LV significance) are saved as PNG and Excel files in `<PROJECT_DIR>/__outputs__/PLS/`.
 
-The results of the analysis are exported to an Excel file and to PNG files containing the salience plot, the LV p values and the LV contrast direction. The files can be found in the project directory under:
+#### Network Graph Analysis
 
-```
-<PROJECT_DIR>/__outputs__/PLS/
-```
-
-#### Network graph analysis
-
-To examine the functional connectivity between the different brain regions, Brainways can be used to create a network graph based on inter-region positive cell count correlation matrices. Network nodes consist of the different brain regions as defined in the atlas, and the edges of the network consist of significant correlations between the regions (the significance threshold can be adjusted by the user, by default p<0.05), based on Pearson’s pairwise correlation. The values are FDR corrected for multiple comparisons. The network graph is exported to a graphml file, and can be used with any graph analysis tools and algorithms for further analysis. The file can be found in the project directory under:
-
-```
-<PROJECT_DIR>/__outputs__/network_graph/
-```
+*   **Purpose:** Explore functional connectivity by calculating correlations in cell counts between brain regions.
+*   **Method:** Creates a graph where nodes are brain regions and edges represent significant Pearson correlations (threshold adjustable, FDR corrected).
+*   **Output:** The network graph is exported as a GraphML file (compatible with graph analysis software like Gephi or NetworkX) to `<PROJECT_DIR>/__outputs__/network_graph/`.

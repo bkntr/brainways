@@ -32,7 +32,7 @@ class AnalysisController(Controller):
     def __init__(self, ui: BrainwaysUI):
         super().__init__(ui)
         self.atlas_layer: napari.layers.Image | None = None
-        self.annotations_layer: napari.layers.Image | None = None
+        self.annotations_layer: napari.layers.Labels | None = None  # Correct type hint
         self._params: BrainwaysParams | None = None
         self._condition: str | None = None
         self._anova_df: pd.DataFrame | None = None
@@ -108,6 +108,8 @@ class AnalysisController(Controller):
         self._is_open = True
 
     def on_mouse_move(self, _layer, event):
+        if self.annotations_layer is None:  # Add None check
+            return
         _ = self.annotations_layer.extent
         data_position = self.annotations_layer.world_to_data(event.position)
         data_position = tuple(int(round(c)) for c in data_position)
@@ -180,6 +182,7 @@ class AnalysisController(Controller):
 
     def show_posthoc(self, contrast: str, pvalue: float):
         assert self._posthoc_df is not None
+        assert self.annotations_layer is not None
 
         atlas = self.ui.project.atlas
         annotation = self.ui.project.atlas.annotation.numpy()
@@ -194,26 +197,6 @@ class AnalysisController(Controller):
         self.contrast_layer.data = annotation_anova
         self.annotations_layer.data[annotation_anova == 0] = 0
         update_layer_contrast_limits(self.contrast_layer)
-
-        # TODO: insert this nicely
-        # import matplotlib as mpl
-
-        # figure = Figure(figsize=(1, 8))
-        # mpl_widget = FigureCanvas()
-        # ax = mpl_widget.figure.subplots()
-        # self.ui.viewer.window.add_dock_widget(mpl_widget)
-        # norm = mpl.colors.Normalize(
-        #     vmin=self.contrast_layer.contrast_limits[0],
-        #     vmax=self.contrast_layer.contrast_limits[1],
-        # )
-        # cbar = figure.colorbar(
-        #     mpl.cm.ScalarMappable(norm=norm, cmap="hot"),
-        #     ax=ax,
-        #     pad=0.05,
-        #     fraction=1,
-        # )
-        # ax.axis("off")
-        # cbar.set_label("t score")
 
         self._show_mode = "posthoc"
         self.contrast_layer.visible = True
@@ -246,7 +229,7 @@ class AnalysisController(Controller):
         multiple_comparisons_method: str,
     ) -> FunctionWorker:
         self._condition = condition_col
-        self.ui.do_work_async(
+        return self.ui.do_work_async(
             self._run_contrast_analysis,
             condition_col=condition_col,
             values_col=values_col,
@@ -280,8 +263,8 @@ class AnalysisController(Controller):
         alpha: float,
         n_perm: int = 1000,
         n_boot: int = 1000,
-    ):
-        self.ui.do_work_async(
+    ) -> FunctionWorker:
+        return self.ui.do_work_async(
             self.ui.project.calculate_pls_analysis,
             condition_col=condition_col,
             values_col=values_col,
@@ -299,8 +282,8 @@ class AnalysisController(Controller):
         n_bootstraps: int,
         multiple_comparison_correction_method: str,
         output_path: Path,
-    ):
-        self.ui.do_work_async(
+    ) -> FunctionWorker:
+        return self.ui.do_work_async(
             self.ui.project.calculate_network_graph,
             condition_col=condition_col,
             values_col=values_col,
@@ -316,9 +299,9 @@ class AnalysisController(Controller):
         pixel_value_mode: RegisteredPixelValues,
         slice_selection: SliceSelection,
         file_format: MaskFileFormat,
-    ):
+    ) -> FunctionWorker:
         slice_infos = self.ui.get_slice_selection(slice_selection)
-        self.ui.do_work_async(
+        return self.ui.do_work_async(
             self.ui.project.export_registration_masks_async,
             progress_label="Exporting Registered Annotation Masks...",
             progress_max_value=len(slice_infos),
@@ -333,6 +316,31 @@ class AnalysisController(Controller):
     ):
         slice_infos = self.ui.get_slice_selection(slice_selection)
         self.ui.project.export_slice_locations(output_path, slice_infos)
+
+    def export_annotated_region_images_async(
+        self,
+        output_path: Path,
+        structure_acronyms: List[str],
+        draw_cells: bool,
+        slice_selection: SliceSelection,
+    ) -> FunctionWorker | None:
+        slice_infos = self.ui.get_slice_selection(slice_selection)
+        if not slice_infos:
+            self.ui.status_bar.showMessage("No slices selected for export.", 5000)
+            return
+
+        def slice_info_predicate(si):
+            return si in slice_infos
+
+        return self.ui.do_work_async(
+            self.ui.project.export_annotated_region_images,
+            progress_label="Exporting Annotated Region Images...",
+            progress_max_value=len(slice_infos) * len(structure_acronyms),
+            output_dir=output_path,
+            structure_acronyms=structure_acronyms,
+            draw_cells=draw_cells,
+            slice_info_predicate=slice_info_predicate,
+        )
 
     @property
     def current_condition(self) -> str | None:

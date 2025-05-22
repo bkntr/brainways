@@ -1,13 +1,11 @@
 from pathlib import Path
 
+import albumentations as A
 import torch
-import yaml
-from jsonargparse import ArgumentParser
 
+from brainways.model.siamese.siamese_backbone import SiameseBackbone
 from brainways.model.siamese.siamese_model import SiameseModel
-from brainways.model.transforms.normalize_percentile import (  # noqa: F401
-    NormalizePercentile,
-)
+from brainways.model.transforms.normalize_percentile import NormalizePercentile  # noqa: F401
 
 
 def load_model(model_dir: Path) -> SiameseModel:
@@ -20,17 +18,25 @@ def load_model(model_dir: Path) -> SiameseModel:
     Returns:
         Loaded and configured SiameseModel
     """
-    # Load configuration
-    config_path = model_dir / "config.yml"
-    with open(config_path) as f:
-        model_cfg = yaml.safe_load(f)
-
-    # Initialize model
-    parser = ArgumentParser()
-    parser.add_class_arguments(SiameseModel, nested_key="model", fail_untyped=False)
-    cfg = parser.parse_object({"model": model_cfg})
-    model = parser.instantiate_classes(cfg).model
-    assert isinstance(model, SiameseModel)
+    model = SiameseModel(
+        backbone=SiameseBackbone(
+            model_name="tf_efficientnetv2_s.in21k",
+            pretrained=False,
+        ),
+        transforms=[
+            A.Resize(height=224, width=224, interpolation=3),
+            NormalizePercentile(limits=(0.1, 99.8)),
+            A.FromFloat(dtype="uint8"),
+            A.ToRGB(),
+            A.Normalize(),
+            A.ToTensorV2(),
+        ],
+        ap_limits={
+            "allen_mouse_25um": (1, 527),
+            "whs_sd_rat_39um": (122, 800),
+        },
+        inner_dim=256,
+    )
 
     # Load state dict
     state_dict_path = model_dir / "state_dict.pt"

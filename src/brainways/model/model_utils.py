@@ -40,11 +40,17 @@ def load_model(model_dir: Path) -> SiameseModel:
 
     # Load state dict
     state_dict_path = model_dir / "state_dict.pt"
-    state_dict = torch.load(state_dict_path, weights_only=True)
+    state_dict = torch.load(
+        state_dict_path,
+        map_location="cpu",
+        weights_only=True,
+    )
     model.load_state_dict(state_dict)
 
-    # Set model to evaluation mode and move to GPU
     model.eval()
-    model.to("cuda")
+
+    # Move model to GPU if available
+    if torch.cuda.is_available():
+        model.to("cuda")
 
     return model

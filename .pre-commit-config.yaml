@@ -1,42 +1,29 @@
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
-    hooks:
-      - id: check-docstring-first
-      - id: end-of-file-fixer
-      - id: trailing-whitespace
-  # - repo: https://github.com/asottile/setup-cfg-fmt
-  #   rev: v1.20.1
-  #   hooks:
-  #     - id: setup-cfg-fmt
-  #       args: [--max-py-version=3.9]
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.19.0
-    hooks:
-      - id: pyupgrade
-        args: [--py38-plus, --keep-runtime-typing]
-  - repo: https://github.com/myint/autoflake
-    rev: v2.3.1
-    hooks:
-      - id: autoflake
-        args: ["--in-place", "--remove-all-unused-imports"]
-  - repo: https://github.com/psf/black
-    rev: 24.10.0
-    hooks:
-      - id: black
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.1.1
-    hooks:
-      - id: flake8
-        additional_dependencies: [flake8-typing-imports>=1.9.0]
-        args: ["--max-line-length", "88", "--extend-ignore", "E203,E501"]
-  # https://mypy.readthedocs.io/en/stable/introduction.html
-  # you may wish to add this as well!
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v0.910-1
-  #   hooks:
-  #     - id: mypy
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v5.0.0
+      hooks:
+          - id: check-docstring-first
+          - id: end-of-file-fixer
+          - id: trailing-whitespace
+    # - repo: https://github.com/asottile/setup-cfg-fmt
+    #   rev: v1.20.1
+    #   hooks:
+    #     - id: setup-cfg-fmt
+    #       args: [--max-py-version=3.9]
+    - repo: https://github.com/asottile/pyupgrade
+      rev: v3.19.0
+      hooks:
+          - id: pyupgrade
+            args: [--py38-plus, --keep-runtime-typing]
+    - repo: https://github.com/astral-sh/ruff-pre-commit
+      rev: v0.11.5
+      hooks:
+          - id: ruff
+            args: ["--fix"]
+          - id: ruff-format
+    # https://mypy.readthedocs.io/en/stable/introduction.html
+    # you may wish to add this as well!
+    # - repo: https://github.com/pre-commit/mirrors-mypy
+    #   rev: v0.910-1
+    #   hooks:
+    #     - id: mypy

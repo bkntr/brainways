@@ -8,13 +8,13 @@ This guide will walk you through installing Brainways and starting your first pr
 
 !!! tip "Use a Virtual Environment"
     We strongly recommend installing Brainways in a dedicated virtual environment (e.g., using `venv` or `conda`) to avoid conflicts with other Python packages.
-    
+
         # Example using venv
         python -m venv brainways-env
         source brainways-env/bin/activate  # On Windows use `brainways-env\Scripts\activate`
 
 !!! warning "GPU Support for Cell Detection (Optional but Recommended)"
-    If you plan to use the Cell Detection features, installing TensorFlow with GPU support *before* installing Brainways is highly recommended for performance. Brainways installs StarDist (which uses TensorFlow) as a dependency. Follow the official [TensorFlow GPU installation guide](https://www.tensorflow.org/install/pip) first, then proceed with the Brainways installation below.
+    If you plan to use the Cell Detection features, installing TensorFlow with GPU support *before* installing Brainways is highly recommended for performance. Brainways installs StarDist (which uses TensorFlow) as a dependency. Follow the official [TensorFlow GPU installation guide](https://www.tensorflow.org/install/pip) first, then proceed with the Brainways installation below (there seems to be an issue in some environments with TensorFlow 2.20. If you encounter issues, try to install TensorFlow 2.19).
 
 ## 1. Install Brainways
 

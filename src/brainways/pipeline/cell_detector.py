@@ -9,9 +9,9 @@ import numpy as np
 import pandas as pd
 from csbdeep.data import Normalizer
 from skimage.measure import regionprops_table
+from stardist.models import StarDist2D
 
 from brainways.pipeline.brainways_params import CellDetectorParams
-from brainways.utils._imports import STARDIST_AVAILABLE
 from brainways.utils.image import normalize_contrast
 
 
@@ -117,15 +117,6 @@ class CellDetector:
 
     @cached_property
     def stardist(self):
-        if STARDIST_AVAILABLE:
-            from stardist.models import StarDist2D
-        else:
-            raise ImportError(
-                "Tried to run cell detector model but stardist is not installed, "
-                "please install by running `pip install stardist` or `pip install "
-                "stardist`"
-            )
-
         if self.custom_model_dir:
             logging.info(f"Using custom StarDist model from {self.custom_model_dir}")
             return StarDist2D(

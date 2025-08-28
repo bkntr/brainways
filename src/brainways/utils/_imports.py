@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """General utilities. Adapted from PytorchLightining"""
+
 import importlib
 from importlib.util import find_spec
 
@@ -51,4 +52,3 @@ def _module_available(module_path: str) -> bool:
 
 
 NAPARI_AVAILABLE = _module_available("napari")
-STARDIST_AVAILABLE = _module_available("stardist")

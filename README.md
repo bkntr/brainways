@@ -31,7 +31,7 @@ Brainways simplifies complex analysis workflows into manageable steps:
 ## Getting Started
 
 !!! note "Windows GPU Support Pre-installation"
-    If you plan to use Brainways with GPU acceleration on Windows, you must install GPU-compatible versions of PyTorch and TensorBoard *before* installing Brainways. Follow the instructions on the [PyTorch](https://pytorch.org/get-started/locally/) and [TensorBoard](https://www.tensorflow.org/install/pip) websites. Once these dependencies are met, proceed with the Brainways installation below.
+    If you plan to use Brainways with GPU acceleration on Windows, you must install GPU-compatible versions of PyTorch and TensorFlow *before* installing Brainways. Follow the instructions on the [PyTorch](https://pytorch.org/get-started/locally/) and [TensorFlow](https://www.tensorflow.org/install/pip) websites. Once these dependencies are met, proceed with the Brainways installation below.
 
 Install and launch the Brainways user interface using pip:
 
@@ -40,10 +40,10 @@ pip install brainways
 brainways ui
 ```
 
-For a detailed walkthrough, please refer to our [Getting Started Guide](02_getting_started.md).
+For a detailed walkthrough, please refer to our [Getting Started Guide](https://brainways.readthedocs.io/en/latest/02_getting_started/).
 
 !!! tip "Achieving Reliable Results"
-    To ensure the best possible outcomes with Brainways, we highly recommend reviewing our [Best Practices Guide](04_best_practices.md).
+    To ensure the best possible outcomes with Brainways, we highly recommend reviewing our [Best Practices Guide](https://brainways.readthedocs.io/en/latest/04_best_practices/).
 
 ## Architecture
 
